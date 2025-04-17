@@ -27,13 +27,13 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/register", {
+      const response = await fetch("http://localhost:3000/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          nama: form.nama,
+          name: form.nama,
           email: form.email,
           no_telp: form.no_telp,
           password: form.password,

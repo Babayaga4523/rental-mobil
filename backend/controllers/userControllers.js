@@ -49,3 +49,20 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+//contoh simple
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Cari user berdasarkan email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Login successful' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

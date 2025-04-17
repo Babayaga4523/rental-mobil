@@ -1,6 +1,5 @@
 const Car = require('../models/car');
 
-
 exports.getAll = async (req, res) => {
   try {
     const users = await Car.findAll();
@@ -18,3 +17,4 @@ exports.create = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+

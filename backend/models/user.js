@@ -11,6 +11,12 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
+  no_telp:{
+    type: DataTypes.STRING,
+  },
+  password:{
+    type:DataTypes.STRING
+  }
 }, {
   tableName: 'users',
   timestamps: false,
