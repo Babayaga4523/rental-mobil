@@ -1,58 +1,79 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Login.css';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     try {
-      const response = await fetch("http://localhost:3000/api/users/login", {
-        method: "POST",
+      const response = await fetch('http://localhost:3000/api/users/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({
+          email: email, // Menggunakan nilai state email
+          password: password, // Menggunakan nilai state password
+        }),
       });
-    
-      const data = await response.json();
 
-      if (response.ok) {
-        alert("Login berhasil!");
-        // Simpan token / info user jika ada
-        localStorage.setItem("nama", data.user.nama);
-        localStorage.setItem("role", data.user.role);
-
-        // Redirect berdasarkan role
-        if (data.user.role === "admin") {
-          window.location.href = "/admin";
-        } else {
-          window.location.href = "/home";
-        }
-
-      } else {
-        alert(data.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.message || 'Terjadi kesalahan saat login');
+        return;
       }
 
-    } catch (error) {
-      alert("Terjadi kesalahan saat login.");
-      console.error(error);
+      const data = await response.json(); // Mendapatkan response JSON
+      localStorage.setItem('token', data.token); // Simpan token ke localStorage jika perlu
+
+      // Redirect sesuai role
+      if (data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat login');
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="login-page d-flex justify-content-center align-items-center">
-      <div className="login-card p-5 shadow-lg rounded-4">
+    <div className="login-page d-flex justify-content-center align-items-center min-vh-100 bg-light">
+      <div className="login-card p-5 bg-white shadow-lg rounded-4" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center mb-4">
-          <img src="/assets/logo-pawon.png" alt="Logo" className="login-logo mb-3" />
+          <img src="/assets/logo.png" alt="Logo" className="login-logo mb-3" style={{ width: '100px' }} />
           <h3 className="text-primary fw-bold">Login</h3>
           <p className="text-muted">Silakan masuk untuk melanjutkan</p>
         </div>
+
+        {error && (
+          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+            {error}
+            <button 
+              type="button" 
+              className="btn-close" 
+              aria-label="Close"
+              onClick={() => setError('')}
+            />
+          </div>
+        )}
+
         <form onSubmit={handleLogin}>
           <div className="mb-3 form-floating">
             <input
@@ -69,7 +90,7 @@ const Login = () => {
 
           <div className="mb-4 position-relative form-floating">
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               id="inputPassword"
               className="form-control"
               placeholder="Password"
@@ -81,20 +102,34 @@ const Login = () => {
             <span
               className="position-absolute top-50 end-0 translate-middle-y pe-3 text-secondary"
               onClick={() => setShowPassword(!showPassword)}
-              style={{ cursor: "pointer" }}
+              style={{ cursor: 'pointer' }}
             >
-              <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
+              <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
             </span>
           </div>
 
-          <button type="submit" className="btn btn-primary w-100 btn-lg rounded-pill">
-            Masuk
+          <button 
+            type="submit" 
+            className="btn btn-primary w-100 btn-lg rounded-pill"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Memproses...
+              </>
+            ) : (
+              'Masuk'
+            )}
           </button>
         </form>
 
         <div className="text-center mt-4">
           <small className="text-muted">
-            Belum punya akun? <a href="/register" className="text-primary">Daftar di sini</a>
+            Belum punya akun?{' '}
+            <a href="/register" className="text-primary text-decoration-none">
+              Daftar di sini
+            </a>
           </small>
         </div>
       </div>

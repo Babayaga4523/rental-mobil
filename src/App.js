@@ -1,39 +1,69 @@
 import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Booking from "./pages/Booking";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
-import Footer from "./components/Footer";
 import About from "./pages/about";
 import Kontak from "./pages/kontak";
 import SearchResults from "./pages/SearchResults";
 import Layanan from "./pages/layanan";
-import DetailMobil from "./pages/DetailMobil"; // Pastikan import ini benar
+import DetailMobil from "./pages/DetailMobil";
+import Testimoni from "./pages/Testimoni";
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './pages/NotFound'; // Pastikan kamu punya halaman ini
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import Testimoni from "./pages/Testimoni";
 
 function App() {
   return (
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/booking" element={<Booking />} />
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/about" element={<About />} />
         <Route path="/layanan" element={<Layanan />} />
         <Route path="/kontak" element={<Kontak />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/detail/:id" element={<DetailMobil />} />
         <Route path="/testimoni" element={<Testimoni />} />
-        {/* Route 404 kalau halaman nggak ditemukan */}
-        <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Halaman Tidak Ditemukan</h2>} />
+
+        {/* Protected Routes */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/booking" 
+          element={
+            <ProtectedRoute>
+              <Booking />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* 404 Not Found */}
+        <Route path="/not-found" element={<NotFound />} />
+        {/* Fallback Route untuk 404 */}
+        <Route path="*" element={<Navigate to="/not-found" replace />} />
       </Routes>
       <Footer />
     </Router>

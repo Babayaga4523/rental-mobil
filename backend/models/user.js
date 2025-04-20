@@ -11,15 +11,20 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
-  no_telp:{
+  no_telp: {
     type: DataTypes.STRING,
   },
-  password:{
-    type:DataTypes.STRING
-  }
+  password: {
+    type: DataTypes.STRING,
+  },
+  role: {
+    type: DataTypes.ENUM('admin', 'user'),
+    allowNull: false,
+    defaultValue: 'user',
+  },
 }, {
   tableName: 'users',
-  timestamps: false,
+  timestamps: true,  // Aktifkan timestamps otomatis
 });
 
 module.exports = User;

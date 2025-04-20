@@ -9,10 +9,17 @@ import "./Home.css";
 const Home = () => {
   const navigate = useNavigate();
   const [testimonials, setTestimonials] = useState([]);
+  const userData = JSON.parse(localStorage.getItem("userData"));
 
   const phoneNumber = "6281381339149";
   const message =
     "Halo! Saya tertarik dengan layanan sewa mobil Anda. Bisa minta info lebih lanjut? 🚘";
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userData");
+    navigate("/login");
+  };
 
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
@@ -46,6 +53,21 @@ const Home = () => {
       transition={{ duration: 0.8 }}
       className="container-fluid p-0"
     >
+      {/* Jika user login, tampilkan dashboard mini */}
+      {userData && (
+        <div className="container mt-4">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h5>Selamat Datang, {userData.nama}!</h5>
+            <button onClick={handleLogout} className="btn btn-outline-danger btn-sm">
+              Logout
+            </button>
+          </div>
+          <div className="alert alert-info">
+            Anda login sebagai: <strong>{userData.role}</strong>
+          </div>
+        </div>
+      )}
+    
       {/* Hero Section */}
       <section
         className="hero-section text-center text-white d-flex align-items-center justify-content-center py-5"
