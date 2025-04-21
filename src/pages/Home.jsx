@@ -24,7 +24,7 @@ const Home = () => {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
 
-    fetch("http://localhost:5000/api/testimoni")
+    fetch("http://localhost:3000/api/testimoni")
       .then((res) => res.json())
       .then((data) => {
         setTestimonials(data);

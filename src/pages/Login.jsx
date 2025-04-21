@@ -3,19 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Login.css';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    // Validasi client-side
+    if (!email || !password) {
+      toast.error('Email dan password harus diisi');
+      return;
+    }
+
     setIsLoading(true);
-    setError('');
 
     try {
       const response = await fetch('http://localhost:3000/api/users/login', {
@@ -23,31 +30,31 @@ const Login = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: email, // Menggunakan nilai state email
-          password: password, // Menggunakan nilai state password
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'Terjadi kesalahan saat login');
-        return;
+        throw new Error(data.message || 'Login gagal');
       }
 
-      const data = await response.json(); // Mendapatkan response JSON
-      localStorage.setItem('token', data.token); // Simpan token ke localStorage jika perlu
+      // Simpan token dan data user
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Redirect sesuai role
+      toast.success('Login berhasil');
+      
+      // Redirect berdasarkan role
       if (data.user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        navigate('/home');
       }
 
-    } catch (err) {
-      setError(err.message || 'Terjadi kesalahan saat login');
-      console.error('Login error:', err);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Terjadi kesalahan saat login');
     } finally {
       setIsLoading(false);
     }
@@ -55,24 +62,12 @@ const Login = () => {
 
   return (
     <div className="login-page d-flex justify-content-center align-items-center min-vh-100 bg-light">
-      <div className="login-card p-5 bg-white shadow-lg rounded-4" style={{ width: '100%', maxWidth: '400px' }}>
+      <div className="login-card p-4 p-md-5 bg-white shadow-lg rounded-4" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center mb-4">
           <img src="/assets/logo.png" alt="Logo" className="login-logo mb-3" style={{ width: '100px' }} />
           <h3 className="text-primary fw-bold">Login</h3>
           <p className="text-muted">Silakan masuk untuk melanjutkan</p>
         </div>
-
-        {error && (
-          <div className="alert alert-danger alert-dismissible fade show" role="alert">
-            {error}
-            <button 
-              type="button" 
-              className="btn-close" 
-              aria-label="Close"
-              onClick={() => setError('')}
-            />
-          </div>
-        )}
 
         <form onSubmit={handleLogin}>
           <div className="mb-3 form-floating">
@@ -97,6 +92,7 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength="6"
             />
             <label htmlFor="inputPassword">Password</label>
             <span

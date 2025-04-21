@@ -1,21 +1,26 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+// Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Pages
 import Home from "./pages/Home";
 import Booking from "./pages/Booking";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
-import About from "./pages/about";
-import Kontak from "./pages/kontak";
+import About from "./pages/about";      // Huruf kapital
+import Kontak from "./pages/kontak";    // Huruf kapital
+import Layanan from "./pages/layanan";  // Huruf kapital
 import SearchResults from "./pages/SearchResults";
-import Layanan from "./pages/layanan";
 import DetailMobil from "./pages/DetailMobil";
 import Testimoni from "./pages/Testimoni";
-import ProtectedRoute from './components/ProtectedRoute';
-import NotFound from './pages/NotFound'; // Pastikan kamu punya halaman ini
+import NotFound from './pages/NotFound';
 
+// Bootstrap
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
@@ -62,7 +67,6 @@ function App() {
 
         {/* 404 Not Found */}
         <Route path="/not-found" element={<NotFound />} />
-        {/* Fallback Route untuk 404 */}
         <Route path="*" element={<Navigate to="/not-found" replace />} />
       </Routes>
       <Footer />
