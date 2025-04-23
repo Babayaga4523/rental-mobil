@@ -13,6 +13,15 @@ const Navbar = () => {
     }
   };
 
+  // Logout handler
+  const handleLogout = () => {
+    // Hapus token dan data user dari localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Redirect ke halaman login
+    navigate('/login');
+  };
+
   const linkStyle = {
     color: "#212529",
     padding: "0.5rem 1rem",
@@ -50,29 +59,32 @@ const Navbar = () => {
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            {[
-              { name: "Home", path: "/" },
-              { name: "Tentang Kami", path: "/About" },
-              { name: "Layanan", path: "/Layanan" },
-              { name: "Testimoni", path: "/Testimoni" },
-              { name: "Login", path: "/Login" },
-            ].map((item, index) => (
+            {[{ name: "Home", path: "/" }, { name: "Tentang Kami", path: "/about" }, { name: "Layanan", path: "/layanan" }, { name: "Testimoni", path: "/testimoni" }].map((item, index) => (
               <li className="nav-item" key={index}>
                 <Link
                   className="nav-link"
                   to={item.path}
                   style={linkStyle}
-                  onMouseEnter={(e) =>
-                    Object.assign(e.target.style, hoverStyle)
-                  }
-                  onMouseLeave={(e) =>
-                    Object.assign(e.target.style, linkStyle)
-                  }
+                  onMouseEnter={(e) => Object.assign(e.target.style, hoverStyle)}
+                  onMouseLeave={(e) => Object.assign(e.target.style, linkStyle)}
                 >
                   {item.name}
                 </Link>
               </li>
             ))}
+            
+            {/* Conditional Login/Logout */}
+            {!localStorage.getItem('token') ? (
+              <li className="nav-item">
+                <Link className="nav-link" to="/login" style={linkStyle}>Login</Link>
+              </li>
+            ) : (
+              <li className="nav-item">
+                <button className="nav-link btn btn-link" onClick={handleLogout} style={{ ...linkStyle, color: 'red' }}>
+                  Logout
+                </button>
+              </li>
+            )}
           </ul>
 
           {/* Form Search */}

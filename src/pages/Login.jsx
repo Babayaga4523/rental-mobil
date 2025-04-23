@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './Login.css';
-import { toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
@@ -17,15 +17,34 @@ const Login = () => {
     e.preventDefault();
     
     // Validasi client-side
-    if (!email || !password) {
-      toast.error('Email dan password harus diisi');
+    if (!email.trim()) {
+      toast.error('Email harus diisi', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
+      return;
+    }
+
+    if (!password) {
+      toast.error('Password harus diisi', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/users/login', {
+      const response = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -36,25 +55,82 @@ const Login = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login gagal');
+        // Notifikasi khusus untuk berbagai jenis error
+        if (response.status === 401) {
+          toast.error('Email atau password salah', {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true
+          });
+        } else if (response.status === 403) {
+          toast.error('Akun Anda belum aktif', {
+            position: "top-center",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true
+          });
+        } else {
+          throw new Error(data.message || 'Login gagal');
+        }
+        return;
       }
 
       // Simpan token dan data user
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      toast.success('Login berhasil');
-      
+      // Notifikasi sukses login
+      toast.success('Login berhasil!', {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored"
+      });
+
       // Redirect berdasarkan role
-      if (data.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/home');
-      }
+      setTimeout(() => {
+        if (data.user.role === 'admin') {
+          navigate('/admin/dashboard');
+          toast.info('Selamat datang di Dashboard Admin', {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true
+          });
+        } else {
+          navigate('/home');
+          toast.info(`Selamat datang, ${data.user.name}!`, {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true
+          });
+        }
+      }, 2000);
 
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Terjadi kesalahan saat login');
+      // Notifikasi error umum
+      toast.error(error.message || 'Terjadi kesalahan saat login. Silakan coba lagi.', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true
+      });
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +138,7 @@ const Login = () => {
 
   return (
     <div className="login-page d-flex justify-content-center align-items-center min-vh-100 bg-light">
+      <ToastContainer />
       <div className="login-card p-4 p-md-5 bg-white shadow-lg rounded-4" style={{ width: '100%', maxWidth: '400px' }}>
         <div className="text-center mb-4">
           <img src="/assets/logo.png" alt="Logo" className="login-logo mb-3" style={{ width: '100px' }} />

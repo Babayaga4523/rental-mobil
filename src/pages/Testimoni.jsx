@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { StarFill } from "react-bootstrap-icons";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Testimoni = () => {
   const [testimoni, setTestimoni] = useState([]);
@@ -20,6 +22,7 @@ const Testimoni = () => {
       setTestimoni(response.data.data || response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+      toast.error("Gagal memuat testimoni");
     }
   };
 
@@ -38,9 +41,22 @@ const Testimoni = () => {
       setNama("");
       setPesan("");
       setRating(5);
-      fetchTestimoni();
+      await fetchTestimoni();
+      
+      // Notifikasi sukses
+      toast.success("Testimoni berhasil dikirim!", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } catch (error) {
       console.error("Gagal kirim testimoni:", error);
+      toast.error("Gagal mengirim testimoni", {
+        position: "top-center",
+      });
     } finally {
       setLoading(false);
     }
@@ -63,29 +79,27 @@ const Testimoni = () => {
 
   return (
     <div className="testimoni-page">
+ 
+
       {/* Hero Section */}
-      <section className="testimoni-hero bg-primary text-white py-5">
-        <div className="container py-4">
-          <div className="row justify-content-center">
-            <div className="col-lg-8 text-center">
-              <h1 className="display-4 fw-bold mb-3">
-                <i className="bi bi-chat-square-quote me-2"></i>
-                Testimoni Pelanggan
-              </h1>
-              <p className="lead mb-4">
-                Bagikan pengalaman Anda menggunakan layanan kami
-              </p>
-              <a 
-                href="#testimoni-form" 
-                className="btn btn-light btn-lg rounded-pill px-4"
-              >
-                <i className="bi bi-pencil-square me-2"></i>
-                Tulis Testimoni
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section
+  className="hero-section text-center text-white d-flex align-items-center justify-content-center py-5"
+  style={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)" }}
+>
+  <div className="content container">
+    <h1 className="fw-bold display-4">🚗 Ceritakan Pengalaman Anda dengan Kami</h1>
+    <p className="lead mb-4">
+    Kami sangat menghargai setiap masukan dan pengalaman Anda. Bagikan cerita perjalanan Anda dengan layanan kami!
+    </p>
+    <button
+      className="btn btn-warning fw-bold px-4 py-2"
+      onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
+    >
+      🎯 Tulis Ulasan Anda Sekarang
+    </button>
+  </div>
+</section>
+
 
       {/* Testimoni Form */}
       <section id="testimoni-form" className="py-5 bg-light">
@@ -98,7 +112,6 @@ const Testimoni = () => {
                     <i className="bi bi-pencil-square me-2"></i>
                     Tulis Testimoni
                   </h2>
-                  
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                       <label htmlFor="nama" className="form-label fw-semibold">
@@ -131,9 +144,7 @@ const Testimoni = () => {
                     </div>
 
                     <div className="mb-4">
-                      <label className="form-label fw-semibold">
-                        Rating
-                      </label>
+                      <label className="form-label fw-semibold">Rating</label>
                       <select
                         className="form-select form-select-lg"
                         value={rating}
@@ -232,5 +243,5 @@ const Testimoni = () => {
     </div>
   );
 };
-
+<ToastContainer />
 export default Testimoni;

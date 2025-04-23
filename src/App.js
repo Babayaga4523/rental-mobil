@@ -1,10 +1,12 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";  // Import ToastContainer
+import "react-toastify/dist/ReactToastify.css";  // Import style Toastify
 
 // Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute'; 
 
 // Pages
 import Home from "./pages/Home";
@@ -12,9 +14,9 @@ import Booking from "./pages/Booking";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
-import About from "./pages/about";      // Huruf kapital
-import Kontak from "./pages/kontak";    // Huruf kapital
-import Layanan from "./pages/layanan";  // Huruf kapital
+import About from "./pages/about"; 
+import Kontak from "./pages/kontak";  
+import Layanan from "./pages/layanan";  
 import SearchResults from "./pages/SearchResults";
 import DetailMobil from "./pages/DetailMobil";
 import Testimoni from "./pages/Testimoni";
@@ -38,6 +40,7 @@ function App() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/detail/:id" element={<DetailMobil />} />
         <Route path="/testimoni" element={<Testimoni />} />
+        <Route path="/home" element={<Home />} />
 
         {/* Protected Routes */}
         <Route 
@@ -69,8 +72,11 @@ function App() {
         <Route path="/not-found" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/not-found" replace />} />
       </Routes>
+      <ToastContainer />  {/* Menambahkan ToastContainer di bagian bawah */}
       <Footer />
+   
     </Router>
+    
   );
 }
 

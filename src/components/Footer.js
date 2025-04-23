@@ -1,5 +1,7 @@
 import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/css/bootstrap.min.css"; 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesome Icon jika belum diimport
+import { faFacebook, faInstagram, faTwitter, faWhatsapp } from '@fortawesome/free-brands-svg-icons'; // Import Icon yang diperlukan
 
 const Footer = () => {
   return (
@@ -17,7 +19,7 @@ const Footer = () => {
             className="text-light fs-4"
             aria-label="Facebook"
           >
-            <i className="fab fa-facebook-f"></i>
+            <FontAwesomeIcon icon={faFacebook} />
           </a>
           <a
             href="https://www.instagram.com/"
@@ -26,7 +28,7 @@ const Footer = () => {
             className="text-light fs-4"
             aria-label="Instagram"
           >
-            <i className="fab fa-instagram"></i>
+            <FontAwesomeIcon icon={faInstagram} />
           </a>
           <a
             href="https://twitter.com/"
@@ -35,7 +37,7 @@ const Footer = () => {
             className="text-light fs-4"
             aria-label="Twitter"
           >
-            <i className="fab fa-twitter"></i>
+            <FontAwesomeIcon icon={faTwitter} />
           </a>
           <a
             href="https://wa.me/6281234567890"
@@ -44,7 +46,7 @@ const Footer = () => {
             className="text-light fs-4"
             aria-label="WhatsApp"
           >
-            <i className="fab fa-whatsapp"></i>
+            <FontAwesomeIcon icon={faWhatsapp} />
           </a>
         </div>
 
