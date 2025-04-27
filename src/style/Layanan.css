@@ -1,0 +1,335 @@
+/* Base Styles */
+.layanan-page {
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+  position: relative;
+  display: inline-block;
+}
+
+.section-title:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: #4e73df;
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Hero Section */
+.layanan-hero {
+  position: relative;
+  height: 70vh;
+  min-height: 600px;
+  background-color: black; /* Set background color to light gray (abu-abu) */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Parallax effect */
+  display: flex;
+  align-items: center;
+  color: white;
+  text-align: center;
+  position: relative;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Dark overlay for better text visibility */
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  z-index: 2;
+}
+
+.hero-title .highlight {
+  font-size: 3.5rem;
+  color: #ffcc00;
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  opacity: 0.9;
+  z-index: 2;
+}
+
+.hero-cta .btn {
+  font-size: 1.1rem;
+  padding: 12px 25px;
+  border-radius: 30px;
+  background-color: #ff6f61;
+  border: none;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  z-index: 2;
+}
+
+.hero-cta .btn:hover {
+  background-color: #ff4c3b;
+  transform: translateY(-3px);
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  z-index: 2;
+}
+
+.stat-item {
+  text-align: center;
+  margin: 0 30px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffcc00;
+}
+
+.stat-label {
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.stat-divider {
+  height: 50px;
+  border-left: 2px solid #ddd;
+  margin: 0 20px;
+}
+
+.scroll-down {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.scroll-line {
+  width: 30px;
+  height: 5px;
+  background-color: #ffcc00;
+  margin-bottom: 5px;
+}
+
+.scroll-down span {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* Search Section */
+.search-section {
+  z-index: 100;
+}
+
+.search-box {
+  border-radius: 50px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.search-box .form-control {
+  padding: 10px 15px;
+  border: 1px solid #dee2e6;
+  border-left: none;
+}
+
+.search-box .input-group-text {
+  border-right: none;
+  padding: 10px 15px;
+}
+
+.filter-buttons .btn {
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Car Cards */
+.car-card {
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.car-card:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.car-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.car-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.car-card:hover .car-image img {
+  transform: scale(1.1);
+}
+
+.car-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.car-badge .badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 50px;
+}
+
+.car-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.car-card:hover .car-overlay {
+  opacity: 1;
+}
+
+.car-overlay .btn {
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.car-card:hover .car-overlay .btn {
+  transform: translateY(0);
+}
+
+.car-body {
+  padding: 20px;
+}
+
+.car-body h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1a1a1a;
+}
+
+.car-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.car-features span {
+  background: #f8f9fa;
+  padding: 5px 10px;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+/* CTA Section */
+.cta-section {
+  background:;
+  border-radius: 10px;
+  padding: 30px;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .hero-title {
+    font-size: 2.8rem;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .layanan-hero {
+    height: 60vh;
+    min-height: 500px;
+    background-attachment: scroll;
+  }
+  
+  .hero-title {
+    font-size: 2.2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .search-section {
+    position: static;
+  }
+  
+  .filter-buttons {
+    justify-content: flex-start !important;
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-title {
+    font-size: 1.8rem;
+  }
+  
+  .car-card {
+    margin-bottom: 20px;
+  }
+  
+  .cta-section .btn {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .cta-section .btn:last-child {
+    margin-bottom: 0;
+  }
+}

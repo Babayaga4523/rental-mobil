@@ -74,9 +74,7 @@ function App() {
       </Routes>
       <ToastContainer />  {/* Menambahkan ToastContainer di bagian bawah */}
       <Footer />
-   
     </Router>
-    
   );
 }
 

@@ -1,72 +1,132 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css"; 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // Import FontAwesome Icon jika belum diimport
-import { faFacebook, faInstagram, faTwitter, faWhatsapp } from '@fortawesome/free-brands-svg-icons'; // Import Icon yang diperlukan
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faFacebook, 
+  faInstagram, 
+  faTwitter, 
+  faWhatsapp,
+  faTiktok
+} from '@fortawesome/free-brands-svg-icons';
+import { faEnvelope, faPhone, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
+import './Footer.css'; // Create this CSS file for custom styles
 
 const Footer = () => {
   return (
-    <footer className="bg-dark text-light pt-5 mt-5 shadow-lg border-top">
-      <div className="container text-center">
-        <h5 className="fw-bold mb-3">
-          🚗 Rental Mobil - Perjalanan Nyaman & Aman
-        </h5>
+    <footer className="footer-container">
+      <div className="footer-wave">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="#343a40"></path>
+          <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="#343a40"></path>
+          <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="#343a40"></path>
+        </svg>
+      </div>
+      
+      <div className="container py-5">
+        <div className="row g-4">
+          {/* Company Info */}
+          <div className="col-md-4">
+            <div className="footer-brand">
+              <h3 className="text-white mb-3">
+                <span className="logo-icon">🚗</span> Rental Mobil
+              </h3>
+              <p className="footer-description">
+                Menyediakan solusi transportasi terbaik untuk perjalanan Anda dengan kenyamanan dan keamanan terjamin.
+              </p>
+              <div className="footer-contact">
+                <p>
+                  <FontAwesomeIcon icon={faMapMarkerAlt} className="me-2" />
+                  Jl. Contoh No. 123, Jakarta
+                </p>
+                <p>
+                  <FontAwesomeIcon icon={faPhone} className="me-2" />
+                  +62 812-3456-7890
+                </p>
+                <p>
+                  <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                  info@rentalmobil.com
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <div className="d-flex justify-content-center gap-4 mb-4">
-          <a
-            href="https://www.facebook.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-light fs-4"
-            aria-label="Facebook"
-          >
-            <FontAwesomeIcon icon={faFacebook} />
-          </a>
-          <a
-            href="https://www.instagram.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-light fs-4"
-            aria-label="Instagram"
-          >
-            <FontAwesomeIcon icon={faInstagram} />
-          </a>
-          <a
-            href="https://twitter.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-light fs-4"
-            aria-label="Twitter"
-          >
-            <FontAwesomeIcon icon={faTwitter} />
-          </a>
-          <a
-            href="https://wa.me/6281234567890"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-light fs-4"
-            aria-label="WhatsApp"
-          >
-            <FontAwesomeIcon icon={faWhatsapp} />
-          </a>
+          {/* Quick Links */}
+          <div className="col-md-2">
+            <h5 className="footer-title">Tautan Cepat</h5>
+            <ul className="footer-links">
+              <li><a href="/home">Beranda</a></li>
+              <li><a href="/about">Tentang Kami</a></li>
+              <li><a href="/layanan">Layanan</a></li>
+              <li><a href="/testimoni">Testimoni</a></li>
+             </ul>
+          </div>
+
+          {/* Services */}
+          <div className="col-md-3">
+            <h5 className="footer-title">Layanan</h5>
+            <ul className="footer-links">
+              <li><a href="/services/daily">Sewa Harian</a></li>
+              <li><a href="/services/monthly">Sewa Bulanan</a></li>
+              <li><a href="/services/wedding">Sewa Pernikahan</a></li>
+              <li><a href="/services/airport">Antar Jemput Bandara</a></li>
+              <li><a href="/services/driver">Dengan Supir</a></li>
+            </ul>
+          </div>
+
+          {/* Social Media */}
+          <div className="col-md-3">
+            <h5 className="footer-title">Ikuti Kami</h5>
+            <div className="social-icons">
+              <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <FontAwesomeIcon icon={faFacebook} />
+              </a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <FontAwesomeIcon icon={faInstagram} />
+              </a>
+              <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <FontAwesomeIcon icon={faTwitter} />
+              </a>
+              <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                <FontAwesomeIcon icon={faWhatsapp} />
+              </a>
+              <a href="https://tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                <FontAwesomeIcon icon={faTiktok} />
+              </a>
+            </div>
+
+            <div className="newsletter mt-4">
+              <h6 className="text-white mb-3">Berlangganan Newsletter</h6>
+              <div className="input-group">
+                <input 
+                  type="email" 
+                  className="form-control" 
+                  placeholder="Email Anda" 
+                  aria-label="Email"
+                />
+                <button className="btn btn-primary" type="button">
+                  Kirim
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <p className="mb-2">&copy; 2024 Rental Mobil. Semua Hak Dilindungi.</p>
-        <p className="text-secondary small mb-0">
-          Versi 1.0.0 &nbsp;|&nbsp;{" "}
-          <a
-            href="/privacy-policy"
-            className="text-secondary text-decoration-none"
-          >
-            Kebijakan Privasi
-          </a>{" "}
-          &nbsp;|&nbsp;{" "}
-          <a
-            href="/terms"
-            className="text-secondary text-decoration-none"
-          >
-            Syarat & Ketentuan
-          </a>
-        </p>
+      <div className="footer-bottom">
+        <div className="container">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-center py-3">
+            <p className="mb-2 mb-md-0">
+              &copy; {new Date().getFullYear()} Rental Mobil. Semua Hak Dilindungi.
+            </p>
+            <div className="footer-legal">
+              <a href="/privacy-policy">Kebijakan Privasi</a>
+              <span className="mx-2">|</span>
+              <a href="/terms">Syarat & Ketentuan</a>
+              <span className="mx-2">|</span>
+              <a href="/sitemap">Peta Situs</a>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   );

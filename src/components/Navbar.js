@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./Navbar.css"; // Add custom styles
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,33 +16,17 @@ const Navbar = () => {
 
   // Logout handler
   const handleLogout = () => {
-    // Hapus token dan data user dari localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    // Redirect ke halaman login
-    navigate('/login');
-  };
-
-  const linkStyle = {
-    color: "#212529",
-    padding: "0.5rem 1rem",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
-    textDecoration: "none",
-  };
-
-  const hoverStyle = {
-    color: "#0d6efd",
-    fontWeight: "600",
+    // Clear token and user data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    // Redirect to login page
+    navigate("/login");
   };
 
   return (
-    <nav
-      className="navbar navbar-expand-lg navbar-light bg-light shadow-sm py-3"
-      style={{ fontFamily: "Segoe UI, sans-serif" }}
-    >
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark py-3">
       <div className="container-fluid">
-        <Link className="navbar-brand fw-bold fs-4 text-dark" to="/">
+        <Link className="navbar-brand fw-bold fs-4 text-light" to="/">
           🚗 Rental Mobil
         </Link>
 
@@ -58,37 +43,40 @@ const Navbar = () => {
         </button>
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-5">
             {[{ name: "Home", path: "/" }, { name: "Tentang Kami", path: "/about" }, { name: "Layanan", path: "/layanan" }, { name: "Testimoni", path: "/testimoni" }].map((item, index) => (
               <li className="nav-item" key={index}>
                 <Link
                   className="nav-link"
                   to={item.path}
-                  style={linkStyle}
-                  onMouseEnter={(e) => Object.assign(e.target.style, hoverStyle)}
-                  onMouseLeave={(e) => Object.assign(e.target.style, linkStyle)}
+                  style={{ fontWeight: "500", transition: "all 0.3s ease" }}
                 >
                   {item.name}
                 </Link>
               </li>
             ))}
-            
+
             {/* Conditional Login/Logout */}
-            {!localStorage.getItem('token') ? (
+            {!localStorage.getItem("token") ? (
               <li className="nav-item">
-                <Link className="nav-link" to="/login" style={linkStyle}>Login</Link>
+                <Link className="nav-link" to="/login">
+                  Login
+                </Link>
               </li>
             ) : (
               <li className="nav-item">
-                <button className="nav-link btn btn-link" onClick={handleLogout} style={{ ...linkStyle, color: 'red' }}>
+                <button
+                  className="nav-link btn btn-link text-danger"
+                  onClick={handleLogout}
+                >
                   Logout
                 </button>
               </li>
             )}
           </ul>
 
-          {/* Form Search */}
-          <form className="d-flex" onSubmit={handleSearch}>
+          {/* Search Form */}
+          <form className="d-flex ms-lg-5" onSubmit={handleSearch}>
             <input
               className="form-control me-2"
               type="search"
@@ -96,8 +84,9 @@ const Navbar = () => {
               aria-label="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ borderRadius: "30px", width: "300px" }}
             />
-            <button className="btn btn-outline-success" type="submit">
+            <button className="btn btn-outline-light" type="submit" style={{ borderRadius: "30px" }}>
               Cari
             </button>
           </form>

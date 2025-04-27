@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { StarFill } from "react-bootstrap-icons";
+import { StarFill, StarHalf, Star } from "react-bootstrap-icons";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { motion } from "framer-motion";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import "../style/Testimoni.css";
 
 const Testimoni = () => {
   const [testimoni, setTestimoni] = useState([]);
@@ -11,8 +15,10 @@ const Testimoni = () => {
   const [pesan, setPesan] = useState("");
   const [rating, setRating] = useState(5);
   const [loading, setLoading] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
+    AOS.init({ duration: 800, once: true });
     fetchTestimoni();
   }, []);
 
@@ -35,7 +41,7 @@ const Testimoni = () => {
         nama,
         pesan,
         rating,
-        user_id: 1 // Ganti dengan user_id dari sistem auth
+        user_id: 1
       });
       
       setNama("");
@@ -43,7 +49,6 @@ const Testimoni = () => {
       setRating(5);
       await fetchTestimoni();
       
-      // Notifikasi sukses
       toast.success("Testimoni berhasil dikirim!", {
         position: "top-center",
         autoClose: 3000,
@@ -54,49 +59,79 @@ const Testimoni = () => {
       });
     } catch (error) {
       console.error("Gagal kirim testimoni:", error);
-      toast.error("Gagal mengirim testimoni", {
-        position: "top-center",
-      });
+      toast.error("Gagal mengirim testimoni", { position: "top-center" });
     } finally {
       setLoading(false);
     }
   };
 
-  // Fungsi untuk render rating bintang
-  const renderRating = (rating) => {
+  const renderRating = (ratingValue) => {
     return (
       <div className="d-flex">
-        {[...Array(5)].map((_, i) => (
-          <StarFill 
-            key={i} 
-            className={i < rating ? "text-warning" : "text-secondary"} 
-            size={18}
-          />
+        {[1, 2, 3, 4, 5].map((star) => {
+          if (star <= ratingValue) {
+            return <StarFill key={star} className="text-warning" size={20} />;
+          }
+          return <Star key={star} className="text-warning" size={20} />;
+        })}
+      </div>
+    );
+  };
+
+  const renderRatingInput = () => {
+    return (
+      <div className="d-flex mb-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            onMouseEnter={() => setHoverRating(star)}
+            onMouseLeave={() => setHoverRating(0)}
+            onClick={() => setRating(star)}
+            style={{ cursor: "pointer" }}
+          >
+            {star <= (hoverRating || rating) ? (
+              <StarFill className="text-warning" size={28} />
+            ) : (
+              <Star className="text-warning" size={28} />
+            )}
+          </span>
         ))}
+        <span className="ms-2 fw-bold text-warning">
+          {hoverRating || rating}/5
+        </span>
       </div>
     );
   };
 
   return (
     <div className="testimoni-page">
+     {/* Hero Section */}
+<section className="testimoni-hero">
  
-
-      {/* Hero Section */}
-      <section
-  className="hero-section text-center text-white d-flex align-items-center justify-content-center py-5"
-  style={{ background: "linear-gradient(135deg, #1e3c72, #2a5298)" }}
->
-  <div className="content container">
-    <h1 className="fw-bold display-4">🚗 Ceritakan Pengalaman Anda dengan Kami</h1>
-    <p className="lead mb-4">
-    Kami sangat menghargai setiap masukan dan pengalaman Anda. Bagikan cerita perjalanan Anda dengan layanan kami!
-    </p>
-    <button
-      className="btn btn-warning fw-bold px-4 py-2"
-      onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
-    >
-      🎯 Tulis Ulasan Anda Sekarang
-    </button>
+  <div className="container h-100">
+    <div className="row h-100 align-items-center">
+      <div className="col-lg-8 mx-auto text-center">
+        <motion.h1
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="hero-title"
+        >
+          Bagikan Pengalaman <span className="highlight">Anda</span>
+        </motion.h1>
+        <p className="hero-subtitle">
+          Ceritakan pengalaman menyewa mobil dengan kami dan bantu kami menjadi lebih baik
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="btn btn-primary btn-lg rounded-pill px-4 py-2 mt-3"
+          onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
+        >
+          <i className="fas fa-pen me-2"></i>Tulis Testimoni
+        </motion.button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -106,12 +141,19 @@ const Testimoni = () => {
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-lg-8">
-              <div className="card border-0 shadow-sm rounded-4">
-                <div className="card-body p-4 p-md-5">
-                  <h2 className="text-center mb-4 fw-bold text-primary">
-                    <i className="bi bi-pencil-square me-2"></i>
-                    Tulis Testimoni
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card border-0 shadow rounded-4 overflow-hidden"
+              >
+                <div className="card-header bg-primary text-white py-3">
+                  <h2 className="mb-0 text-center">
+                    <i className="fas fa-edit me-2"></i>
+                    Form Testimoni
                   </h2>
+                </div>
+                <div className="card-body p-4 p-md-5">
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                       <label htmlFor="nama" className="form-label fw-semibold">
@@ -145,17 +187,7 @@ const Testimoni = () => {
 
                     <div className="mb-4">
                       <label className="form-label fw-semibold">Rating</label>
-                      <select
-                        className="form-select form-select-lg"
-                        value={rating}
-                        onChange={(e) => setRating(parseInt(e.target.value))}
-                      >
-                        <option value={5}>Sangat Memuaskan (5 Bintang)</option>
-                        <option value={4}>Memuaskan (4 Bintang)</option>
-                        <option value={3}>Cukup Baik (3 Bintang)</option>
-                        <option value={2}>Kurang (2 Bintang)</option>
-                        <option value={1}>Tidak Puas (1 Bintang)</option>
-                      </select>
+                      {renderRatingInput()}
                     </div>
 
                     <div className="d-grid">
@@ -171,7 +203,7 @@ const Testimoni = () => {
                           </>
                         ) : (
                           <>
-                            <i className="bi bi-send-check me-2"></i>
+                            <i className="fas fa-paper-plane me-2"></i>
                             Kirim Testimoni
                           </>
                         )}
@@ -179,30 +211,38 @@ const Testimoni = () => {
                     </div>
                   </form>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Testimoni List */}
-      <section className="py-5">
+      <section className="testimoni-list py-5">
         <div className="container">
-          <div className="text-center mb-5">
-            <h2 className="display-5 fw-bold text-primary">
-              <i className="bi bi-chat-left-quote me-2"></i>
-              Apa Kata Mereka?
+          <div className="section-header text-center mb-5">
+            <h2 className="section-title">
+              <i className="fas fa-quote-left text-primary me-2"></i>
+              Apa Kata Pelanggan Kami
             </h2>
-            <p className="lead text-muted">
-              Testimoni jujur dari pelanggan kami
+            <p className="section-subtitle">
+              Testimoni jujur dari pelanggan yang telah menggunakan layanan kami
             </p>
           </div>
 
           <div className="row g-4">
             {testimoni.length > 0 ? (
-              testimoni.map((item) => (
-                <div className="col-md-6 col-lg-4" key={item.id}>
-                  <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+              testimoni.map((item, index) => (
+                <div 
+                  className="col-md-6 col-lg-4" 
+                  key={item.id}
+                  data-aos="fade-up"
+                  data-aos-delay={index % 3 * 100}
+                >
+                  <motion.div
+                    whileHover={{ y: -10 }}
+                    className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                  >
                     <div className="card-body p-4 d-flex flex-column">
                       <div className="mb-3">
                         {renderRating(item.rating)}
@@ -211,7 +251,7 @@ const Testimoni = () => {
                         "{item.pesan}"
                       </p>
                       <div className="d-flex align-items-center">
-                        <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{width: '50px', height: '50px'}}>
+                        <div className="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
                           <span className="fs-5 fw-bold">{item.nama.charAt(0).toUpperCase()}</span>
                         </div>
                         <div className="ms-3">
@@ -226,13 +266,13 @@ const Testimoni = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               ))
             ) : (
               <div className="col-12 text-center py-5">
                 <div className="alert alert-info">
-                  <i className="bi bi-info-circle me-2"></i>
+                  <i className="fas fa-info-circle me-2"></i>
                   Belum ada testimoni. Jadilah yang pertama!
                 </div>
               </div>
@@ -240,8 +280,9 @@ const Testimoni = () => {
           </div>
         </div>
       </section>
+      <ToastContainer />
     </div>
   );
 };
-<ToastContainer />
+
 export default Testimoni;

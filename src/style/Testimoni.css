@@ -1,0 +1,150 @@
+/* Base Styles */
+.testimoni-page {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .section-header {
+    margin-bottom: 3rem;
+  }
+  
+  .section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    position: relative;
+    color: #1a1a1a;
+  }
+  
+  .section-title:after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: #4e73df;
+  }
+  
+  .section-subtitle {
+    font-size: 1.1rem;
+    color: #6c757d;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  /* Hero Section */
+  .testimoni-hero {
+    position: relative;
+  height: 70vh;
+  min-height: 600px;
+  background-color: black; /* Set background color to light gray (abu-abu) */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed; /* Parallax effect */
+  display: flex;
+  align-items: center;
+  color: white;
+  text-align: center;
+  position: relative;
+  }
+  
+  .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Black overlay with opacity */
+  }
+  
+  .hero-title {
+    font-size: 3rem;
+    color: white;
+    font-weight: 700;
+  }
+  
+  .hero-subtitle {
+    color: white;
+    font-size: 1.2rem;
+    margin-top: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .btn-primary {
+    background-color: #007bff;
+    border: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Optional: Style for the .highlight span */
+  .highlight {
+    color: #ffc107; /* You can change this to any color you'd prefer */
+  }
+  
+  /* Testimoni Form */
+  .testimoni-form .card {
+    border: none;
+  }
+  
+  .testimoni-form .card-header {
+    font-size: 1.5rem;
+  }
+  
+  /* Testimoni Cards */
+  .testimoni-list .card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .testimoni-list .card:hover {
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  
+  .avatar {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  
+  /* Rating Stars */
+  .rating-stars {
+    color: #FFD700;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 992px) {
+    .hero-title {
+      font-size: 2.8rem;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.2rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .hero-title {
+      font-size: 1.8rem;
+    }
+    
+    .testimoni-form .card-body {
+      padding: 1.5rem;
+    }
+  }

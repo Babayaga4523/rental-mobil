@@ -1,93 +1,360 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import dummyLayanan from "../data/dummyLayanan";
+import { useParams, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "animate.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
-const AboutCar = () => {
+const CarDetail = () => {
   const { id } = useParams();
-  const car = dummyLayanan.find((item) => item.id === parseInt(id));
-  const [mainImage, setMainImage] = useState(car?.gambar);
+  const navigate = useNavigate();
+  const [car, setCar] = useState(null);
   const [days, setDays] = useState(1);
-  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("description");
 
   useEffect(() => {
-    // Ambil data testimoni dari server
-    fetch(`http://localhost:5000/api/testimonials?carId=${id}`)
-      .then((response) => response.json())
-      .then((data) => setTestimonials(data))
-      .catch((error) => console.error("Error fetching testimonials:", error));
+    // Initialize AOS
+    AOS.init({
+      duration: 800,
+      once: true,
+      easing: 'ease-in-out'
+    });
+
+    fetch(`http://localhost:3000/api/layanan/${id}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Mobil tidak ditemukan");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setCar(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching car data:", error);
+        setError(error.message);
+        setLoading(false);
+      });
   }, [id]);
 
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div className="text-center" data-aos="zoom-in">
+          <div className="spinner-grow text-primary" style={{width: '4rem', height: '4rem'}} role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <h3 className="mt-4 text-primary">Memuat detail mobil...</h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div 
+          className="text-center p-5 bg-white rounded-4 shadow" 
+          style={{maxWidth: '600px'}}
+          data-aos="zoom-in"
+        >
+          <div className="mb-4">
+            <i className="fas fa-exclamation-triangle text-danger" style={{fontSize: '5rem'}}></i>
+          </div>
+          <h2 className="fw-bold mb-3">Oops! Terjadi Kesalahan</h2>
+          <p className="fs-5 mb-4">{error}</p>
+          <button 
+            className="btn btn-primary px-4 py-2 rounded-pill fw-bold"
+            onClick={() => navigate("/layanan")}
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            <i className="fas fa-arrow-left me-2"></i> Kembali ke Daftar Mobil
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!car) {
-    return <h2 className="text-center mt-5 text-danger">❌ Mobil tidak ditemukan!</h2>;
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div 
+          className="text-center p-5 bg-white rounded-4 shadow" 
+          style={{maxWidth: '600px'}}
+          data-aos="zoom-in"
+        >
+          <div className="mb-4">
+            <i className="fas fa-car-crash text-warning" style={{fontSize: '5rem'}}></i>
+          </div>
+          <h2 className="fw-bold mb-3">Mobil Tidak Ditemukan</h2>
+          <p className="fs-5 mb-4">Mobil yang Anda cari tidak tersedia dalam sistem kami.</p>
+          <button 
+            className="btn btn-warning px-4 py-2 rounded-pill fw-bold text-white"
+            onClick={() => navigate("/layanan")}
+            data-aos="fade-up"
+            data-aos-delay="200"
+          >
+            <i className="fas fa-arrow-left me-2"></i> Kembali ke Daftar Mobil
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const totalPrice = car.harga * days;
+  const discountedPrice = car.diskon 
+    ? totalPrice - (totalPrice * car.diskon / 100)
+    : totalPrice;
+
+  const handleBooking = () => {
+    navigate("/booking", {
+      state: {
+        carId: car.id,
+        carName: car.nama,
+        price: car.harga,
+        days,
+        totalPrice: discountedPrice,
+        image: car.gambar,
+        discount: car.diskon || 0
+      }
+    });
+  };
 
   return (
-    <div className="container py-5">
-      <div className="row g-4 align-items-center">
-        {/* Image Section */}
-        <div className="col-md-6">
-          <div className="card shadow-lg border-0">
-            <img
-              src={mainImage}
-              alt={car.nama}
-              className="card-img-top rounded animate__animated animate__fadeIn"
-            />
-            <div className="card-body text-center">
-              <div className="d-flex justify-content-center gap-2">
-                {car.galeri?.map((img, index) => (
-                  <img
-                    key={index}
-                    src={img}
-                    alt={`Thumbnail ${index + 1}`}
-                    className={`img-thumbnail rounded shadow-sm ${mainImage === img ? "border-primary border-3" : ""}`}
-                    style={{ width: "80px", height: "80px", cursor: "pointer" }}
-                    onClick={() => setMainImage(img)}
-                  />
-                ))}
-              </div>
+    <div className="bg-light">
+      {/* Hero Section */}
+      <div className="bg-dark text-white py-5">
+        <div className="container">
+          <button 
+            onClick={() => navigate("/layanan")}
+            className="btn btn-outline-light mb-4 rounded-pill"
+            data-aos="fade-right"
+          >
+            <i className="fas fa-arrow-left me-2"></i> Kembali
+          </button>
+          <h1 className="display-4 fw-bold mb-3" data-aos="fade-up">{car.nama}</h1>
+          <div className="d-flex align-items-center" data-aos="fade-up" data-aos-delay="100">
+            <span className="bg-primary px-3 py-1 rounded-pill me-3">
+              {car.kategori || 'Standard'}
+            </span>
+            <div className="rating">
+              {[...Array(5)].map((_, i) => (
+                <i 
+                  key={i}
+                  className={`fas fa-star ${i < (car.rating || 4) ? 'text-warning' : 'text-secondary'}`}
+                ></i>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Info Section */}
-        <div className="col-md-6">
-          <h1 className="fw-bold text-primary animate__animated animate__fadeInDown">{car.nama}</h1>
-          <h3 className="text-success fw-bold">Rp {car.harga.toLocaleString()}/hari</h3>
-          <p className="text-muted">{car.deskripsi}</p>
+      {/* Main Content */}
+      <div className="container py-5">
+        <div className="row g-5">
+          {/* Car Images */}
+          <div className="col-lg-7">
+            <div 
+              className="card border-0 shadow-lg rounded-4 overflow-hidden mb-4"
+              data-aos="zoom-in"
+            >
+              <img
+                src={car.gambar}
+                alt={car.nama}
+                className="img-fluid w-100"
+                style={{height: '450px', objectFit: 'cover'}}
+              />
+            </div>
+            
+            <div className="d-flex gap-3 mb-4">
+              {[1, 2, 3].map((i) => (
+                <div 
+                  key={i} 
+                  className="col-4"
+                  data-aos="fade-up"
+                  data-aos-delay={i * 100}
+                >
+                  <div className="card border-0 shadow-sm rounded-3 overflow-hidden">
+                    <img
+                      src={car.gambar}
+                      alt={`${car.nama} ${i}`}
+                      className="img-fluid"
+                      style={{height: '120px', objectFit: 'cover'}}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <div className="mb-3">
-            <label className="form-label fw-bold">Jumlah Hari:</label>
-            <input
-              type="number"
-              className="form-control w-50 text-center"
-              min="1"
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-            />
+            {/* Tabs */}
+            <div 
+              className="card border-0 shadow-sm rounded-4 overflow-hidden"
+              data-aos="fade-up"
+            >
+              <div className="card-header bg-white">
+                <ul className="nav nav-tabs card-header-tabs">
+                  <li className="nav-item">
+                    <button
+                      className={`nav-link ${activeTab === 'description' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('description')}
+                    >
+                      <i className="fas fa-info-circle me-2"></i> Deskripsi
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div className="card-body">
+                {activeTab === 'description' && (
+                  <div>
+                    <h5 className="fw-bold" data-aos="fade-up">Tentang Mobil Ini</h5>
+                    <p className="lead" data-aos="fade-up" data-aos-delay="100">{car.deskripsi}</p>
+                    <div className="mt-4">
+                      <h6 className="fw-bold" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
+                      <div className="row mt-3">
+                        {['AC', 'Audio', 'Kamera Mundur', 'GPS', 'Bluetooth', 'USB Port'].map((feature, i) => (
+                          <div 
+                            key={i} 
+                            className="col-md-6 mb-2"
+                            data-aos="fade-up"
+                            data-aos-delay={200 + (i * 50)}
+                          >
+                            <i className="fas fa-check-circle text-success me-2"></i>
+                            {feature}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <h4 className="fw-bold text-danger">Total Harga: Rp {totalPrice.toLocaleString()}</h4>
-
-          <button className="btn btn-primary w-100 shadow-sm mb-2">🚗 Pesan Sekarang</button>
-          <a href="/layanan" className="btn btn-outline-secondary w-100 shadow-sm">🔙 Kembali ke daftar mobil</a>
-
-          {/* Customer Reviews Section */}
-          <div className="mt-5">
-            <h4 className="fw-bold">💬 Ulasan Pelanggan</h4>
-            <div className="list-group">
-              {testimonials.length > 0 ? (
-                testimonials.map((testimonial, index) => (
-                  <div key={index} className="list-group-item">
-                    ⭐ <strong>{testimonial.nama}:</strong> "{testimonial.ulasan}"
+          {/* Booking Section */}
+          <div className="col-lg-5">
+            <div 
+              className="card border-0 shadow-lg rounded-4 sticky-top" 
+              style={{top: '20px'}}
+              data-aos="fade-left"
+            >
+              <div className="card-header bg-primary text-white py-3 rounded-top-4">
+                <h4 className="mb-0 fw-bold">
+                  <i className="fas fa-tag me-2"></i> Harga Sewa
+                </h4>
+              </div>
+              <div className="card-body">
+                <div 
+                  className="d-flex justify-content-between align-items-center mb-3"
+                  data-aos="fade-up"
+                >
+                  <span className="text-muted">Harga per hari:</span>
+                  <span className="fw-bold">Rp {car.harga.toLocaleString('id-ID')}</span>
+                </div>
+                
+                <div 
+                  className="mb-4"
+                  data-aos="fade-up"
+                  data-aos-delay="100"
+                >
+                  <label className="form-label fw-bold">Durasi Sewa (hari):</label>
+                  <div className="input-group">
+                    <button 
+                      className="btn btn-outline-secondary"
+                      onClick={() => setDays(Math.max(1, days - 1))}
+                    >
+                      <i className="fas fa-minus"></i>
+                    </button>
+                    <input
+                      type="number"
+                      className="form-control text-center"
+                      min="1"
+                      value={days}
+                      onChange={(e) => setDays(Math.max(1, Number(e.target.value)))}
+                    />
+                    <button 
+                      className="btn btn-outline-secondary"
+                      onClick={() => setDays(days + 1)}
+                    >
+                      <i className="fas fa-plus"></i>
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="list-group-item text-muted">Belum ada ulasan untuk mobil ini.</div>
-              )}
+                </div>
+                
+                {car.diskon && (
+                  <div 
+                    className="alert alert-success py-2 mb-3"
+                    data-aos="zoom-in"
+                    data-aos-delay="150"
+                  >
+                    <div className="d-flex justify-content-between">
+                      <span>
+                        <i className="fas fa-percentage me-2"></i> Diskon {car.diskon}%
+                      </span>
+                      <span>- Rp {(totalPrice * car.diskon / 100).toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div 
+                  className="bg-light p-3 rounded-3 mb-4"
+                  data-aos="fade-up"
+                  data-aos-delay="200"
+                >
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="mb-0 fw-bold">Total Harga:</h5>
+                    <h3 className="mb-0 text-success fw-bold">
+                      Rp {discountedPrice.toLocaleString('id-ID')}
+                    </h3>
+                  </div>
+                  <small className="text-muted">Termasuk pajak dan asuransi</small>
+                </div>
+                
+                <button 
+                  className="btn btn-primary btn-lg w-100 py-3 fw-bold mb-3"
+                  onClick={handleBooking}
+                  data-aos="zoom-in"
+                  data-aos-delay="250"
+                >
+                  <i className="fas fa-calendar-check me-2"></i> Pesan Sekarang
+                </button>
+                
+                <div className="text-center">
+                  <small className="text-muted">
+                    <i className="fas fa-lock me-1"></i> Pembayaran aman dan terjamin
+                  </small>
+                </div>
+                
+                <div 
+                  className="mt-4 pt-3 border-top"
+                  data-aos="fade-up"
+                  data-aos-delay="300"
+                >
+                  <h6 className="fw-bold mb-3">
+                    <i className="fas fa-shield-alt me-2 text-primary"></i> Termasuk dalam sewa:
+                  </h6>
+                  <ul className="list-unstyled">
+                    {[
+                      "Asuransi komprehensif",
+                      "Bantuan darurat 24/7",
+                      "Gratis antar-jemput bandara",
+                      "Tanpa batas kilometer"
+                    ].map((item, index) => (
+                      <li 
+                        key={index}
+                        className="mb-2"
+                        data-aos="fade-up"
+                        data-aos-delay={300 + (index * 50)}
+                      >
+                        <i className="fas fa-check-circle text-success me-2"></i> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -96,4 +363,4 @@ const AboutCar = () => {
   );
 };
 
-export default AboutCar;
+export default CarDetail;

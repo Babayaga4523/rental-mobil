@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import './Register.css';
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
+import '../style/Register.css';
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -21,7 +21,6 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
-  // Membersihkan notifikasi saat komponen tidak lagi digunakan
   useEffect(() => {
     return () => {
       toast.dismiss();
@@ -29,10 +28,7 @@ const Register = () => {
   }, []);
 
   const showNotification = (type, message) => {
-    // Menutup notifikasi yang ada
     toast.dismiss();
-    
-    // Pengaturan notifikasi
     const options = {
       position: "top-center",
       autoClose: type === 'error' ? 5000 : 3000,
@@ -40,27 +36,20 @@ const Register = () => {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-      progress: undefined,
       theme: "colored",
     };
-
-    if (type === 'error') {
-      toast.error(message, options);
-    } else {
-      toast.success(message, options);
-    }
+    type === 'error' ? toast.error(message, options) : toast.success(message, options);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Validasi khusus untuk nomor telepon
     if (name === "no_telp" && !/^\d*$/.test(value)) {
-      setErrors({...errors, no_telp: "Nomor telepon hanya boleh mengandung angka"});
-      showNotification('error', "Nomor telepon hanya boleh mengandung angka");
+      setErrors({ ...errors, no_telp: "Nomor telepon hanya boleh angka" });
+      showNotification("error", "Nomor telepon hanya boleh angka");
       return;
     } else {
-      setErrors({...errors, no_telp: ""});
+      setErrors({ ...errors, no_telp: "" });
     }
 
     setForm({ ...form, [name]: value });
@@ -70,13 +59,11 @@ const Register = () => {
     const newErrors = {};
     let isValid = true;
 
-    // Validasi nama
     if (!form.nama.trim()) {
       newErrors.nama = "Nama lengkap harus diisi";
       isValid = false;
     }
 
-    // Validasi email
     if (!form.email.trim()) {
       newErrors.email = "Email harus diisi";
       isValid = false;
@@ -85,7 +72,6 @@ const Register = () => {
       isValid = false;
     }
 
-    // Validasi nomor telepon
     if (!form.no_telp.trim()) {
       newErrors.no_telp = "Nomor telepon harus diisi";
       isValid = false;
@@ -94,7 +80,6 @@ const Register = () => {
       isValid = false;
     }
 
-    // Validasi password
     if (!form.password) {
       newErrors.password = "Password harus diisi";
       isValid = false;
@@ -103,20 +88,15 @@ const Register = () => {
       isValid = false;
     }
 
-    // Validasi konfirmasi password
     if (form.password !== form.konfirmasi) {
       newErrors.konfirmasi = "Password dan konfirmasi tidak sama";
       isValid = false;
     }
 
     setErrors(newErrors);
-
-    // Tampilkan notifikasi error pertama yang ditemukan
     if (!isValid) {
       const firstError = Object.values(newErrors).find(msg => msg);
-      if (firstError) {
-        showNotification('error', firstError);
-      }
+      if (firstError) showNotification("error", firstError);
     }
 
     return isValid;
@@ -125,212 +105,162 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi form sebelum submit
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
     try {
-      // Kirim data ke API
       const response = await fetch("http://localhost:3000/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.nama,
           email: form.email,
           password: form.password,
-          no_telp: form.no_telp
+          no_telp: form.no_telp,
         })
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Registrasi gagal");
 
-      // Handle response error
-      if (!response.ok) {
-        throw new Error(data.message || "Registrasi gagal");
-      }
-
-      // Tampilkan notifikasi sukses
-      showNotification('success', "Registrasi berhasil! Mengarahkan ke halaman login...");
-      
-      // Reset form
-      setForm({
-        nama: "",
-        email: "",
-        no_telp: "",
-        password: "",
-        konfirmasi: ""
-      });
-
-      // Redirect ke halaman login setelah 3 detik
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+      showNotification("success", "Registrasi berhasil! Mengarahkan ke login...");
+      setForm({ nama: "", email: "", no_telp: "", password: "", konfirmasi: "" });
+      setTimeout(() => navigate("/login"), 3000);
 
     } catch (err) {
       console.error("Error:", err);
-      showNotification('error', err.message || "Terjadi kesalahan pada server. Silakan coba lagi.");
+      showNotification("error", err.message || "Terjadi kesalahan pada server.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="register-page d-flex justify-content-center align-items-center">
-      <div className="glass-card p-4 p-md-5 shadow">
-        <div className="text-center mb-4">
+    <div className="register-container">
+      <div className="auth-card">
+        <div className="logo-container">
           <img 
             src="/assets/logo-pawon.png" 
             alt="Logo" 
-            className="register-logo mb-3 img-fluid" 
-            style={{ maxHeight: "80px" }}
+            className="logo"
           />
-          <h2 className="fw-bold text-dark">Daftar Akun</h2>
-          <p className="text-muted">Lengkapi data untuk mendaftar akun baru</p>
+          <div className="app-name">Pawon</div>
         </div>
-        
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Field Nama */}
-          <div className="form-floating mb-3">
+
+        <div className="auth-header">
+          <h2>Daftar Akun</h2>
+          <p>Lengkapi data untuk mendaftar akun baru</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="register-form">
+          <div className="form-group">
+            <label htmlFor="nama" className="form-label">Nama Lengkap</label>
             <input
               type="text"
               name="nama"
+              id="nama"
               className={`form-control ${errors.nama && "is-invalid"}`}
-              id="floatingNama"
-              placeholder="Nama Lengkap"
+              placeholder="Masukkan nama lengkap"
               value={form.nama}
               onChange={handleChange}
-              required
             />
-            <label htmlFor="floatingNama">Nama Lengkap</label>
-            {errors.nama && <div className="invalid-feedback">{errors.nama}</div>}
+            {errors.nama && <div className="error-message">{errors.nama}</div>}
           </div>
 
-          {/* Field Email */}
-          <div className="form-floating mb-3">
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">Email</label>
             <input
               type="email"
               name="email"
+              id="email"
               className={`form-control ${errors.email && "is-invalid"}`}
-              id="floatingEmail"
-              placeholder="Email"
+              placeholder="Masukkan email"
               value={form.email}
               onChange={handleChange}
-              required
             />
-            <label htmlFor="floatingEmail">Email</label>
-            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+            {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
 
-          {/* Field Nomor Telepon */}
-          <div className="form-floating mb-3">
+          <div className="form-group">
+            <label htmlFor="no_telp" className="form-label">Nomor Telepon</label>
             <input
               type="tel"
               name="no_telp"
+              id="no_telp"
               className={`form-control ${errors.no_telp && "is-invalid"}`}
-              id="floatingTelepon"
-              placeholder="Nomor Telepon"
+              placeholder="Masukkan nomor telepon"
               value={form.no_telp}
               onChange={handleChange}
-              required
             />
-            <label htmlFor="floatingTelepon">Nomor Telepon</label>
-            {errors.no_telp && <div className="invalid-feedback">{errors.no_telp}</div>}
+            {errors.no_telp && <div className="error-message">{errors.no_telp}</div>}
           </div>
+          <div className="form-group">
+  <label htmlFor="password" className="form-label">Password</label>
+  <div className="password-wrapper">
+    <input
+      type={showPassword ? "text" : "password"}
+      name="password"
+      id="password"
+      className={`form-control ${errors.password ? "is-invalid" : ""}`}
+      placeholder="Masukkan password"
+      value={form.password}
+      onChange={handleChange}
+    />
+    <button 
+      type="button" 
+      className="toggle-button"
+      onClick={() => setShowPassword(!showPassword)}
+    >
+      <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+    </button>
+  </div>
+  {errors.password && <div className="error-message">{errors.password}</div>}
+</div>
 
-          {/* Field Password */}
-          <div className="position-relative mb-3">
-            <div className="form-floating">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                className={`form-control ${errors.password && "is-invalid"}`}
-                id="floatingPassword"
-                placeholder="Password"
-                value={form.password}
-                onChange={handleChange}
-                minLength="6"
-                required
-              />
-              <label htmlFor="floatingPassword">Password</label>
-              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-            </div>
-            <span 
-              className="password-toggle" 
-              onClick={() => setShowPassword(!showPassword)}
-              style={{ cursor: 'pointer' }}
-            >
-              <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-            </span>
-          </div>
-
-          {/* Field Konfirmasi Password */}
-          <div className="position-relative mb-4">
-            <div className="form-floating">
-              <input
-                type={showKonfirmasi ? "text" : "password"}
-                name="konfirmasi"
-                className={`form-control ${errors.konfirmasi && "is-invalid"}`}
-                id="floatingKonfirmasi"
-                placeholder="Konfirmasi Password"
-                value={form.konfirmasi}
-                onChange={handleChange}
-                minLength="6"
-                required
-              />
-              <label htmlFor="floatingKonfirmasi">Konfirmasi Password</label>
-              {errors.konfirmasi && <div className="invalid-feedback">{errors.konfirmasi}</div>}
-            </div>
-            <span 
-              className="password-toggle" 
-              onClick={() => setShowKonfirmasi(!showKonfirmasi)}
-              style={{ cursor: 'pointer' }}
-            >
-              <i className={`bi ${showKonfirmasi ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-            </span>
-          </div>
-
-          {/* Tombol Submit */}
+<div className="form-group">
+  <label htmlFor="konfirmasi" className="form-label">Konfirmasi Password</label>
+  <div className="password-wrapper">
+    <input
+      type={showKonfirmasi ? "text" : "password"}
+      name="konfirmasi"
+      id="konfirmasi"
+      className={`form-control ${errors.konfirmasi ? "is-invalid" : ""}`}
+      placeholder="Konfirmasi password"
+      value={form.konfirmasi}
+      onChange={handleChange}
+    />
+    <button 
+      type="button" 
+      className="toggle-button"
+      onClick={() => setShowKonfirmasi(!showKonfirmasi)}
+      aria-label={showKonfirmasi ? "Sembunyikan password" : "Tampilkan password"}
+    >
+      <i className={showKonfirmasi ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+    </button>
+  </div>
+  {errors.konfirmasi && <div className="error-message">{errors.konfirmasi}</div>}
+</div>
           <button
             type="submit"
-            className="btn btn-primary w-100 btn-lg rounded-pill py-3"
+            className="submit-button"
             disabled={loading}
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Sedang memproses...
+                <span className="spinner"></span>
+                Mendaftarkan...
               </>
-            ) : "Daftar"}
+            ) : "Daftar Sekarang"}
           </button>
         </form>
 
-        {/* Link ke Login */}
-        <div className="text-center mt-3">
-          <small className="text-muted">
-            Sudah punya akun? <a href="/login" className="text-primary text-decoration-none">Masuk</a>
-          </small>
+        <div className="auth-footer">
+          Sudah punya akun? <a href="/login" className="auth-link">Masuk di sini</a>
         </div>
       </div>
-      
-      {/* Container untuk Notifikasi */}
-      <ToastContainer 
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        limit={1}
-        theme="light"
-      />
+
+      <ToastContainer />
     </div>
   );
 };
