@@ -8,18 +8,19 @@ app.use(express.json());
 app.use(cors());
 
 // Import routes
+const orderRoutes = require('./routes/orderRoutes');
 
-const carRoutes = require('./routes/carRoute');
 const layananRoutes = require('./routes/layanan');
 const testimoniRoutes = require('./routes/testimoni');
 const authRoutes = require('./routes/authRoute'); // tambahkan ini
 
 // Gunakan route
 ;
-app.use('/api/cars', carRoutes);
+
 app.use('/api/layanan', layananRoutes);
 app.use('/api/testimoni', testimoniRoutes);
 app.use('/api/auth', authRoutes); // tambahkan ini juga
+app.use('/api/orders', orderRoutes);
 
 // Tes koneksi
 app.get('/', (req, res) => {

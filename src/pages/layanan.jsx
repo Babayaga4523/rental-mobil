@@ -16,13 +16,13 @@ const Layanan = () => {
   const navigate = useNavigate();
 
   // Car categories for filtering
-  const categories = ["All", "Sedan", "SUV", "MPV", "Sport", "Luxury"];
+  const categories = ["All", "Sedan", "SUV", "MPV", "VAN", "Sport", "Luxury"];
 
   useEffect(() => {
     AOS.init({
       duration: 800,
-      once: false, // Allow animations to trigger every time element comes into view
-      mirror: true, // Animate out when scrolling past
+      once: false,
+      mirror: true,
       easing: 'ease-in-out-quad'
     });
     
@@ -52,47 +52,97 @@ const Layanan = () => {
 
   return (
     <div className="layanan-page">
-      {/* Hero Section with Parallax Effect */}
-      <section className="layanan-hero">
-        <div className="container h-100">
-          <div className="row h-100 align-items-center">
-            <div className="col-lg-8 mx-auto text-center">
-              <motion.h1
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8 }}
-                className="hero-title"
-                data-aos="zoom-in"
-                data-aos-delay="100"
-              >
-                Temukan Mobil <span className="highlight">Perfect</span> Untuk Anda
-              </motion.h1>
-              <p 
-                className="hero-subtitle"
-                data-aos="fade-up"
-                data-aos-delay="300"
-              >
-                Pilih dari koleksi mobil premium kami yang selalu terawat dan siap menemani perjalanan Anda
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn btn-primary btn-lg rounded-pill px-4 py-2 mt-3"
-                onClick={() => document.getElementById("layanan-section").scrollIntoView({ behavior: 'smooth' })}
-                data-aos="fade-up"
-                data-aos-delay="500"
-                data-aos-anchor-placement="top-bottom"
-              >
-                <i className="fas fa-car me-2"></i>Lihat Armada
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Section */}
+<section className="layanan-hero position-relative overflow-hidden">
+  {/* Background Overlay */}
+  <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0 bg-dark opacity-75"></div>
+  
+  {/* Animated Gradient Background */}
+  <motion.div 
+    className="position-absolute w-100 h-100 top-0 start-0"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 1 }}
+    style={{
+      background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%)'
+    }}
+  />
+  
+  <div className="container h-100 position-relative z-index-1">
+    <div className="row h-100 align-items-center">
+      <div className="col-lg-8 mx-auto text-center px-4">
+        {/* Main Title */}
+        <motion.h1
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="hero-title text-white mb-4 fw-bold display-4"
+          data-aos="zoom-in"
+          data-aos-delay="100"
+        >
+          Temukan Mobil <span className="text-gradient">Perfect</span> Untuk Anda
+        </motion.h1>
+        
+        {/* Subtitle */}
+        <motion.p 
+          className="hero-subtitle text-light fs-5 mb-5 mx-auto"
+          style={{ maxWidth: '600px' }}
+          data-aos="fade-up"
+          data-aos-delay="300"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          Pilih dari koleksi mobil premium kami yang selalu terawat dan siap menemani perjalanan Anda
+        </motion.p>
+        
+        {/* CTA Button */}
+        <motion.div
+          data-aos="fade-up"
+          data-aos-delay="500"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <button
+            className="btn btn-primary btn-lg rounded-pill px-4 py-3 hero-cta d-inline-flex align-items-center"
+            onClick={() => document.getElementById("layanan-section").scrollIntoView({ behavior: 'smooth' })}
+            style={{
+              background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)',
+              border: 'none',
+              boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)'
+            }}
+          >
+            <i className="fas fa-car me-3 fs-5"></i>
+            <span className="fw-medium">Lihat Armada</span>
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style jsx>{`
+  .hero-title .text-gradient {
+    background: linear-gradient(90deg, #93c5fd 0%, #bfdbfe 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .layanan-hero {
+    height: 80vh;
+    min-height: 650px;
+  }
+  
+  .hero-cta:hover {
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6) !important;
+    transform: translateY(-2px);
+  }
+`}</style>
 
       {/* Search and Filter Section */}
       <section 
-        className="search-section py-4 bg-white sticky-top shadow-sm"
+        className="search-section py-4 sticky-top"
         data-aos="fade-down"
         data-aos-offset="0"
         data-aos-easing="ease-in-sine"
@@ -105,16 +155,24 @@ const Layanan = () => {
                 data-aos="fade-right"
                 data-aos-delay="200"
               >
-                <span className="input-group-text bg-white border-end-0">
-                  <i className="fas fa-search text-muted"></i>
+                <span className="input-group-text">
+                  <i className="fas fa-search"></i>
                 </span>
                 <input
                   type="text"
-                  className="form-control border-start-0"
+                  className="form-control"
                   placeholder="Cari mobil (nama atau deskripsi)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                {searchTerm && (
+                  <button 
+                    className="clear-search"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
               </div>
             </div>
             <div className="col-md-6">
@@ -124,15 +182,24 @@ const Layanan = () => {
                 data-aos-delay="200"
               >
                 {categories.map((category, index) => (
-                  <button
+                  <motion.button
                     key={category}
-                    className={`btn btn-sm rounded-pill ${activeFilter === category ? 'btn-primary' : 'btn-outline-primary'}`}
+                    className={`filter-btn ${activeFilter === category ? 'active' : ''}`}
                     onClick={() => setActiveFilter(category)}
                     data-aos="zoom-in"
                     data-aos-delay={300 + (index * 100)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     {category}
-                  </button>
+                    {activeFilter === category && (
+                      <motion.span 
+                        className="filter-indicator"
+                        layoutId="filterIndicator"
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      />
+                    )}
+                  </motion.button>
                 ))}
               </div>
             </div>
@@ -157,7 +224,7 @@ const Layanan = () => {
               className="text-center py-5"
               data-aos="zoom-in"
             >
-              <div className="spinner-border text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
+              <div className="spinner-grow text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
               <p className="mt-3">Memuat data mobil...</p>
@@ -167,18 +234,19 @@ const Layanan = () => {
               className="text-center py-5"
               data-aos="zoom-in"
             >
-              <div className="alert alert-danger" role="alert">
-                <i className="fas fa-exclamation-triangle me-2"></i>
-                {error}
+              <div className="error-card">
+                <i className="fas fa-exclamation-triangle error-icon"></i>
+                <h4 className="error-title">Oops! Terjadi Kesalahan</h4>
+                <p className="error-message">{error}</p>
+                <button 
+                  className="btn btn-outline-primary mt-3"
+                  onClick={() => window.location.reload()}
+                  data-aos="fade-up"
+                  data-aos-delay="200"
+                >
+                  <i className="fas fa-sync-alt me-2"></i>Coba Lagi
+                </button>
               </div>
-              <button 
-                className="btn btn-outline-primary mt-3"
-                onClick={() => window.location.reload()}
-                data-aos="fade-up"
-                data-aos-delay="200"
-              >
-                <i className="fas fa-sync-alt me-2"></i>Coba Lagi
-              </button>
             </div>
           ) : filteredLayanan.length > 0 ? (
             <div className="row g-4">
@@ -193,6 +261,9 @@ const Layanan = () => {
                   <motion.div
                     whileHover={{ y: -10 }}
                     className="car-card w-100 d-flex flex-column"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
                   >
                     <div className="car-image">
                       <img
@@ -203,30 +274,21 @@ const Layanan = () => {
                       />
                       <div className="car-badge">
                         <span 
-                          className="badge bg-primary"
+                          className="badge category-badge"
                           data-aos="fade-right"
                           data-aos-delay="300"
                         >
                           {car.kategori || 'Premium'}
                         </span>
                         <span 
-                          className="badge bg-success"
+                          className="badge price-badge"
                           data-aos="fade-left"
                           data-aos-delay="300"
                         >
                           Rp {car.harga.toLocaleString('id-ID')}/hari
                         </span>
                       </div>
-                      <div className="car-overlay">
-                        <button 
-                          className="btn btn-light btn-sm rounded-pill"
-                          onClick={() => navigate(`/detail/${car.id}`)}
-                          data-aos="zoom-in"
-                          data-aos-delay="400"
-                        >
-                          <i className="fas fa-eye me-2"></i>Lihat Detail
-                        </button>
-                      </div>
+                   
                     </div>
                     <div className="car-body d-flex flex-column flex-grow-1">
                       <h3 data-aos="fade-up" data-aos-delay="200">{car.nama}</h3>
@@ -236,18 +298,25 @@ const Layanan = () => {
                         data-aos-delay="300"
                       >
                         {car.fitur?.slice(0, 3).map((fitur, i) => (
-                          <span key={i}>{fitur}</span>
+                          <span key={i}>
+                            <i className="fas fa-check-circle me-2"></i>
+                            {fitur}
+                          </span>
                         ))}
                       </div>
                       <div className="mt-auto pt-3">
-                        <button
-                          className="btn btn-primary w-100 rounded-pill py-2"
-                          onClick={() => navigate(`/booking`)}
+                        <motion.button
+                          className="btn btn-primary w-100 rounded-pill py-2 book-btn"
+                          onClick={() => navigate(`/detail/${car.id}`)}
                           data-aos="fade-up"
                           data-aos-delay="400"
+                          whileHover={{ 
+                            scale: 1.02,
+                            boxShadow: "0 5px 15px rgba(0, 0, 0, 0.1)"
+                          }}
                         >
                           <i className="fas fa-calendar-check me-2"></i>Pesan Sekarang
-                        </button>
+                        </motion.button>
                       </div>
                     </div>
                   </motion.div>
@@ -259,51 +328,50 @@ const Layanan = () => {
               className="text-center py-5"
               data-aos="zoom-in"
             >
-              <div className="alert alert-warning" role="alert">
-                <i className="fas fa-info-circle me-2"></i>
-                Tidak ditemukan mobil yang sesuai dengan pencarian Anda
+              <div className="no-results-card">
+                <i className="fas fa-car-crash no-results-icon"></i>
+                <h4 className="no-results-title">Tidak Ditemukan</h4>
+                <p className="no-results-message">
+                  Tidak ada mobil yang sesuai dengan pencarian Anda. Coba kata kunci lain atau filter yang berbeda.
+                </p>
+                <motion.button 
+                  className="btn btn-outline-secondary reset-btn"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setActiveFilter("All");
+                  }}
+                  data-aos="fade-up"
+                  data-aos-delay="200"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <i className="fas fa-redo me-2"></i>Reset Pencarian
+                </motion.button>
               </div>
-              <button 
-                className="btn btn-outline-secondary"
-                onClick={() => {
-                  setSearchTerm("");
-                  setActiveFilter("All");
-                }}
-                data-aos="fade-up"
-                data-aos-delay="200"
-              >
-                <i className="fas fa-times me-2"></i>Reset Filter
-              </button>
             </div>
           )}
+        </div>
+      </section>
 
-          {/* CTA Section */}
-          <div 
-            className="cta-section text-center mt-5 pt-5"
-            data-aos="fade-up"
-            data-aos-offset="200"
-          >
-            <h3 className="fw-bold mb-4">Butuh Bantuan Memilih Mobil?</h3>
-            <p className="mb-4">Tim ahli kami siap membantu Anda menemukan mobil yang sempurna untuk kebutuhan Anda.</p>
-            <div className="d-flex justify-content-center gap-3">
-              <a 
-                href="https://wa.me/6281234567890" 
-                className="btn btn-success px-4 py-2 rounded-pill"
-                target="_blank"
-                rel="noreferrer"
-                data-aos="zoom-in"
-                data-aos-delay="200"
-              >
-                <i className="fab fa-whatsapp me-2"></i>Chat via WhatsApp
-              </a>
-              <button 
-                className="btn btn-outline-primary px-4 py-2 rounded-pill"
-                onClick={() => navigate("/contact")}
-                data-aos="zoom-in"
-                data-aos-delay="300"
-              >
-                <i className="fas fa-phone me-2"></i>Hubungi Kami
-              </button>
+      {/* Call to Action Section */}
+      <section className="cta-section py-5">
+        <div className="container">
+          <div className="cta-card p-5 rounded-4">
+            <div className="row align-items-center">
+              <div className="col-lg-8">
+                <h3 className="cta-title">Butuh Bantuan Memilih Mobil?</h3>
+                <p className="cta-text">
+                  Tim kami siap membantu Anda menemukan mobil yang sesuai dengan kebutuhan dan budget Anda.
+                </p>
+              </div>
+              <div className="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <motion.button
+                  className="btn btn-light rounded-pill px-4 py-2 cta-btn"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <i className="fas fa-headset me-2"></i>Hubungi Kami
+                </motion.button>
+              </div>
             </div>
           </div>
         </div>
