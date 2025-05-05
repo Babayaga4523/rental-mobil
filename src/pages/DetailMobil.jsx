@@ -15,30 +15,32 @@ const CarDetail = () => {
   const [activeTab, setActiveTab] = useState("description");
 
   useEffect(() => {
-    // Initialize AOS
     AOS.init({
       duration: 800,
       once: true,
       easing: 'ease-in-out'
     });
 
-    fetch(`http://localhost:3000/api/layanan/${id}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Mobil tidak ditemukan");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setCar(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching car data:", error);
-        setError(error.message);
-        setLoading(false);
-      });
-  }, [id]);
+    
+      fetch(`http://localhost:3000/api/layanan/${id}`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Mobil tidak ditemukan");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          setCar(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("Error fetching car data:", error);
+          setError(error.message);
+          setLoading(false);
+        });
+    }, [id]);
+  
+    
 
   if (loading) {
     return (
@@ -53,7 +55,7 @@ const CarDetail = () => {
     );
   }
 
-  if (error) {
+  if (error || !car) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
         <div 
@@ -65,7 +67,7 @@ const CarDetail = () => {
             <i className="fas fa-exclamation-triangle text-danger" style={{fontSize: '5rem'}}></i>
           </div>
           <h2 className="fw-bold mb-3">Oops! Terjadi Kesalahan</h2>
-          <p className="fs-5 mb-4">{error}</p>
+          <p className="fs-5 mb-4">{error || 'Data mobil tidak tersedia'}</p>
           <button 
             className="btn btn-primary px-4 py-2 rounded-pill fw-bold"
             onClick={() => navigate("/layanan")}
@@ -79,47 +81,22 @@ const CarDetail = () => {
     );
   }
 
-  if (!car) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-        <div 
-          className="text-center p-5 bg-white rounded-4 shadow" 
-          style={{maxWidth: '600px'}}
-          data-aos="zoom-in"
-        >
-          <div className="mb-4">
-            <i className="fas fa-car-crash text-warning" style={{fontSize: '5rem'}}></i>
-          </div>
-          <h2 className="fw-bold mb-3">Mobil Tidak Ditemukan</h2>
-          <p className="fs-5 mb-4">Mobil yang Anda cari tidak tersedia dalam sistem kami.</p>
-          <button 
-            className="btn btn-warning px-4 py-2 rounded-pill fw-bold text-white"
-            onClick={() => navigate("/layanan")}
-            data-aos="fade-up"
-            data-aos-delay="200"
-          >
-            <i className="fas fa-arrow-left me-2"></i> Kembali ke Daftar Mobil
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const totalPrice = car.harga * days;
-  const discountedPrice = car.diskon 
-    ? totalPrice - (totalPrice * car.diskon / 100)
-    : totalPrice;
+  // Safely calculate prices with default values
+  const harga = car.harga || 0;
+  const diskon = car.diskon || 0;
+  const totalPrice = harga * days;
+  const discountedPrice = diskon ? totalPrice - (totalPrice * diskon / 100) : totalPrice;
 
   const handleBooking = () => {
     navigate("/booking", {
       state: {
         carId: car.id,
         carName: car.nama,
-        price: car.harga,
+        price: harga,
         days,
         totalPrice: discountedPrice,
-        image: car.gambar,
-        discount: car.diskon || 0
+        image: car.gambar || '/images/default-car.jpg',
+        discount: diskon
       }
     });
   };
@@ -136,7 +113,7 @@ const CarDetail = () => {
           >
             <i className="fas fa-arrow-left me-2"></i> Kembali
           </button>
-          <h1 className="display-4 fw-bold mb-3" data-aos="fade-up">{car.nama}</h1>
+          <h1 className="display-4 fw-bold mb-3" data-aos="fade-up">{car.nama || 'Mobil Premium'}</h1>
           <div className="d-flex align-items-center" data-aos="fade-up" data-aos-delay="100">
             <span className="bg-primary px-3 py-1 rounded-pill me-3">
               {car.kategori || 'Standard'}
@@ -163,33 +140,16 @@ const CarDetail = () => {
               data-aos="zoom-in"
             >
               <img
-                src={car.gambar}
-                alt={car.nama}
+                src={car.gambar || '/images/default-car.jpg'}
+                alt={car.nama || 'Mobil'}
                 className="img-fluid w-100"
                 style={{height: '450px', objectFit: 'cover'}}
+                onError={(e) => {
+                  e.target.src = '/images/default-car.jpg';
+                }}
               />
             </div>
             
-            <div className="d-flex gap-3 mb-4">
-              {[1, 2, 3].map((i) => (
-                <div 
-                  key={i} 
-                  className="col-4"
-                  data-aos="fade-up"
-                  data-aos-delay={i * 100}
-                >
-                  <div className="card border-0 shadow-sm rounded-3 overflow-hidden">
-                    <img
-                      src={car.gambar}
-                      alt={`${car.nama} ${i}`}
-                      className="img-fluid"
-                      style={{height: '120px', objectFit: 'cover'}}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
             {/* Tabs */}
             <div 
               className="card border-0 shadow-sm rounded-4 overflow-hidden"
@@ -211,7 +171,9 @@ const CarDetail = () => {
                 {activeTab === 'description' && (
                   <div>
                     <h5 className="fw-bold" data-aos="fade-up">Tentang Mobil Ini</h5>
-                    <p className="lead" data-aos="fade-up" data-aos-delay="100">{car.deskripsi}</p>
+                    <p className="lead" data-aos="fade-up" data-aos-delay="100">
+                      {car.deskripsi || 'Mobil premium dengan fasilitas lengkap dan nyaman untuk perjalanan Anda.'}
+                    </p>
                     <div className="mt-4">
                       <h6 className="fw-bold" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
                       <div className="row mt-3">
@@ -252,7 +214,7 @@ const CarDetail = () => {
                   data-aos="fade-up"
                 >
                   <span className="text-muted">Harga per hari:</span>
-                  <span className="fw-bold">Rp {car.harga.toLocaleString('id-ID')}</span>
+                  <span className="fw-bold">Rp {harga.toLocaleString('id-ID')}</span>
                 </div>
                 
                 <div 
@@ -284,7 +246,7 @@ const CarDetail = () => {
                   </div>
                 </div>
                 
-                {car.diskon && (
+                {diskon > 0 && (
                   <div 
                     className="alert alert-success py-2 mb-3"
                     data-aos="zoom-in"
@@ -292,9 +254,9 @@ const CarDetail = () => {
                   >
                     <div className="d-flex justify-content-between">
                       <span>
-                        <i className="fas fa-percentage me-2"></i> Diskon {car.diskon}%
+                        <i className="fas fa-percentage me-2"></i> Diskon {diskon}%
                       </span>
-                      <span>- Rp {(totalPrice * car.diskon / 100).toLocaleString('id-ID')}</span>
+                      <span>- Rp {(totalPrice * diskon / 100).toLocaleString('id-ID')}</span>
                     </div>
                   </div>
                 )}
@@ -326,33 +288,6 @@ const CarDetail = () => {
                   <small className="text-muted">
                     <i className="fas fa-lock me-1"></i> Pembayaran aman dan terjamin
                   </small>
-                </div>
-                
-                <div 
-                  className="mt-4 pt-3 border-top"
-                  data-aos="fade-up"
-                  data-aos-delay="300"
-                >
-                  <h6 className="fw-bold mb-3">
-                    <i className="fas fa-shield-alt me-2 text-primary"></i> Termasuk dalam sewa:
-                  </h6>
-                  <ul className="list-unstyled">
-                    {[
-                      "Asuransi komprehensif",
-                      "Bantuan darurat 24/7",
-                      "Gratis antar-jemput bandara",
-                      "Tanpa batas kilometer"
-                    ].map((item, index) => (
-                      <li 
-                        key={index}
-                        className="mb-2"
-                        data-aos="fade-up"
-                        data-aos-delay={300 + (index * 50)}
-                      >
-                        <i className="fas fa-check-circle text-success me-2"></i> {item}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
             </div>

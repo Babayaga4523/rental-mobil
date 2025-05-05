@@ -9,15 +9,19 @@ const Layanan = sequelize.define('Layanan', {
   deskripsi: {
     type: DataTypes.STRING,
     allowNull: false,
-    
   },
-  harga:{
+  harga: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  gambar:{
+  gambar: {
     type: DataTypes.STRING,
     allowNull: false,
+  },
+  kategori: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Umum', // bisa diatur default, misalnya 'Umum'
   },
 }, 
 {
