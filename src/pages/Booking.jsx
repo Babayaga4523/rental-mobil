@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaCar, FaCalendarAlt, FaMoneyBillWave, FaPercentage } from "react-icons/fa";
+import {
+  FaCar,
+  FaCalendarAlt,
+  FaMoneyBillWave,
+  FaPercentage,
+} from "react-icons/fa";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { format, addDays } from "date-fns";
@@ -8,7 +13,15 @@ import { format, addDays } from "date-fns";
 const Booking = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { carId, carName, price, days = 1, totalPrice, image, discount } = location.state || {};
+  const {
+    carId,
+    carName,
+    price,
+    days = 1,
+    totalPrice,
+    image,
+    discount,
+  } = location.state || {};
 
   const [formData, setFormData] = useState({
     car_id: carId,
@@ -16,6 +29,7 @@ const Booking = () => {
     return_date: "",
     payment_method: "credit_card",
     additional_notes: "",
+    total_price: totalPrice,
   });
 
   const [errors, setErrors] = useState({});
@@ -106,7 +120,9 @@ const Booking = () => {
       let errorMessage = "Failed to create order";
       if (error.response) {
         errorMessage =
-          error.response.data.message || error.response.data.error || errorMessage;
+          error.response.data.message ||
+          error.response.data.error ||
+          errorMessage;
       } else if (error.request) {
         errorMessage = "No response from server";
       } else {
@@ -125,13 +141,21 @@ const Booking = () => {
   if (!carId) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="text-center p-5 bg-white rounded-4 shadow" style={{ maxWidth: "600px" }}>
+        <div
+          className="text-center p-5 bg-white rounded-4 shadow"
+          style={{ maxWidth: "600px" }}
+        >
           <div className="mb-4">
             <FaCar className="text-danger" style={{ fontSize: "4rem" }} />
           </div>
           <h2 className="fw-bold mb-3">Car Not Found</h2>
-          <p className="lead mb-4">Please return to the car list to choose a vehicle</p>
-          <button onClick={() => navigate("/layanan")} className="btn btn-primary px-4 py-2">
+          <p className="lead mb-4">
+            Please return to the car list to choose a vehicle
+          </p>
+          <button
+            onClick={() => navigate("/layanan")}
+            className="btn btn-primary px-4 py-2"
+          >
             Back to Car List
           </button>
         </div>
@@ -156,14 +180,14 @@ const Booking = () => {
                   {/* Car Summary Section */}
                   <div className="col-lg-5">
                     <div className="card border-0 shadow-sm h-100">
-                      <div className="card-img-top overflow-hidden" style={{ height: "200px" }}>
+                      <div
+                        className="card-img-top overflow-hidden"
+                        style={{ height: "200px" }}
+                      >
                         <img
                           src={image || "/images/default-car.jpg"}
                           className="img-fluid w-100 h-100 object-fit-cover"
                           alt={carName}
-                          onError={(e) => {
-                            e.target.src = "/images/default-car.jpg";
-                          }}
                         />
                       </div>
                       <div className="card-body">
@@ -172,7 +196,10 @@ const Booking = () => {
                         <div className="d-flex align-items-center mb-2">
                           <FaMoneyBillWave className="text-primary me-2" />
                           <span>
-                            Price per day: <strong>Rp {price?.toLocaleString("id-ID") || "0"}</strong>
+                            Price per day:{" "}
+                            <strong>
+                              Rp {price?.toLocaleString("id-ID") || "0"}
+                            </strong>
                           </span>
                         </div>
 
@@ -187,7 +214,10 @@ const Booking = () => {
                           <div className="d-flex align-items-center mb-2">
                             <FaPercentage className="text-success me-2" />
                             <span>
-                              Discount: <strong className="text-success">{discount}%</strong>
+                              Discount:{" "}
+                              <strong className="text-success">
+                                {discount}%
+                              </strong>
                             </span>
                           </div>
                         )}
@@ -199,7 +229,9 @@ const Booking = () => {
                               Rp {totalPrice?.toLocaleString("id-ID") || "0"}
                             </h4>
                           </div>
-                          <small className="text-muted">Includes tax and insurance</small>
+                          <small className="text-muted">
+                            Includes tax and insurance
+                          </small>
                         </div>
                       </div>
                     </div>
@@ -210,17 +242,24 @@ const Booking = () => {
                     <div className="card border-0 shadow-sm h-100">
                       <div className="card-body">
                         <h4 className="fw-bold mb-4">
-                          <FaCalendarAlt className="me-2 text-primary" /> Booking Details
+                          <FaCalendarAlt className="me-2 text-primary" />{" "}
+                          Booking Details
                         </h4>
 
                         <form onSubmit={handleSubmit}>
                           <div className="mb-3">
-                            <label htmlFor="pickup_date" className="form-label fw-bold">
-                              <FaCalendarAlt className="me-2 text-muted" /> Pickup Date
+                            <label
+                              htmlFor="pickup_date"
+                              className="form-label fw-bold"
+                            >
+                              <FaCalendarAlt className="me-2 text-muted" />{" "}
+                              Pickup Date
                             </label>
                             <input
                               type="date"
-                              className={`form-control py-2 ${errors.pickup_date ? "is-invalid" : ""}`}
+                              className={`form-control py-2 ${
+                                errors.pickup_date ? "is-invalid" : ""
+                              }`}
                               id="pickup_date"
                               name="pickup_date"
                               value={formData.pickup_date}
@@ -228,12 +267,20 @@ const Booking = () => {
                               min={format(new Date(), "yyyy-MM-dd")}
                               required
                             />
-                            {errors.pickup_date && <div className="invalid-feedback">{errors.pickup_date}</div>}
+                            {errors.pickup_date && (
+                              <div className="invalid-feedback">
+                                {errors.pickup_date}
+                              </div>
+                            )}
                           </div>
 
                           <div className="mb-3">
-                            <label htmlFor="return_date" className="form-label fw-bold">
-                              <FaCalendarAlt className="me-2 text-muted" /> Return Date
+                            <label
+                              htmlFor="return_date"
+                              className="form-label fw-bold"
+                            >
+                              <FaCalendarAlt className="me-2 text-muted" />{" "}
+                              Return Date
                             </label>
                             <input
                               type="date"
@@ -244,11 +291,16 @@ const Booking = () => {
                               readOnly
                               required
                             />
-                            <small className="text-muted">Automatically calculated based on rental duration</small>
+                            <small className="text-muted">
+                              Automatically calculated based on rental duration
+                            </small>
                           </div>
 
                           <div className="mb-3">
-                            <label htmlFor="payment_method" className="form-label fw-bold">
+                            <label
+                              htmlFor="payment_method"
+                              className="form-label fw-bold"
+                            >
                               Payment Method
                             </label>
                             <select
@@ -259,13 +311,18 @@ const Booking = () => {
                               onChange={handleChange}
                             >
                               <option value="credit_card">Credit Card</option>
-                              <option value="bank_transfer">Bank Transfer</option>
+                              <option value="bank_transfer">
+                                Bank Transfer
+                              </option>
                               <option value="e_wallet">E-Wallet</option>
                             </select>
                           </div>
 
                           <div className="mb-4">
-                            <label htmlFor="additional_notes" className="form-label fw-bold">
+                            <label
+                              htmlFor="additional_notes"
+                              className="form-label fw-bold"
+                            >
                               Additional Notes
                             </label>
                             <textarea
@@ -287,7 +344,11 @@ const Booking = () => {
                             >
                               {isLoading ? (
                                 <>
-                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  <span
+                                    className="spinner-border spinner-border-sm me-2"
+                                    role="status"
+                                    aria-hidden="true"
+                                  ></span>
                                   Processing...
                                 </>
                               ) : (
