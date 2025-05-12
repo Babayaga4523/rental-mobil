@@ -4,7 +4,11 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const sequelize = require("./config/database");
-
+const Layanan = require("./models/layanan");
+const Order = require("./models/order");
+const User = require("./models/user");
+const models = require("./models/user");
+const db = {};
 const app = express();
 
 // Buat folder uploads/payment_proofs jika belum ada
@@ -13,6 +17,12 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
   console.log("Folder uploads/payment_proofs dibuat.");
 }
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
 
 // Middleware
 app.use(express.json());
@@ -25,12 +35,14 @@ const orderRoutes = require("./routes/orderRoutes");
 const layananRoutes = require("./routes/layanan");
 const testimoniRoutes = require("./routes/testimoni");
 const authRoutes = require("./routes/authRoute");
+const userRoutes = require("./routes/userRoute");
 
 // Gunakan route
 app.use("/api/layanan", layananRoutes);
 app.use("/api/testimoni", testimoniRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/users", userRoutes);
 
 // Tes koneksi
 app.get("/", (req, res) => {
