@@ -11,12 +11,18 @@ const User = sequelize.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
     },
     no_telp: {
       type: DataTypes.STRING,
+      allowNull: true,
     },
     password: {
       type: DataTypes.STRING,
+      allowNull: false,
     },
     role: {
       type: DataTypes.ENUM("admin", "user"),
@@ -25,8 +31,8 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: "users",
-    timestamps: false, // Aktifkan timestamps otomatis
+    tableName: "user",
+    timestamps: true, // Aktifkan timestamps otomatis (createdAt & updatedAt)
   }
 );
 

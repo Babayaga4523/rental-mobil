@@ -1,108 +1,108 @@
-import React, { useState } from "react";
-import { FaCreditCard, FaMoneyBillWave, FaQrcode, FaLock, FaCheckCircle, FaArrowLeft, FaUser, FaEnvelope, FaPhone, FaCalendarAlt } from "react-icons/fa";
-import { useLocation, useNavigate } from "react-router-dom";
-import '../style/Payment.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  FaCreditCard,
+  FaMoneyBillWave,
+  FaWallet,
+  FaCheckCircle,
+  FaArrowLeft,
+} from "react-icons/fa";
+import { toast } from "react-toastify";
+import axios from "axios";
 
-const PaymentPage = () => {
-  const location = useLocation();
+const Payment = () => {
   const navigate = useNavigate();
-  const { 
-    carName, 
-    totalPrice,
-    price,
-    days,
-    discount,
-    image,
-    customerInfo // This comes from booking form
-  } = location.state || {};
-  
-  const [paymentMethod, setPaymentMethod] = useState("credit-card");
+  const location = useLocation();
+  const { order, car, totalPrice, days } = location.state || {};
+
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [cardNumber, setCardNumber] = useState("");
   const [cardName, setCardName] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [cvv, setCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  const handlePaymentSubmit = (e) => {
+  // Redirect jika tidak ada data order
+  useEffect(() => {
+    if (!order) {
+      toast.error("No booking data found");
+      navigate("/layanan");
+    }
+  }, [order, navigate]);
+
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
-    
-    // Simulate payment processing
-    setTimeout(() => {
+
+    try {
+      // Simulasi proses pembayaran
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Update status pembayaran di backend
+      const token = localStorage.getItem("token");
+      await axios.patch(
+        `http://localhost:3000/api/orders/${order.id}/payment`,
+        {
+          payment_status: "paid",
+          payment_method: paymentMethod,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPaymentSuccess(true);
+      toast.success("Payment successful!");
+
+      // Redirect ke halaman invoice setelah 3 detik
+      setTimeout(() => {
+        navigate("/invoice", {
+          state: {
+            order: { ...order, payment_status: "paid" },
+            car,
+            totalPrice,
+            days,
+          },
+        });
+      }, 3000);
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Payment failed. Please try again.");
+    } finally {
       setIsProcessing(false);
-      setIsSuccess(true);
-    }, 2000);
-  };
-
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
     }
   };
 
-  const formatExpiryDate = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    
-    if (v.length >= 3) {
-      return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
-    }
-    return value;
-  };
-
-  if (!carName || !customerInfo) {
+  if (!order) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="text-center p-5 bg-white rounded-4 shadow" style={{ maxWidth: '600px' }}>
-          <div className="mb-4">
-            <FaCreditCard className="text-danger" style={{ fontSize: '4rem' }} />
-          </div>
-          <h2 className="fw-bold mb-3">Data Booking Tidak Lengkap</h2>
-          <p className="lead mb-4">Silakan kembali ke halaman booking untuk memulai kembali</p>
-          <button 
-            onClick={() => navigate('/booking')}
-            className="btn btn-primary px-4 py-2"
+        <div className="text-center">
+          <h2>No Booking Data Found</h2>
+          <button
+            onClick={() => navigate("/layanan")}
+            className="btn btn-primary mt-3"
           >
-            Kembali ke Halaman Booking
+            Back to Car List
           </button>
         </div>
       </div>
     );
   }
 
-  if (isSuccess) {
+  if (paymentSuccess) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
-        <div className="text-center p-5 bg-white rounded-4 shadow" style={{ maxWidth: '600px' }}>
-          <div className="mb-4">
-            <FaCheckCircle className="text-success" style={{ fontSize: '5rem' }} />
+        <div className="text-center p-5 bg-white rounded-3 shadow-sm">
+          <FaCheckCircle className="text-success mb-4" style={{ fontSize: "5rem" }} />
+          <h2 className="mb-3">Payment Successful!</h2>
+          <p className="lead">Your booking is now confirmed</p>
+          <p>Redirecting to invoice page...</p>
+          <div className="spinner-border text-primary mt-3" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
-          <h2 className="fw-bold mb-3">Pembayaran Berhasil!</h2>
-          <p className="lead mb-4">Terima kasih telah melakukan pembayaran untuk {carName}</p>
-          <div className="bg-light p-4 rounded-3 mb-4">
-            <h4 className="text-success fw-bold">Rp {totalPrice?.toLocaleString('id-ID')}</h4>
-            <p className="text-muted mb-0">Telah berhasil dibayarkan</p>
-          </div>
-          <p className="text-muted mb-4">
-            Kami telah mengirimkan detail booking ke email Anda di <strong>{customerInfo.customerEmail}</strong>.
-          </p>
-          <button 
-            onClick={() => navigate('/')}
-            className="btn btn-primary px-4 py-2"
-          >
-            Kembali ke Beranda
-          </button>
         </div>
       </div>
     );
@@ -113,125 +113,71 @@ const PaymentPage = () => {
       <div className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-10">
-            <div className="card border-0 shadow-lg overflow-hidden mb-4">
+            <div className="card border-0 shadow-lg overflow-hidden">
               <div className="card-header bg-primary text-white py-3">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h2 className="mb-0 fw-bold">
-                    <FaCreditCard className="me-2" /> Pembayaran
-                  </h2>
-                  <div className="badge bg-white text-primary fs-6 py-2 px-3">
-                    Total: Rp {totalPrice?.toLocaleString('id-ID')}
-                  </div>
+                <div className="d-flex align-items-center">
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="btn btn-sm btn-outline-light me-3"
+                  >
+                    <FaArrowLeft />
+                  </button>
+                  <h2 className="mb-0 fw-bold">Payment</h2>
                 </div>
               </div>
-              
-              <div className="card-body p-4">
-                {/* Booking Summary Section */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <h4 className="fw-bold mb-4">Detail Booking</h4>
-                    
-                    <div className="row">
-                      <div className="col-md-6 mb-3">
-                        <div className="d-flex align-items-center mb-2">
-                          <FaUser className="text-primary me-2" />
-                          <span><strong>Nama:</strong> {customerInfo.customerName}</span>
-                        </div>
-                        <div className="d-flex align-items-center mb-2">
-                          <FaEnvelope className="text-primary me-2" />
-                          <span><strong>Email:</strong> {customerInfo.customerEmail}</span>
-                        </div>
-                        <div className="d-flex align-items-center">
-                          <FaPhone className="text-primary me-2" />
-                          <span><strong>Telepon:</strong> {customerInfo.customerPhone}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="col-md-6 mb-3">
-                        <div className="d-flex align-items-center mb-2">
-                          <FaCalendarAlt className="text-primary me-2" />
-                          <span><strong>Tanggal Pengambilan:</strong> {customerInfo.bookingDate}</span>
-                        </div>
-                        {customerInfo.additionalNotes && (
-                          <div>
-                            <p className="mb-1"><strong>Catatan:</strong></p>
-                            <p className="text-muted small">{customerInfo.additionalNotes}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="border-top pt-3 mt-3">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <span>Harga Sewa ({days} hari):</span>
-                        <span>Rp {price?.toLocaleString('id-ID')} x {days}</span>
-                      </div>
-                      {discount > 0 && (
-                        <div className="d-flex justify-content-between align-items-center mb-2 text-success">
-                          <span>Diskon {discount}%:</span>
-                          <span>- Rp {(price * days * discount / 100).toLocaleString('id-ID')}</span>
-                        </div>
-                      )}
-                      <div className="d-flex justify-content-between align-items-center fw-bold">
-                        <span>Total Pembayaran:</span>
-                        <span className="text-success">Rp {totalPrice?.toLocaleString('id-ID')}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
+              <div className="card-body p-4">
                 <div className="row g-4">
-                  {/* Payment Methods */}
+                  {/* Order Summary */}
                   <div className="col-lg-5">
                     <div className="card border-0 shadow-sm h-100">
                       <div className="card-body">
-                        <h4 className="fw-bold mb-4">Metode Pembayaran</h4>
-                        
-                        <div className="payment-methods">
-                          <div 
-                            className={`payment-method ${paymentMethod === 'credit-card' ? 'active' : ''}`}
-                            onClick={() => setPaymentMethod('credit-card')}
-                          >
-                            <div className="method-icon">
-                              <FaCreditCard className="text-primary" />
-                            </div>
-                            <div className="method-info">
-                              <h6 className="mb-0">Kartu Kredit/Debit</h6>
-                              <small className="text-muted">Visa, Mastercard, JCB</small>
-                            </div>
-                          </div>
-                          
-                          <div 
-                            className={`payment-method ${paymentMethod === 'bank-transfer' ? 'active' : ''}`}
-                            onClick={() => setPaymentMethod('bank-transfer')}
-                          >
-                            <div className="method-icon">
-                              <FaMoneyBillWave className="text-primary" />
-                            </div>
-                            <div className="method-info">
-                              <h6 className="mb-0">Transfer Bank</h6>
-                              <small className="text-muted">BCA, Mandiri, BRI, BNI</small>
-                            </div>
-                          </div>
-                          
-                          <div 
-                            className={`payment-method ${paymentMethod === 'e-wallet' ? 'active' : ''}`}
-                            onClick={() => setPaymentMethod('e-wallet')}
-                          >
-                            <div className="method-icon">
-                              <FaQrcode className="text-primary" />
-                            </div>
-                            <div className="method-info">
-                              <h6 className="mb-0">E-Wallet</h6>
-                              <small className="text-muted">Gopay, OVO, DANA, LinkAja</small>
+                        <h4 className="fw-bold mb-4">Order Summary</h4>
+
+                        <div className="mb-4">
+                          <h6 className="text-muted mb-3">Car Details</h6>
+                          <div className="d-flex mb-3">
+                            <img
+                              src={car.image || "/images/default-car.jpg"}
+                              alt={car.name}
+                              className="rounded me-3"
+                              style={{ width: "80px", height: "60px", objectFit: "cover" }}
+                            />
+                            <div>
+                              <h6 className="mb-1">{car.name}</h6>
+                              <small className="text-muted">
+                                {days} day rental
+                              </small>
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="payment-security mt-4 pt-3 border-top">
-                          <div className="d-flex align-items-center">
-                            <FaLock className="text-success me-2" />
-                            <small className="text-muted">Transaksi Anda aman dan terenkripsi</small>
+
+                        <div className="mb-4">
+                          <h6 className="text-muted mb-3">Booking Details</h6>
+                          <div className="d-flex justify-content-between mb-2">
+                            <span>Order ID:</span>
+                            <span className="fw-bold">{order.id}</span>
+                          </div>
+                          <div className="d-flex justify-content-between mb-2">
+                            <span>Pickup Date:</span>
+                            <span className="fw-bold">
+                              {new Date(order.pickup_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="d-flex justify-content-between mb-2">
+                            <span>Return Date:</span>
+                            <span className="fw-bold">
+                              {new Date(order.return_date).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="border-top pt-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <h5 className="mb-0">Total Amount:</h5>
+                            <h4 className="mb-0 text-success fw-bold">
+                              Rp {totalPrice.toLocaleString("id-ID")}
+                            </h4>
                           </div>
                         </div>
                       </div>
@@ -240,223 +186,180 @@ const PaymentPage = () => {
 
                   {/* Payment Form */}
                   <div className="col-lg-7">
-                    {paymentMethod === 'credit-card' && (
-                      <div className="card border-0 shadow-sm h-100">
-                        <div className="card-body">
-                          <h4 className="fw-bold mb-4">
-                            <FaCreditCard className="me-2 text-primary" /> Detail Kartu
-                          </h4>
-                          
-                          <form onSubmit={handlePaymentSubmit}>
-                            <div className="mb-4">
-                              <label htmlFor="cardNumber" className="form-label fw-bold">
-                                Nomor Kartu
-                              </label>
-                              <input 
-                                type="text" 
-                                className="form-control py-2" 
-                                id="cardNumber" 
-                                placeholder="1234 5678 9012 3456" 
-                                value={formatCardNumber(cardNumber)}
-                                onChange={(e) => setCardNumber(e.target.value)}
-                                maxLength="19"
-                                required 
-                              />
-                            </div>
-                            
-                            <div className="mb-4">
-                              <label htmlFor="cardName" className="form-label fw-bold">
-                                Nama Pemilik Kartu
-                              </label>
-                              <input 
-                                type="text" 
-                                className="form-control py-2" 
-                                id="cardName" 
-                                placeholder="Nama sesuai di kartu" 
-                                value={cardName}
-                                onChange={(e) => setCardName(e.target.value)}
-                                required 
-                              />
-                            </div>
-                            
-                            <div className="row">
-                              <div className="col-md-6 mb-4">
-                                <label htmlFor="expiryDate" className="form-label fw-bold">
-                                  Masa Berlaku
-                                </label>
-                                <input 
-                                  type="text" 
-                                  className="form-control py-2" 
-                                  id="expiryDate" 
-                                  placeholder="MM/YY" 
-                                  value={formatExpiryDate(expiryDate)}
-                                  onChange={(e) => setExpiryDate(e.target.value)}
-                                  maxLength="5"
-                                  required 
-                                />
-                              </div>
-                              <div className="col-md-6 mb-4">
-                                <label htmlFor="cvv" className="form-label fw-bold">
-                                  CVV
-                                </label>
-                                <input 
-                                  type="text" 
-                                  className="form-control py-2" 
-                                  id="cvv" 
-                                  placeholder="123" 
-                                  value={cvv}
-                                  onChange={(e) => setCvv(e.target.value.replace(/[^0-9]/g, ''))}
-                                  maxLength="3"
-                                  required 
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="d-grid mt-4">
-                              <button 
-                                type="submit" 
-                                className="btn btn-primary btn-lg py-3 fw-bold"
-                                disabled={isProcessing}
+                    <div className="card border-0 shadow-sm h-100">
+                      <div className="card-body">
+                        <h4 className="fw-bold mb-4">Payment Method</h4>
+
+                        <form onSubmit={handlePaymentSubmit}>
+                          <div className="mb-4">
+                            <div className="btn-group w-100" role="group">
+                              <button
+                                type="button"
+                                className={`btn ${
+                                  paymentMethod === "credit_card"
+                                    ? "btn-primary"
+                                    : "btn-outline-primary"
+                                }`}
+                                onClick={() => setPaymentMethod("credit_card")}
                               >
-                                {isProcessing ? (
-                                  <>
-                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    Memproses Pembayaran...
-                                  </>
-                                ) : (
-                                  "Konfirmasi Pembayaran"
-                                )}
+                                <FaCreditCard className="me-2" />
+                                Credit Card
+                              </button>
+                              <button
+                                type="button"
+                                className={`btn ${
+                                  paymentMethod === "bank_transfer"
+                                    ? "btn-primary"
+                                    : "btn-outline-primary"
+                                }`}
+                                onClick={() => setPaymentMethod("bank_transfer")}
+                              >
+                                <FaMoneyBillWave className="me-2" />
+                                Bank Transfer
+                              </button>
+                              <button
+                                type="button"
+                                className={`btn ${
+                                  paymentMethod === "e_wallet"
+                                    ? "btn-primary"
+                                    : "btn-outline-primary"
+                                }`}
+                                onClick={() => setPaymentMethod("e_wallet")}
+                              >
+                                <FaWallet className="me-2" />
+                                E-Wallet
                               </button>
                             </div>
-                          </form>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {paymentMethod === 'bank-transfer' && (
-                      <div className="card border-0 shadow-sm h-100">
-                        <div className="card-body">
-                          <h4 className="fw-bold mb-4">
-                            <FaMoneyBillWave className="me-2 text-primary" /> Transfer Bank
-                          </h4>
-                          
-                          <div className="bank-transfer-methods">
-                            <div className="bank-method">
-                              <img src="/images/bca.png" alt="BCA" className="bank-logo" />
-                              <div className="bank-info">
-                                <h6 className="mb-1">Bank Central Asia (BCA)</h6>
-                                <p className="mb-1 fw-bold">123 456 7890</p>
-                                <p className="mb-0 text-muted small">a/n Rental Mobil Jaya</p>
-                              </div>
-                            </div>
-                            
-                            <div className="bank-method">
-                              <img src="/images/mandiri.png" alt="Mandiri" className="bank-logo" />
-                              <div className="bank-info">
-                                <h6 className="mb-1">Bank Mandiri</h6>
-                                <p className="mb-1 fw-bold">987 654 3210</p>
-                                <p className="mb-0 text-muted small">a/n Rental Mobil Jaya</p>
-                              </div>
-                            </div>
-                            
-                            <div className="bank-method">
-                              <img src="/images/bri.png" alt="BRI" className="bank-logo" />
-                              <div className="bank-info">
-                                <h6 className="mb-1">Bank Rakyat Indonesia (BRI)</h6>
-                                <p className="mb-1 fw-bold">567 890 1234</p>
-                                <p className="mb-0 text-muted small">a/n Rental Mobil Jaya</p>
-                              </div>
-                            </div>
                           </div>
-                          
-                          <div className="bg-light p-3 rounded-3 mt-4">
-                            <h6 className="fw-bold">Instruksi Pembayaran:</h6>
-                            <ol className="small">
-                              <li>Transfer tepat sebesar <strong>Rp {totalPrice?.toLocaleString('id-ID')}</strong></li>
-                              <li>Gunakan nomor rekening di atas</li>
-                              <li>Simpan bukti transfer</li>
-                              <li>Konfirmasi pembayaran melalui WhatsApp kami</li>
-                            </ol>
-                          </div>
-                          
+
+                          {paymentMethod === "credit_card" && (
+                            <>
+                              <div className="mb-3">
+                                <label className="form-label">Card Number</label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="1234 5678 9012 3456"
+                                  value={cardNumber}
+                                  onChange={(e) =>
+                                    setCardNumber(
+                                      e.target.value.replace(/\D/g, "").slice(0, 16)
+                                    )
+                                  }
+                                  required
+                                />
+                              </div>
+
+                              <div className="mb-3">
+                                <label className="form-label">Cardholder Name</label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="John Doe"
+                                  value={cardName}
+                                  onChange={(e) => setCardName(e.target.value)}
+                                  required
+                                />
+                              </div>
+
+                              <div className="row g-3 mb-3">
+                                <div className="col-md-6">
+                                  <label className="form-label">Expiry Date</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="MM/YY"
+                                    value={expiryDate}
+                                    onChange={(e) =>
+                                      setExpiryDate(
+                                        e.target.value
+                                          .replace(/\D/g, "")
+                                          .replace(/^(\d{2})/, "$1/")
+                                          .slice(0, 5)
+                                      )
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div className="col-md-6">
+                                  <label className="form-label">CVV</label>
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="123"
+                                    value={cvv}
+                                    onChange={(e) =>
+                                      setCvv(e.target.value.replace(/\D/g, "").slice(0, 3))
+                                    }
+                                    required
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {paymentMethod === "bank_transfer" && (
+                            <div className="alert alert-info">
+                              <h5>Bank Transfer Instructions</h5>
+                              <p>
+                                Please transfer to:<br />
+                                Bank: BCA<br />
+                                Account: 1234567890<br />
+                                Name: Rental Mobil Jaya
+                              </p>
+                              <p className="mb-0">
+                                Include your order ID as payment reference.
+                              </p>
+                            </div>
+                          )}
+
+                          {paymentMethod === "e_wallet" && (
+                            <div className="alert alert-info">
+                              <h5>E-Wallet Payment</h5>
+                              <p>
+                                Please complete payment via your preferred e-wallet app
+                                using QR code below:
+                              </p>
+                              <div className="text-center my-3">
+                                <img
+                                  src="/images/qr-code-placeholder.png"
+                                  alt="QR Code"
+                                  style={{ width: "150px" }}
+                                />
+                              </div>
+                              <p className="mb-0">
+                                Or send to phone number: 081234567890
+                              </p>
+                            </div>
+                          )}
+
                           <div className="d-grid mt-4">
-                            <button 
-                              className="btn btn-outline-primary"
-                              onClick={() => setIsSuccess(true)}
+                            <button
+                              type="submit"
+                              className="btn btn-primary btn-lg py-3 fw-bold"
+                              disabled={isProcessing}
                             >
-                              Saya Sudah Transfer
+                              {isProcessing ? (
+                                <>
+                                  <span
+                                    className="spinner-border spinner-border-sm me-2"
+                                    role="status"
+                                    aria-hidden="true"
+                                  ></span>
+                                  Processing Payment...
+                                </>
+                              ) : (
+                                "Confirm Payment"
+                              )}
                             </button>
                           </div>
-                        </div>
+                        </form>
                       </div>
-                    )}
-                    
-                    {paymentMethod === 'e-wallet' && (
-                      <div className="card border-0 shadow-sm h-100">
-                        <div className="card-body">
-                          <h4 className="fw-bold mb-4">
-                            <FaQrcode className="me-2 text-primary" /> E-Wallet
-                          </h4>
-                          
-                          <div className="text-center mb-4">
-                            <img 
-                              src="/images/payment-qr.png" 
-                              alt="QR Code Payment" 
-                              className="img-fluid mb-3" 
-                              style={{maxWidth: '200px'}}
-                            />
-                            <p className="fw-bold">Scan QR Code untuk pembayaran</p>
-                            <p className="text-muted small">Gunakan aplikasi Gopay, OVO, DANA, atau LinkAja</p>
-                          </div>
-                          
-                          <div className="e-wallet-methods">
-                            <div className="wallet-method">
-                              <img src="/images/gopay.png" alt="Gopay" className="wallet-logo" />
-                              <div className="wallet-info">
-                                <h6 className="mb-0">Gopay</h6>
-                                <small className="text-muted">0812-3456-7890</small>
-                              </div>
-                            </div>
-                            
-                            <div className="wallet-method">
-                              <img src="/images/ovo.png" alt="OVO" className="wallet-logo" />
-                              <div className="wallet-info">
-                                <h6 className="mb-0">OVO</h6>
-                                <small className="text-muted">0812-3456-7890</small>
-                              </div>
-                            </div>
-                            
-                            <div className="wallet-method">
-                              <img src="/images/dana.png" alt="DANA" className="wallet-logo" />
-                              <div className="wallet-info">
-                                <h6 className="mb-0">DANA</h6>
-                                <small className="text-muted">0812-3456-7890</small>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="d-grid mt-4">
-                            <button 
-                              className="btn btn-outline-primary"
-                              onClick={() => setIsSuccess(true)}
-                            >
-                              Saya Sudah Bayar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <button 
-              onClick={() => navigate(-1)}
-              className="btn btn-outline-secondary"
-            >
-              <FaArrowLeft className="me-2" /> Kembali
-            </button>
           </div>
         </div>
       </div>
@@ -464,4 +367,4 @@ const PaymentPage = () => {
   );
 };
 
-export default PaymentPage;
+export default Payment;
