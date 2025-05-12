@@ -1,27 +1,37 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 const sequelize = require("./config/database");
+
 const app = express();
+
+// Buat folder uploads/payment_proofs jika belum ada
+const uploadDir = path.join(__dirname, "uploads/payment_proofs");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("Folder uploads/payment_proofs dibuat.");
+}
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+// Tambahkan ini:
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes
 const orderRoutes = require("./routes/orderRoutes");
-
 const layananRoutes = require("./routes/layanan");
 const testimoniRoutes = require("./routes/testimoni");
-const authRoutes = require("./routes/authRoute"); // tambahkan ini
+const authRoutes = require("./routes/authRoute");
 
 // Gunakan route
 app.use("/api/layanan", layananRoutes);
 app.use("/api/testimoni", testimoniRoutes);
-app.use("/api/auth", authRoutes); // tambahkan ini juga
+app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 
-console.log("halo" + process.env.JWT_SECRET);
 // Tes koneksi
 app.get("/", (req, res) => {
   res.send("Rental Mobil API is running");

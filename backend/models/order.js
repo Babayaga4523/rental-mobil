@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database'); // Sesuaikan dengan path config database Anda
+const sequelize = require('../config/database');
 
 const Order = sequelize.define('Order', {
   id: {
@@ -12,7 +12,7 @@ const Order = sequelize.define('Order', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Users', // Nama model/tabel User
+      model: 'user', // Nama tabel
       key: 'id'
     }
   },
@@ -20,7 +20,7 @@ const Order = sequelize.define('Order', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Layanan', // Nama model/tabel Layanan
+      model: 'layanan',
       key: 'id'
     }
   },
@@ -55,6 +55,11 @@ const Order = sequelize.define('Order', {
     allowNull: true,
     comment: 'metode pembayaran'
   },
+  payment_proof: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    comment: 'Path/link ke bukti pembayaran'
+  },
   payment_status: {
     type: DataTypes.ENUM('unpaid', 'paid', 'failed'),
     allowNull: false,
@@ -65,32 +70,15 @@ const Order = sequelize.define('Order', {
     type: DataTypes.TEXT,
     allowNull: true,
     comment: 'catatan tambahan'
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
-    comment: 'waktu pembuatan'
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    allowNull: false,
-    defaultValue: DataTypes.NOW,
-    onUpdate: DataTypes.NOW,
-    comment: 'waktu terakhir diperbarui'
   }
 }, {
   tableName: 'orders',
-  timestamps: true, // Aktifkan createdAt dan updatedAt otomatis
+  timestamps: true,
   charset: 'utf8mb4',
   collate: 'utf8mb4_general_ci',
   indexes: [
-    {
-      fields: ['user_id']
-    },
-    {
-      fields: ['car_id']
-    }
+    { fields: ['user_id'] },
+    { fields: ['car_id'] }
   ]
 });
 
