@@ -1,11 +1,10 @@
 const { Op } = require("sequelize");
-const Order = require("../models/order");
-const Layanan = require("../models/layanan");
-const User = require("../models/user");
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const sequelize = require("../config/database");
+const db = require('../models');
+const { Order, Layanan, User } = db;
 
 const calculateRentalDuration = (startDate, endDate) => {
   const start = new Date(startDate);
@@ -99,7 +98,7 @@ const formatResponOrder = (order, mobil, durasi) => {
 const cekKetersediaanMobil = async (carId, pickupDate, returnDate, transaction) => {
   const orderConflicts = await Order.findAll({
     where: {
-      car_id: carId,
+      layanan_id: carId,
       [Op.or]: [
         {
           pickup_date: { [Op.lte]: returnDate },
@@ -118,7 +117,7 @@ exports.createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { 
-      car_id, 
+      layanan_id, 
       pickup_date, 
       return_date, 
       payment_method = 'credit_card', 
@@ -130,7 +129,7 @@ exports.createOrder = async (req, res) => {
     const payment_proof = req.file ? req.file.path : null;
 
     // Validasi input
-    if (!car_id || !pickup_date || !return_date) {
+    if (!layanan_id || !pickup_date || !return_date) {
       deleteFileIfExist(payment_proof);
       await transaction.rollback();
       return res.status(400).json({
@@ -163,7 +162,7 @@ exports.createOrder = async (req, res) => {
     }
 
     // Cek ketersediaan mobil
-    const car = await Layanan.findByPk(car_id, { transaction });
+    const car = await Layanan.findByPk(layanan_id, { transaction });
     if (!car) {
       deleteFileIfExist(payment_proof);
       await transaction.rollback();
@@ -173,7 +172,7 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    const isAvailable = await cekKetersediaanMobil(car_id, pickupDate, returnDate, transaction);
+    const isAvailable = await cekKetersediaanMobil(layanan_id, pickupDate, returnDate, transaction);
     if (!isAvailable) {
       deleteFileIfExist(payment_proof);
       await transaction.rollback();
@@ -198,7 +197,7 @@ exports.createOrder = async (req, res) => {
     // Buat pesanan
     const newOrder = await Order.create({
       user_id,
-      car_id,
+      layanan_id,
       order_date: new Date(),
       pickup_date: pickupDate,
       return_date: returnDate,
@@ -230,6 +229,51 @@ exports.createOrder = async (req, res) => {
     });
   }
 };
+
+exports.getOrderByUserId = async (req, res) => {
+  try {
+    const user_id = req.user.id;
+
+    const orders = await Order.findAll({
+      where: { user_id },
+      include: [
+        {
+          model: Layanan,
+          as: 'layanan', 
+          attributes: ['id', 'nama', 'harga']
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['name', 'no_telp']
+        }
+      ],
+      order: [['order_date', 'DESC']]
+    });
+
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pesanan tidak ditemukan untuk pengguna ini"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Daftar pesanan ditemukan",
+      data: orders
+    });
+
+  } catch (error) {
+    console.error("Error mengambil pesanan:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan pada server",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
+  }
+};
+
 
 exports.uploadPaymentProof = async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -277,7 +321,7 @@ exports.uploadPaymentProof = async (req, res) => {
       status: 'pending'
     }, { transaction });
 
-    const car = await Layanan.findByPk(order.car_id, { transaction });
+    const car = await Layanan.findByPk(order.layanan_id, { transaction });
     const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
 
     await transaction.commit();
@@ -340,7 +384,7 @@ exports.verifyPayment = async (req, res) => {
       status: status === 'paid' ? 'confirmed' : 'cancelled'
     }, { transaction });
 
-    const car = await Layanan.findByPk(order.car_id, { transaction });
+    const car = await Layanan.findByPk(order.layanan_id, { transaction });
     const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
 
     await transaction.commit();
@@ -599,7 +643,7 @@ exports.cancelOrder = async (req, res) => {
 
     await transaction.commit();
 
-    const car = await Layanan.findByPk(order.car_id);
+    const car = await Layanan.findByPk(order.layanan_id);
     const durasi = calculateRentalDuration(order.pickup_date, order.return_date);
 
     return res.json({
@@ -711,7 +755,7 @@ exports.cancelOrder = async (req, res) => {
 
     await transaction.commit();
 
-    const car = await Layanan.findByPk(order.car_id);
+    const car = await Layanan.findByPk(order.layanan_id);
     const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
 
     return res.json({

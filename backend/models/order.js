@@ -12,18 +12,18 @@ const Order = sequelize.define('Order', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'user', // Nama tabel
+      model: 'user', // Nama model/tabel User
       key: 'id'
     }
   },
-  car_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'layanan',
-      key: 'id'
-    }
-  },
+  layanan_id: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  references: {
+    model: 'layanan',
+    key: 'id'
+  }
+},
   order_date: {
     type: DataTypes.DATE,
     allowNull: false,
@@ -78,8 +78,18 @@ const Order = sequelize.define('Order', {
   collate: 'utf8mb4_general_ci',
   indexes: [
     { fields: ['user_id'] },
-    { fields: ['car_id'] }
+    { fields: ['layanan_id'] }
   ]
 });
 
+Order.associate = (models) => {
+  Order.belongsTo(models.Layanan, {
+    foreignKey: 'layanan_id',
+    as: 'layanan'
+  });
+  Order.belongsTo(models.User, {
+    foreignKey: 'user_id',
+    as: 'user'
+  });
+};
 module.exports = Order;

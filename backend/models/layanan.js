@@ -29,4 +29,10 @@ const Layanan = sequelize.define('Layanan', {
   timestamps: false,
 });
 
+Layanan.associate = (models) => {
+  Layanan.hasMany(models.Order, {
+    foreignKey: 'layanan_id',
+    as: 'orders'
+  });
+};
 module.exports = Layanan;

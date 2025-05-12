@@ -45,7 +45,7 @@ router.post(
   '/',
   upload.single('payment_proof'),
   [
-    check('car_id', 'Car ID is required').isInt(),
+    check('layanan_id', 'Car ID is required').isInt(),
     check('pickup_date', 'Valid pickup date is required').isISO8601(),
     check('return_date', 'Valid return date is required').isISO8601(),
     check('payment_method', 'Invalid payment method')
@@ -114,7 +114,7 @@ router.get(
   [
     check('id', 'Invalid order ID').isInt()
   ],
-  orderController.getOrderReceipt
+  orderController.getOrderByUserId
 );
 
 module.exports = router;
