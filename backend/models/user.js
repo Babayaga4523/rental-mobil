@@ -29,10 +29,15 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: "user",
     },
+    status: {
+      type: DataTypes.ENUM("active", "inactive"),
+      allowNull: false,
+      defaultValue: "active",
+    },
   },
   {
     tableName: "user",
-    timestamps: true, // Aktifkan timestamps otomatis (createdAt & updatedAt)
+    timestamps: true,
   }
 );
 

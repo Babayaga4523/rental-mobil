@@ -1,0 +1,201 @@
+/* Root & Layout */
+.detail-mobil-root {
+  font-family: 'Poppins', Arial, sans-serif;
+  background: #f8f9fa;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Hero Section */
+.detail-mobil-hero {
+  background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
+  min-height: 320px;
+  position: relative;
+  border-bottom-left-radius: 40px;
+  border-bottom-right-radius: 40px;
+  box-shadow: 0 8px 32px rgba(30,60,114,0.08);
+}
+.detail-mobil-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.detail-mobil-category {
+  font-size: 1rem;
+  font-weight: 500;
+  background: #fff !important;
+  color: #2a5298 !important;
+  border: 1px solid #2a5298;
+}
+.detail-mobil-rating i {
+  font-size: 1.2rem;
+}
+
+/* Back Button */
+.detail-mobil-back-btn {
+  font-size: 1rem;
+  font-weight: 500;
+  border-width: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.detail-mobil-back-btn:hover {
+  background: #fff !important;
+  color: #2a5298 !important;
+}
+
+/* Main Content */
+.detail-mobil-main {
+  margin-top: -40px;
+  z-index: 2;
+  position: relative;
+}
+
+/* Image Card */
+.detail-mobil-image-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(30,60,114,0.08);
+  overflow: hidden;
+}
+.detail-mobil-image {
+  border-radius: 18px;
+  object-fit: cover;
+  width: 100%;
+  height: 450px;
+  background: #e9ecef;
+  transition: transform 0.4s;
+}
+.detail-mobil-image-card:hover .detail-mobil-image {
+  transform: scale(1.03);
+}
+
+/* Tabs */
+.detail-mobil-tabs {
+  margin-top: 1.5rem;
+  background: #fff;
+  border-radius: 18px;
+}
+.detail-mobil-tabs-header {
+  border-bottom: 1px solid #e9ecef;
+  background: #fff;
+}
+.detail-mobil-tab-link {
+  font-weight: 500;
+  color: #2a5298;
+  border: none;
+  background: none;
+  transition: color 0.2s;
+}
+.detail-mobil-tab-link.active,
+.detail-mobil-tab-link:focus {
+  color: #fff !important;
+  background: #2a5298 !important;
+  border-radius: 8px 8px 0 0;
+}
+.detail-mobil-tabs-body {
+  padding: 1.5rem;
+}
+.detail-mobil-description-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+.detail-mobil-description-text {
+  font-size: 1.1rem;
+  color: #444;
+}
+.detail-mobil-features-title {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+.detail-mobil-feature-item {
+  font-size: 1rem;
+  color: #222;
+  display: flex;
+  align-items: center;
+}
+
+/* Booking Card */
+.detail-mobil-booking-card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(30,60,114,0.10);
+  margin-bottom: 2rem;
+}
+.detail-mobil-booking-header {
+  border-radius: 24px 24px 0 0;
+  background: linear-gradient(90deg, #2a5298 0%, #1e3c72 100%);
+}
+.detail-mobil-booking-title {
+  font-size: 1.3rem;
+}
+.detail-mobil-booking-body {
+  padding: 2rem 1.5rem;
+}
+.detail-mobil-price-per-day {
+  font-size: 1.1rem;
+}
+.detail-mobil-duration {
+  margin-bottom: 1.5rem;
+}
+.detail-mobil-duration-input {
+  max-width: 70px;
+  font-size: 1.1rem;
+}
+.detail-mobil-duration-decrease,
+.detail-mobil-duration-increase {
+  font-size: 1.1rem;
+}
+.detail-mobil-discount {
+  font-size: 1rem;
+  border-radius: 8px;
+}
+.detail-mobil-total-price {
+  font-size: 1.1rem;
+  border-radius: 10px;
+  background: #f1f3f6;
+}
+.detail-mobil-book-now {
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.detail-mobil-book-now:hover {
+  background: #1e3c72 !important;
+}
+.detail-mobil-payment-info {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: #888;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .detail-mobil-main {
+    margin-top: 0;
+    padding: 2rem 0.5rem;
+  }
+  .detail-mobil-booking-card {
+    margin-top: 2rem;
+  }
+}
+@media (max-width: 600px) {
+  .detail-mobil-title {
+    font-size: 2rem;
+  }
+  .detail-mobil-image {
+    height: 220px;
+  }
+  .detail-mobil-booking-body {
+    padding: 1rem;
+  }
+  .detail-mobil-tabs-body {
+    padding: 1rem;
+  }
+}
+
+/* Utility */
+.detail-mobil-feature-item i {
+  color: #2a5298;
+  margin-right: 0.5rem;
+}

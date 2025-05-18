@@ -1,19 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const orderController = require("../controllers/orderController");
-const authMiddleware = require("../middleware/authMiddleware");
+
 const { check } = require("express-validator");
 const path = require('path');
-const fs = require('fs'); // Tambahkan ini untuk mengatasi error 'fs is not defined'
+const fs = require('fs');
 require("dotenv").config();
 const multer = require('multer');
+const {authMiddleware, checkAdmin } = require("../middleware/authMiddleware");
 
-// Multer setup for file upload
+// Setup Multer untuk upload bukti pembayaran
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const dir = path.join(__dirname, '../uploads/payment_proofs');
-      // Create directory if it doesn't exist
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
@@ -33,14 +33,14 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 // Maks 5MB
   }
 });
 
-// Apply auth middleware to all order routes
+// Middleware auth global
 router.use(authMiddleware);
 
-// Route to create order with optional payment proof
+// Create order dengan bukti pembayaran opsional
 router.post(
   '/',
   upload.single('payment_proof'),
@@ -56,7 +56,15 @@ router.post(
   orderController.createOrder
 );
 
-// Route to upload payment proof for existing order
+// Route untuk admin: melihat semua order
+router.get(
+  "/admin/all",
+  authMiddleware,
+  checkAdmin,
+  orderController.getAllOrdersAdmin
+);
+
+// Upload bukti pembayaran untuk order yang sudah ada
 router.put(
   '/:id/payment',
   upload.single('payment_proof'),
@@ -66,7 +74,7 @@ router.put(
   orderController.uploadPaymentProof
 );
 
-// Route to get all orders with optional filtering
+// Mendapatkan semua order dengan filter opsional
 router.get(
   "/",
   [
@@ -79,7 +87,7 @@ router.get(
   orderController.getAllOrders
 );
 
-// Route to get order by id
+// Mendapatkan detail order berdasarkan ID
 router.get(
   "/:id",
   [
@@ -88,7 +96,7 @@ router.get(
   orderController.getOrderById
 );
 
-// Route to verify payment (admin only)
+// Verifikasi pembayaran oleh admin
 router.put(
   '/:id/verify',
   [
@@ -98,7 +106,7 @@ router.put(
   orderController.verifyPayment
 );
 
-// Route to cancel order
+// Batalkan order
 router.put(
   '/:id/cancel',
   [
@@ -107,14 +115,24 @@ router.put(
   orderController.cancelOrder
 );
 
-// Route to get order receipt
+// Update order status
+router.put(
+  '/:id',
+  [
+    check('id', 'Invalid order ID').isInt(),
+    check('status', 'Invalid status').isIn(['pending', 'confirmed', 'completed', 'cancelled', 'rejected'])
+  ],
+  orderController.updateOrderStatus
+);
+
+// Generate receipt
 router.get(
   '/:id/receipt',
-   authMiddleware, // Tambahkan middleware auth
+  authMiddleware,
   [
     check('id', 'Invalid order ID').isInt()
   ],
-  orderController.getOrderByUserId
+  orderController.getOrderReceipt
 );
 
 module.exports = router;

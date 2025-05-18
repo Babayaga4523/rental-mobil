@@ -10,7 +10,7 @@ const calculateRentalDuration = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = Math.abs(end - start);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Dalam hari
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // BENAR: selisih hari
 };
 // Konfigurasi Multer untuk upload file
 const storage = multer.diskStorage({
@@ -187,12 +187,7 @@ exports.createOrder = async (req, res) => {
     const total = total_price || (car.harga_per_hari * durasi);
 
     // Determine payment status
-    let paymentStatus = 'unpaid';
-    if (payment_method === 'credit_card') {
-      paymentStatus = 'pending_verification';
-    } else if (payment_proof) {
-      paymentStatus = 'pending_verification';
-    }
+    const payment_status = (payment_method === 'credit_card' || payment_proof) ? 'pending_verification' : 'unpaid';
 
     // Buat pesanan
     const newOrder = await Order.create({
@@ -204,7 +199,7 @@ exports.createOrder = async (req, res) => {
       total_price: total,
       payment_method: payment_method || "credit_card",
       payment_proof: payment_proof,
-      payment_status: "unpaid",
+      payment_status: payment_status,
       additional_notes: additional_notes || null,
       status: "pending"
     }, { transaction });
@@ -455,21 +450,24 @@ exports.getAllOrders = async (req, res) => {
 
 exports.getOrderById = async (req, res) => {
   try {
+    // Admin bisa akses semua, user hanya miliknya sendiri
+    const where = { id: req.params.id };
+    if (req.user.role !== "admin") {
+      where.user_id = req.user.id;
+    }
+
     const order = await Order.findOne({
-      where: {
-        id: req.params.id,
-        user_id: req.user.id,
-      },
+      where,
       include: [
         {
           model: Layanan,
-          as: 'car',
-          attributes: ['id', 'merek', 'model', 'nomor_plat', 'harga_per_hari', 'image']
+          as: 'layanan',
+          attributes: ['id', 'nama', 'harga']
         },
         {
           model: User,
           as: 'user',
-          attributes: ['name', 'phone', 'address']
+          attributes: ['id', 'name', 'email', 'no_telp']
         }
       ],
     });
@@ -481,11 +479,17 @@ exports.getOrderById = async (req, res) => {
       });
     }
 
-    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
+    // Kirim path bukti pembayaran yang bisa diakses frontend
+    const paymentProofUrl = order.payment_proof
+      ? `/uploads/payment_proofs/${require('path').basename(order.payment_proof)}`
+      : null;
 
     return res.json({
       success: true,
-      data: formatResponOrder(order, order.car, durasi),
+      data: {
+        ...order.toJSON(),
+        payment_proof: paymentProofUrl
+      }
     });
   } catch (error) {
     console.error("Error mengambil pesanan:", error);
@@ -499,114 +503,69 @@ exports.getOrderById = async (req, res) => {
 // Fungsi untuk format response pesanan
 const formatReceiptResponse = (order, car, user) => {
   const duration = calculateRentalDuration(order.pickup_date, order.return_date);
-  const subtotal = car.harga_per_hari * duration;
-  const tax = subtotal * 0.1; // 10% tax
-  const total = subtotal + tax;
-
   return {
     order: {
       id: order.id,
-      order_date: order.createdAt,
+      order_date: order.order_date,
       pickup_date: order.pickup_date,
       return_date: order.return_date,
       duration: duration,
-      total_price: total,
+      total_price: order.total_price,
+      status: order.status,
       payment_method: order.payment_method,
       payment_status: order.payment_status,
       payment_proof: order.payment_proof ? `/uploads/payment_proofs/${path.basename(order.payment_proof)}` : null,
-      additional_notes: order.additional_notes || null,
-      status: order.status
+      additional_notes: order.additional_notes
     },
     car: {
       id: car.id,
-      name: `${car.merek} ${car.model}`,
-      license_plate: car.nomor_plat,
+      name: car.nama || `${car.merek || ""} ${car.model || ""}`,
+      license_plate: car.nomor_plat || "-",
       image_url: car.image || "/images/default-car.jpg",
       type: car.type || "Standard",
       transmission: car.transmission || "Automatic",
       fuel_type: car.fuel || "Gasoline",
       capacity: car.kapasitas || 4,
-      price_per_day: car.harga_per_hari
+      price_per_day: car.harga_per_hari || car.harga || 0
     },
     user: {
       id: user.id,
       name: user.name,
-      email: user.email,
-      phone: user.phone,
-      id_number: user.id_number || "N/A",
-      address: user.address || "N/A"
+      email: user.email || "-",
+      phone: user.phone || user.no_telp || "-",
+      id_number: user.id_number || "-",
+      address: user.address || "-"
     }
   };
 };
 
+
 // Fungsi untuk mendapatkan struk pesanan
 exports.getOrderReceipt = async (req, res) => {
-  const transaction = await sequelize.transaction();
   try {
-    const orderId = req.params.id;
-    const userId = req.user.id;
-
-    // Validasi input ID pesanan
-    if (!orderId || isNaN(orderId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid order ID"
-      });
-    }
-
-    // Mencari pesanan berdasarkan ID dan user_id untuk memastikan hanya pemilik yang dapat mengaksesnya
     const order = await Order.findOne({
-      where: {
-        id: orderId,
-        user_id: userId
-      },
+      where: { id: req.params.id },
       include: [
-        {
-          model: Layanan,
-          as: 'car',
-          attributes: ['id', 'merek', 'model', 'nomor_plat', 'harga_per_hari', 'image', 'type', 'transmission', 'fuel', 'kapasitas']
-        },
-        {
-          model: User,
-          attributes: ['id', 'name', 'email', 'phone', 'id_number', 'address']
-        }
-      ],
-      transaction
+        { model: Layanan, as: 'layanan' },
+        { model: User, as: 'user' }
+      ]
     });
 
-    // Jika pesanan tidak ditemukan
     if (!order) {
-      await transaction.rollback();
-      return res.status(404).json({
-        success: false,
-        message: "Order not found or you don't have access"
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Format data untuk struk
-    const receiptData = formatReceiptResponse(order, order.car, order.user);
-
-    // Commit transaksi jika data berhasil diambil
-    await transaction.commit();
+    const response = formatReceiptResponse(order, order.layanan, order.user);
 
     return res.json({
       success: true,
-      message: "Receipt data retrieved successfully",
-      data: receiptData
+      data: response
     });
-
   } catch (error) {
-    // Rollback transaksi jika terjadi error
-    await transaction.rollback();
-    console.error("Error in getOrderReceipt:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined
-    });
+    console.error("Error getOrderReceipt:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
 // Fungsi lainnya yang sudah ada
 exports.cancelOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -660,115 +619,52 @@ exports.cancelOrder = async (req, res) => {
     });
   }
 };
-exports.getReceipt = async (req, res) => {
+
+// Ambil semua pesanan untuk admin
+exports.getAllOrdersAdmin = async (req, res) => {
   try {
-    const { id } = req.params;
-    const user_id = req.user.id;
-
-    const order = await Order.findOne({
-      where: { id, user_id },
-      include: [
-        { model: Layanan, as: 'mobil' },
-        { model: User, as: 'user' }
-      ]
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Pesanan tidak ditemukan"
-      });
+    // Pastikan hanya admin yang bisa akses
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Akses ditolak" });
     }
 
-    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
-    const mobil = order.mobil;
-
-    const response = formatResponOrder(order, mobil, durasi);
-
-    return res.json({
-      success: true,
-      message: "Data struk ditemukan",
-      data: {
-        receipt: {
-          nama_pelanggan: response.user?.name,
-          alamat: response.user?.address,
-          telepon: response.user?.phone,
-          mobil: response.mobil.nama,
-          nomor_plat: response.mobil.nomor_plat,
-          tanggal_pesan: response.tanggal_pesan,
-          tanggal_pickup: response.tanggal.pickup,
-          tanggal_kembali: response.tanggal.return,
-          durasi: response.durasi + ' hari',
-          harga_per_hari: `Rp ${response.detail_harga.per_hari.toLocaleString()}`,
-          total: `Rp ${response.detail_harga.total.toLocaleString()}`,
-          pajak: `Rp ${response.detail_harga.pajak.toLocaleString()}`,
-          sub_total: `Rp ${response.detail_harga.sub_total.toLocaleString()}`,
-          metode_pembayaran: response.pembayaran.metode,
-          status_pembayaran: response.pembayaran.status,
-          status_pesanan: response.status,
-          bukti_pembayaran: response.pembayaran.bukti
+    const orders = await Order.findAll({
+      include: [
+        {
+          model: Layanan,
+          as: 'layanan',
+          attributes: ['id', 'nama', 'harga']
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email', 'no_telp']
         }
-      }
+      ],
+      order: [['order_date', 'DESC']]
     });
-
+res.json({
+      success: true,
+      data: orders
+    });
   } catch (error) {
-    console.error("Error saat mengambil struk:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal mengambil data struk"
-    });
+    console.error("Error getAllOrdersAdmin:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-exports.cancelOrder = async (req, res) => {
-  const transaction = await sequelize.transaction();
+exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const user_id = req.user.id;
-
-    const order = await Order.findOne({
-      where: { id, user_id },
-      transaction
-    });
-
+    const { status } = req.body;
+    const order = await Order.findByPk(id);
     if (!order) {
-      await transaction.rollback();
-      return res.status(404).json({
-        success: false,
-        message: "Pesanan tidak ditemukan"
-      });
+      return res.status(404).json({ success: false, message: "Pesanan tidak ditemukan" });
     }
-
-    // Hanya bisa cancel jika status masih unpaid/pending
-    if (!['unpaid', 'pending'].includes(order.status)) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: "Pesanan hanya bisa dibatalkan jika status unpaid/pending"
-      });
-    }
-
-    await order.update({
-      status: 'cancelled',
-      payment_status: 'refunded'
-    }, { transaction });
-
-    await transaction.commit();
-
-    const car = await Layanan.findByPk(order.layanan_id);
-    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
-
-    return res.json({
-      success: true,
-      message: "Pesanan berhasil dibatalkan",
-      data: formatResponOrder(order, car, durasi)
-    });
+    order.status = status;
+    await order.save();
+    res.json({ success: true, message: "Status pesanan berhasil diupdate", data: order });
   } catch (error) {
-    await transaction.rollback();
-    console.error("Error membatalkan pesanan:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal membatalkan pesanan"
-    });
+    res.status(500).json({ success: false, message: "Gagal update status pesanan" });
   }
 };

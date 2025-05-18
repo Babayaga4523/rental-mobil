@@ -61,7 +61,7 @@ const Order = sequelize.define('Order', {
     comment: 'Path/link ke bukti pembayaran'
   },
   payment_status: {
-    type: DataTypes.ENUM('unpaid', 'paid', 'failed'),
+    type: DataTypes.ENUM('unpaid', 'paid', 'failed', 'pending_verification', 'rejected', 'refunded'),
     allowNull: false,
     defaultValue: 'unpaid',
     comment: 'status pembayaran'

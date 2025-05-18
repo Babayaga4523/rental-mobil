@@ -33,6 +33,7 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       no_telp,
       role: "user", // Default role "user"
+      status: "active", // default aktif
     });
 
     // Menghapus password sebelum mengirimkan data user
@@ -106,9 +107,9 @@ const deleteUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan." });
     }
-
-    await user.destroy();
-    res.status(200).json({ success: true, message: "User berhasil dihapus." });
+    user.status = "inactive";
+    await user.save();
+    res.status(200).json({ success: true, message: "User berhasil dinonaktifkan." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -118,9 +119,9 @@ const deleteUser = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ["password"] }, // Jangan sertakan password dalam data yang dikirim
+      attributes: { exclude: ["password"] },
     });
-    res.status(200).json({ success: true, users });
+    res.status(200).json({ success: true, data: users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -149,8 +150,7 @@ const getUserById = async (req, res) => {
 // Fungsi untuk update user
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { nama, email, no_telp } = req.body;
-
+  const { nama, email, no_telp, status, role } = req.body; // tambahkan role
   try {
     const user = await User.findByPk(id);
     if (!user) {
@@ -158,16 +158,34 @@ const updateUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan." });
     }
-
     user.name = nama || user.name;
     user.email = email || user.email;
     user.no_telp = no_telp || user.no_telp;
+    if (status) user.status = status;
+    if (role) user.role = role; // tambahkan baris ini
+    await user.save();
+    const { password: _, ...updatedUser } = user.toJSON();
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
+// Fungsi untuk mengganti password user
+const changePassword = async (req, res) => {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+  try {
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ success: false, message: "User tidak ditemukan." });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: "Password lama salah." });
+
+    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    const { password: _, ...updatedUser } = user.toJSON();
-
-    res.status(200).json({ success: true, user: updatedUser });
+    res.json({ success: true, message: "Password berhasil diubah." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -181,4 +199,5 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
+  changePassword,
 };

@@ -1,95 +1,170 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./Navbar.css"; // Add custom styles
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import "./Navbar.css";
 
 const Navbar = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${searchQuery}`);
-    }
-  };
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
 
-  // Logout handler
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location]);
+
+
+
   const handleLogout = () => {
-    // Clear token and user data from localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Redirect to login page
     navigate("/login");
   };
 
-  return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark py-3">
-      <div className="container-fluid">
-        <Link className="navbar-brand fw-bold fs-4 text-light" to="/">
-          🚗 Rental Mobil
-        </Link>
+  const navLinks = [
+    { name: "Home", path: "/", icon: "fa-home" },
+    { name: "Tentang Kami", path: "/about", icon: "fa-info-circle" },
+    { name: "Layanan", path: "/layanan", icon: "fa-car" },
 
+  ...(localStorage.getItem("token")
+    ? [{ name: "Status Pesanan", path: "/pesanan", icon: "fa-clipboard-list" }]
+    : []),
+    { name: "Testimoni", path: "/testimoni", icon: "fa-comments" },
+
+  ];
+
+  return (
+    <nav className={`navbar navbar-expand-lg navbar-dark fixed-top py-3 ${scrolled ? "navbar-scrolled" : ""} ${mobileMenuOpen ? "mobile-menu-open" : ""}`}>
+      <div className="container">
+        {/* Brand Logo with Animation */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Link className="navbar-brand d-flex align-items-center" to="/">
+            <div className="brand-logo me-2">
+              <i className="fas fa-car text-primary"></i>
+            </div>
+            <span className="brand-text">
+              <span className="fw-bold">Premium</span>Rental
+            </span>
+          </Link>
+        </motion.div>
+
+        {/* Mobile Toggle Button */}
         <button
-          className="navbar-toggler"
+          className={`navbar-toggler ${mobileMenuOpen ? "collapsed" : ""}`}
           type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
-          aria-expanded="false"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle navigation"
         >
-          <span className="navbar-toggler-icon" />
+          <span className="navbar-toggler-icon"></span>
         </button>
 
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-5">
-            {[{ name: "Home", path: "/" }, { name: "Tentang Kami", path: "/about" }, { name: "Layanan", path: "/layanan" }, { name: "Testimoni", path: "/testimoni" }].map((item, index) => (
-              <li className="nav-item" key={index}>
+        {/* Navigation Content */}
+        <div className={`collapse navbar-collapse ${mobileMenuOpen ? "show" : ""}`}>
+          <ul className="navbar-nav mx-auto mb-2 mb-lg-0">
+            {navLinks.map((item, index) => (
+              <motion.li
+                className="nav-item"
+                key={index}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
                 <Link
-                  className="nav-link"
+                  className={`nav-link position-relative ${location.pathname === item.path ? "active" : ""}`}
                   to={item.path}
-                  style={{ fontWeight: "500", transition: "all 0.3s ease" }}
                 >
+                  <i className={`fas ${item.icon} me-2 d-lg-none`}></i>
                   {item.name}
+                  {location.pathname === item.path && (
+                    <motion.span
+                      className="nav-active-indicator"
+                      layoutId="navActive"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
                 </Link>
-              </li>
+              </motion.li>
             ))}
-
-            {/* Conditional Login/Logout */}
-            {!localStorage.getItem("token") ? (
-              <li className="nav-item">
-                <Link className="nav-link" to="/login">
-                  Login
-                </Link>
-              </li>
-            ) : (
-              <li className="nav-item">
-                <button
-                  className="nav-link btn btn-link text-danger"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </li>
-            )}
           </ul>
 
-          {/* Search Form */}
-          <form className="d-flex ms-lg-5" onSubmit={handleSearch}>
-            <input
-              className="form-control me-2"
-              type="search"
-              placeholder="Cari mobil..."
-              aria-label="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ borderRadius: "30px", width: "300px" }}
-            />
-            <button className="btn btn-outline-light" type="submit" style={{ borderRadius: "30px" }}>
-              Cari
-            </button>
-          </form>
+          {/* Auth Section */}
+          <div className="d-flex align-items-center auth-section">
+            {!localStorage.getItem("token") ? (
+              <>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/login" className="btn btn-outline-light btn-sm rounded-pill me-2">
+                    <i className="fas fa-sign-in-alt me-1"></i> Login
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link to="/register" className="btn btn-primary btn-sm rounded-pill">
+                    <i className="fas fa-user-plus me-1"></i> Daftar
+                  </Link>
+                </motion.div>
+              </>
+            ) : (
+              <div className="dropdown">
+  <button
+    className="btn btn-link text-white dropdown-toggle d-flex align-items-center"
+    type="button"
+    id="userDropdown"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+  >
+    <div className="user-avatar me-2">
+      <i className="fas fa-user-circle"></i>
+    </div>
+    <span className="d-none d-lg-inline">
+      {JSON.parse(localStorage.getItem("user"))?.name || "My Account"}
+    </span>
+  </button>
+  <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+    <li>
+      <Link className="dropdown-item" to="/dashboard">
+        <i className="fas fa-tachometer-alt me-2"></i> Dashboard
+      </Link>
+    </li>
+    <li>
+      <Link className="dropdown-item" to="/profile">
+        <i className="fas fa-user me-2"></i> Profile
+      </Link>
+    </li>
+    <li>
+      <hr className="dropdown-divider" />
+    </li>
+    <li>
+      <button className="dropdown-item text-danger" onClick={handleLogout}>
+        <i className="fas fa-sign-out-alt me-2"></i> Logout
+      </button>
+    </li>
+  </ul>
+</div>
+            )}
+          </div>
+
+
         </div>
       </div>
     </nav>

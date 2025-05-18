@@ -19,6 +19,9 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { format, addDays, isBefore } from "date-fns";
 import PropTypes from "prop-types";
+import "../style/BookingPage.css";
+  
+const BACKEND_URL = "http://localhost:3000";
 
 const Booking = () => {
   const navigate = useNavigate();
@@ -34,11 +37,10 @@ const Booking = () => {
   } = location.state || {};
 
   const [formData, setFormData] = useState({
-    car_id: carId,
+    layanan_id: carId,
     pickup_date: "",
     return_date: "",
     payment_method: "bank_transfer",
-    payment_status: "unpaid",
     additional_notes: "",
     total_price: totalPrice,
     payment_proof: null,
@@ -156,33 +158,32 @@ const Booking = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!validateForm()) {
       toast.error("Please fill the form correctly");
       return;
     }
-  
+
     setIsLoading(true);
     setIsUploading(true);
-  
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("No authentication token found");
       }
-  
+
       const formDataToSend = new FormData();
-      formDataToSend.append('car_id', formData.car_id);
+      formDataToSend.append('layanan_id', formData.layanan_id);
       formDataToSend.append('pickup_date', formData.pickup_date);
       formDataToSend.append('return_date', formData.return_date);
       formDataToSend.append('payment_method', formData.payment_method);
-      formDataToSend.append('payment_status', formData.payment_status);
       formDataToSend.append('additional_notes', formData.additional_notes);
       formDataToSend.append('total_price', formData.total_price);
       if (formData.payment_proof) {
         formDataToSend.append('payment_proof', formData.payment_proof);
       }
-  
+
       const response = await axios.post(
         "http://localhost:3000/api/orders",
         formDataToSend,
@@ -196,16 +197,18 @@ const Booking = () => {
               (progressEvent.loaded * 100) / progressEvent.total
             );
             setUploadProgress(percentCompleted);
-          },
+          },  
         }
       );
       console.log(response.data); // Debugging: log response untuk memastikan data dikirim dengan benar
-      navigate(`/orders/${response.data.data.id}/receipt`, {
-        state: {
-          order: response.data.data, // Data pesanan yang diterima dari backend
-          car: { id: carId, name: carName, image, price }, // Data mobil untuk halaman receipt
-        },
-      });
+
+      // Ambil orderId dari response backend
+      const orderId = response.data?.data?.id 
+      if (!orderId) {
+        toast.error("Gagal mendapatkan ID pesanan dari server");
+        return;
+      }
+      navigate(`/orders/${orderId}/receipt`);
     } catch (error) {
       console.error("Order creation error:", error);
       let errorMessage = "Failed to create order";
@@ -254,12 +257,12 @@ const Booking = () => {
   }
 
   return (
-    <div className="booking-page bg-light py-5">
+    <div className="booking-page-root bg-light py-5">
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-10">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-primary text-white py-3">
+            <div className="booking-page-card border-0 shadow-sm">
+              <div className="booking-page-card-header bg-primary text-white py-3">
                 <div className="d-flex align-items-center">
                   <button 
                     className="btn btn-sm btn-outline-light me-3"
@@ -274,16 +277,22 @@ const Booking = () => {
                 </div>
               </div>
 
-              <div className="card-body p-4">
+              <div className="booking-page-card-body p-4">
                 <div className="row g-4">
                   {/* Summary Section */}
                   <div className="col-lg-5">
-                    <div className="card h-100 border-0 shadow-sm">
-                      <div className="card-img-top ratio ratio-16x9 bg-light">
+                    <div className="booking-page-summary card h-100 border-0 shadow-sm">
+                      <div className="booking-page-card-img-top ratio ratio-16x9 bg-light">
                         <img
-                          src={image || "/images/default-car.jpg"}
+                          src={
+                            image
+                              ? image.startsWith("http")
+                                ? image
+                                : BACKEND_URL + image
+                              : "/images/default-car.jpg"
+                          }
                           alt={carName}
-                          className="img-cover"
+                          className="booking-page-img-cover"
                         />
                       </div>
                       <div className="card-body">

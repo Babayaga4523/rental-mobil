@@ -2,13 +2,18 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Layanan = sequelize.define('Layanan', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   nama: {
     type: DataTypes.STRING,
     allowNull: false,
   },
   deskripsi: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
   },
   harga: {
     type: DataTypes.INTEGER,
@@ -16,13 +21,18 @@ const Layanan = sequelize.define('Layanan', {
   },
   gambar: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true, // opsional
   },
   kategori: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'Umum', // bisa diatur default, misalnya 'Umum'
+    defaultValue: 'Umum',
   },
+  status: {
+    type: DataTypes.ENUM('available', 'unavailable'),
+    allowNull: false,
+    defaultValue: 'available'
+  }
 }, 
 {
   tableName: 'layanan',

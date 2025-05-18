@@ -34,5 +34,11 @@ const authMiddleware = async (req, res, next) => {
     res.status(401).json({ success: false, message: "Token tidak valid" });
   }
 };
-
-module.exports = authMiddleware;
+const checkAdmin = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: "Akses hanya untuk admin" });
+  }
+};
+module.exports = {authMiddleware,checkAdmin};

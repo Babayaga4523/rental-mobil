@@ -4,6 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import "../style/DetailMobilPage.css";
+
+const BACKEND_URL = "http://localhost:3000";
 
 const CarDetail = () => {
   const { id } = useParams();
@@ -21,26 +24,23 @@ const CarDetail = () => {
       easing: 'ease-in-out'
     });
 
-    
-      fetch(`http://localhost:3000/api/layanan/${id}`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Mobil tidak ditemukan");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setCar(data);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error fetching car data:", error);
-          setError(error.message);
-          setLoading(false);
-        });
-    }, [id]);
-  
-    
+    fetch(`${BACKEND_URL}/api/layanan/${id}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Mobil tidak ditemukan");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setCar(data.data); // <-- gunakan data.data
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching car data:", error);
+        setError(error.message);
+        setLoading(false);
+      });
+  }, [id]);
 
   if (loading) {
     return (
@@ -102,23 +102,23 @@ const CarDetail = () => {
   };
 
   return (
-    <div className="bg-light">
+    <div className="detail-mobil-root bg-light">
       {/* Hero Section */}
-      <div className="bg-dark text-white py-5">
+      <div className="detail-mobil-hero bg-dark text-white py-5">
         <div className="container">
           <button 
             onClick={() => navigate("/layanan")}
-            className="btn btn-outline-light mb-4 rounded-pill"
+            className="btn btn-outline-light mb-4 rounded-pill detail-mobil-back-btn"
             data-aos="fade-right"
           >
             <i className="fas fa-arrow-left me-2"></i> Kembali
           </button>
-          <h1 className="display-4 fw-bold mb-3" data-aos="fade-up">{car.nama || 'Mobil Premium'}</h1>
+          <h1 className="display-4 fw-bold mb-3 detail-mobil-title" data-aos="fade-up">{car.nama || 'Mobil Premium'}</h1>
           <div className="d-flex align-items-center" data-aos="fade-up" data-aos-delay="100">
-            <span className="bg-primary px-3 py-1 rounded-pill me-3">
+            <span className="bg-primary px-3 py-1 rounded-pill me-3 detail-mobil-category">
               {car.kategori || 'Standard'}
             </span>
-            <div className="rating">
+            <div className="detail-mobil-rating">
               {[...Array(5)].map((_, i) => (
                 <i 
                   key={i}
@@ -131,18 +131,24 @@ const CarDetail = () => {
       </div>
 
       {/* Main Content */}
-      <div className="container py-5">
+      <div className="container py-5 detail-mobil-main">
         <div className="row g-5">
           {/* Car Images */}
           <div className="col-lg-7">
             <div 
-              className="card border-0 shadow-lg rounded-4 overflow-hidden mb-4"
+              className="card border-0 shadow-lg rounded-4 overflow-hidden mb-4 detail-mobil-image-card"
               data-aos="zoom-in"
             >
               <img
-                src={car.gambar || '/images/default-car.jpg'}
+                src={
+                  car.gambar
+                    ? car.gambar.startsWith("http")
+                      ? car.gambar
+                      : BACKEND_URL + car.gambar
+                    : '/images/default-car.jpg'
+                }
                 alt={car.nama || 'Mobil'}
-                className="img-fluid w-100"
+                className="img-fluid w-100 detail-mobil-image"
                 style={{height: '450px', objectFit: 'cover'}}
                 onError={(e) => {
                   e.target.src = '/images/default-car.jpg';
@@ -152,14 +158,14 @@ const CarDetail = () => {
             
             {/* Tabs */}
             <div 
-              className="card border-0 shadow-sm rounded-4 overflow-hidden"
+              className="card border-0 shadow-sm rounded-4 overflow-hidden detail-mobil-tabs"
               data-aos="fade-up"
             >
-              <div className="card-header bg-white">
+              <div className="card-header bg-white detail-mobil-tabs-header">
                 <ul className="nav nav-tabs card-header-tabs">
                   <li className="nav-item">
                     <button
-                      className={`nav-link ${activeTab === 'description' ? 'active' : ''}`}
+                      className={`nav-link ${activeTab === 'description' ? 'active' : ''} detail-mobil-tab-link`}
                       onClick={() => setActiveTab('description')}
                     >
                       <i className="fas fa-info-circle me-2"></i> Deskripsi
@@ -167,20 +173,20 @@ const CarDetail = () => {
                   </li>
                 </ul>
               </div>
-              <div className="card-body">
+              <div className="card-body detail-mobil-tabs-body">
                 {activeTab === 'description' && (
                   <div>
-                    <h5 className="fw-bold" data-aos="fade-up">Tentang Mobil Ini</h5>
-                    <p className="lead" data-aos="fade-up" data-aos-delay="100">
+                    <h5 className="fw-bold detail-mobil-description-title" data-aos="fade-up">Tentang Mobil Ini</h5>
+                    <p className="lead detail-mobil-description-text" data-aos="fade-up" data-aos-delay="100">
                       {car.deskripsi || 'Mobil premium dengan fasilitas lengkap dan nyaman untuk perjalanan Anda.'}
                     </p>
-                    <div className="mt-4">
-                      <h6 className="fw-bold" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
-                      <div className="row mt-3">
+                    <div className="mt-4 detail-mobil-features">
+                      <h6 className="fw-bold detail-mobil-features-title" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
+                      <div className="row mt-3 detail-mobil-features-list">
                         {['AC', 'Audio', 'Kamera Mundur', 'GPS', 'Bluetooth', 'USB Port'].map((feature, i) => (
                           <div 
                             key={i} 
-                            className="col-md-6 mb-2"
+                            className="col-md-6 mb-2 detail-mobil-feature-item"
                             data-aos="fade-up"
                             data-aos-delay={200 + (i * 50)}
                           >
@@ -199,18 +205,18 @@ const CarDetail = () => {
           {/* Booking Section */}
           <div className="col-lg-5">
             <div 
-              className="card border-0 shadow-lg rounded-4 sticky-top" 
+              className="card border-0 shadow-lg rounded-4 sticky-top detail-mobil-booking-card" 
               style={{top: '20px'}}
               data-aos="fade-left"
             >
-              <div className="card-header bg-primary text-white py-3 rounded-top-4">
-                <h4 className="mb-0 fw-bold">
+              <div className="card-header bg-primary text-white py-3 rounded-top-4 detail-mobil-booking-header">
+                <h4 className="mb-0 fw-bold detail-mobil-booking-title">
                   <i className="fas fa-tag me-2"></i> Harga Sewa
                 </h4>
               </div>
-              <div className="card-body">
+              <div className="card-body detail-mobil-booking-body">
                 <div 
-                  className="d-flex justify-content-between align-items-center mb-3"
+                  className="d-flex justify-content-between align-items-center mb-3 detail-mobil-price-per-day"
                   data-aos="fade-up"
                 >
                   <span className="text-muted">Harga per hari:</span>
@@ -218,27 +224,27 @@ const CarDetail = () => {
                 </div>
                 
                 <div 
-                  className="mb-4"
+                  className="mb-4 detail-mobil-duration"
                   data-aos="fade-up"
                   data-aos-delay="100"
                 >
                   <label className="form-label fw-bold">Durasi Sewa (hari):</label>
                   <div className="input-group">
                     <button 
-                      className="btn btn-outline-secondary"
+                      className="btn btn-outline-secondary detail-mobil-duration-decrease"
                       onClick={() => setDays(Math.max(1, days - 1))}
                     >
                       <i className="fas fa-minus"></i>
                     </button>
                     <input
                       type="number"
-                      className="form-control text-center"
+                      className="form-control text-center detail-mobil-duration-input"
                       min="1"
                       value={days}
                       onChange={(e) => setDays(Math.max(1, Number(e.target.value)))}
                     />
                     <button 
-                      className="btn btn-outline-secondary"
+                      className="btn btn-outline-secondary detail-mobil-duration-increase"
                       onClick={() => setDays(days + 1)}
                     >
                       <i className="fas fa-plus"></i>
@@ -248,7 +254,7 @@ const CarDetail = () => {
                 
                 {diskon > 0 && (
                   <div 
-                    className="alert alert-success py-2 mb-3"
+                    className="alert alert-success py-2 mb-3 detail-mobil-discount"
                     data-aos="zoom-in"
                     data-aos-delay="150"
                   >
@@ -262,7 +268,7 @@ const CarDetail = () => {
                 )}
                 
                 <div 
-                  className="bg-light p-3 rounded-3 mb-4"
+                  className="bg-light p-3 rounded-3 mb-4 detail-mobil-total-price"
                   data-aos="fade-up"
                   data-aos-delay="200"
                 >
@@ -276,7 +282,7 @@ const CarDetail = () => {
                 </div>
                 
                 <button 
-                  className="btn btn-primary btn-lg w-100 py-3 fw-bold mb-3"
+                  className="btn btn-primary btn-lg w-100 py-3 fw-bold mb-3 detail-mobil-book-now"
                   onClick={handleBooking}
                   data-aos="zoom-in"
                   data-aos-delay="250"
@@ -284,7 +290,7 @@ const CarDetail = () => {
                   <i className="fas fa-calendar-check me-2"></i> Pesan Sekarang
                 </button>
                 
-                <div className="text-center">
+                <div className="text-center detail-mobil-payment-info">
                   <small className="text-muted">
                     <i className="fas fa-lock me-1"></i> Pembayaran aman dan terjamin
                   </small>
