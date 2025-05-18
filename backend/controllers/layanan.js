@@ -1,61 +1,78 @@
-const LayananModel = require('../models/layanan');
+const Layanan = require('../models/layanan');
 
-// GET semua layanan
 exports.getAll = async (req, res) => {
   try {
-    const layanan = await LayananModel.findAll();
-    res.json(layanan);
+    const layanan = await Layanan.findAll();
+    res.json({ success: true, data: layanan });
   } catch (err) {
-    console.error('Error fetching layanan:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// GET layanan berdasarkan ID
 exports.getById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const layanan = await LayananModel.findByPk(id);
-    
-    if (!layanan) {
-      return res.status(404).json({ message: 'Layanan tidak ditemukan' });
-    }
-    
-    res.json(layanan);
+    const layanan = await Layanan.findByPk(req.params.id);
+    if (!layanan) return res.status(404).json({ message: 'Layanan tidak ditemukan' });
+    res.json({ success: true, data: layanan });
   } catch (err) {
-    console.error('Error fetching layanan by ID:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// POST buat tambah layanan baru
 exports.create = async (req, res) => {
   try {
-    const layanan = await LayananModel.create(req.body);
-    res.status(201).json(layanan);
+    const { nama, kategori, harga, status, deskripsi } = req.body;
+    let gambar = null;
+    if (req.file) {
+      gambar = `/uploads/${req.file.filename}`;
+    }
+    if (!nama || !kategori || !harga) {
+      return res.status(400).json({ message: "Nama, kategori, dan harga wajib diisi" });
+    }
+    const layanan = await Layanan.create({
+      nama,
+      kategori,
+      harga,
+      status: status || 'available',
+      deskripsi: deskripsi || '',
+      gambar
+    });
+    res.status(201).json({ success: true, data: layanan });
   } catch (err) {
-    console.error('Error creating layanan:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// PUT untuk update kategori layanan
-exports.updateKategori = async (req, res) => {
+exports.update = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { kategori } = req.body;
-
-    const layanan = await LayananModel.findByPk(id);
-    if (!layanan) {
-      return res.status(404).json({ message: 'Layanan tidak ditemukan' });
+    const layanan = await Layanan.findByPk(req.params.id);
+    if (!layanan) return res.status(404).json({ message: 'Layanan tidak ditemukan' });
+    const { nama, kategori, harga, status, deskripsi } = req.body;
+    let gambar = layanan.gambar;
+    if (req.file) {
+      gambar = `/uploads/${req.file.filename}`;
     }
-
-    layanan.kategori = kategori;
-    await layanan.save();
-
-    res.json({ message: 'Kategori berhasil diupdate', layanan });
+    await layanan.update({
+      nama: nama ?? layanan.nama,
+      kategori: kategori ?? layanan.kategori,
+      harga: harga ?? layanan.harga,
+      status: status ?? layanan.status,
+      deskripsi: deskripsi ?? layanan.deskripsi,
+      gambar
+    });
+    res.json({ success: true, data: layanan });
   } catch (err) {
-    console.error('Error updating kategori:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.delete = async (req, res) => {
+  try {
+    const layanan = await Layanan.findByPk(req.params.id);
+    if (!layanan) return res.status(404).json({ message: 'Layanan tidak ditemukan' });
+    await layanan.destroy();
+    res.json({ success: true, message: "Layanan berhasil dihapus" });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };

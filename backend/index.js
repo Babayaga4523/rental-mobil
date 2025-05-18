@@ -4,10 +4,6 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const sequelize = require("./config/database");
-const Layanan = require("./models/layanan");
-const Order = require("./models/order");
-const User = require("./models/user");
-const models = require("./models/user");
 const db = {};
 const app = express();
 
@@ -27,7 +23,6 @@ Object.keys(db).forEach(modelName => {
 // Middleware
 app.use(express.json());
 app.use(cors());
-// Tambahkan ini:
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Import routes

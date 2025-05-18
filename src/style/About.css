@@ -43,28 +43,29 @@
 /* ================ */
 /* HERO SECTION */
 /* ================ */
+/* HERO SECTION */
 .about-hero {
   position: relative;
-  height: 100vh;
-  min-height: 800px;
-  background-color: #000;
+  min-height: 90vh;
+  background: linear-gradient(rgba(13, 30, 70, 0.85), rgba(13, 30, 70, 0.85)), 
+              url('') no-repeat center center;
   background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  padding-top: 80px;
   display: flex;
   align-items: center;
-  color: white;
-  text-align: center;
+  color: #fff;
+  text-align: left;
 }
 
 .hero-gradient-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  
+  right: 0;
+  bottom: 0;
+
   z-index: 1;
+  opacity: 1;
 }
 
 .hero-content {
@@ -76,19 +77,15 @@
   font-size: 3.5rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.hero-title .highlight {
-  color: #ffcc00;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 .hero-subtitle {
-  font-size: 1.3rem;
-  max-width: 700px;
-  margin: 0 auto 2.5rem;
+  font-size: 1.25rem;
   opacity: 0.9;
-  line-height: 1.6;
+  color: #fff;
+  margin-bottom: 2rem;
 }
 
 .hero-cta .btn {

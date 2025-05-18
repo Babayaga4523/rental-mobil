@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import "../style/Login.css";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -54,7 +55,7 @@ const Login = () => {
 
       // Redirect berdasarkan role
       const redirectPath = location.state?.from ||
-        (data.user.role === 'admin' ? '/admin/dashboard' : '/home');
+        (data.user.role === 'admin' ? '/admin' : '/home');
       
       navigate(redirectPath, {
         state: { 
@@ -86,7 +87,8 @@ const Login = () => {
       <ToastContainer />
       <div className="login-card">
         <div className="logo-container">
-          <img src="/assets/logo.png" alt="Logo" className="logo" />
+          <img src="/assets/logo-pawon.png" alt="Logo" className="logo" />
+          <div className="app-name">Pawon</div>
         </div>
 
         <div className="header">
@@ -94,11 +96,12 @@ const Login = () => {
           <p>Masuk untuk melanjutkan ke akun Anda</p>
         </div>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleLogin} className="login-form">
           <div className="form-group">
-            <label>Alamat Email</label>
+            <label htmlFor="email">Alamat Email</label>
             <input
               type="email"
+              id="email"
               placeholder="contoh@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -107,10 +110,11 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <div className="password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
+                id="password"
                 placeholder="Masukkan password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -119,15 +123,22 @@ const Login = () => {
               />
               <button
                 type="button"
+                className="password-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
               >
-                {showPassword ? "Hide" : "Show"}
+                <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}></i>
               </button>
             </div>
           </div>
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Memproses..." : "Masuk Sekarang"}
+          <button type="submit" className="login-btn" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner"></span>
+                Memproses...
+              </>
+            ) : "Masuk Sekarang"}
           </button>
         </form>
 

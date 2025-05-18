@@ -1,0 +1,207 @@
+/* Layanan.css */
+
+/* Base Styles */
+.layanan-page-root {
+  font-family: 'Poppins', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Hero Section */
+.layanan-page-hero {
+  height: 80vh;
+  min-height: 650px;
+  background-size: cover;
+  background-position: center;
+}
+
+.layanan-page-hero-overlay {
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.9) 0%, rgba(39, 53, 147, 0.85) 50%, rgba(57, 73, 171, 0.8) 100%);
+}
+
+.layanan-page-hero-title {
+  font-size: 3.5rem;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.layanan-page-hero-title .text-gradient {
+  background: linear-gradient(90deg, #64b5f6 0%, #bbdefb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.layanan-page-hero-subtitle {
+  opacity: 0.9;
+}
+
+/* Search Section */
+.layanan-page-search-section {
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.layanan-page-search-box {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.layanan-page-search-box input {
+  padding: 0.75rem 1rem;
+}
+
+.layanan-page-clear-search {
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}
+
+.layanan-page-filter-btn {
+  position: relative;
+  border: 1px solid #dee2e6;
+  background-color: white;
+  color: #495057;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.layanan-page-filter-btn.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.layanan-page-filter-indicator {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: white;
+}
+
+/* Car Cards */
+.layanan-page-car-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.layanan-page-car-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.layanan-page-car-image {
+  height: 200px;
+  overflow: hidden;
+}
+
+.layanan-page-car-image img {
+  transition: transform 0.5s ease;
+}
+
+.layanan-page-car-card:hover .layanan-page-car-image img {
+  transform: scale(1.05);
+}
+
+.layanan-page-car-badge .badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+.layanan-page-book-btn {
+  transition: all 0.3s ease;
+}
+
+/* Error & No Results */
+.layanan-page-error-card, .layanan-page-no-results-card {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.layanan-page-error-icon, .layanan-page-no-results-icon {
+  font-size: 3rem;
+}
+
+.layanan-page-error-title, .layanan-page-no-results-title {
+  margin-bottom: 1rem;
+}
+
+.layanan-page-error-message, .layanan-page-no-results-message {
+  margin-bottom: 1.5rem;
+}
+
+/* CTA Section */
+.layanan-page-cta-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: none;
+}
+
+.layanan-page-cta-title {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.layanan-page-cta-text {
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+.layanan-page-cta-btn {
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .layanan-page-hero-title {
+    font-size: 2.8rem;
+  }
+  
+  .layanan-page-hero {
+    height: auto;
+    padding: 120px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .layanan-page-hero-title {
+    font-size: 2.2rem;
+  }
+  
+  .layanan-page-hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .filter-buttons {
+    justify-content: flex-start !important;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .layanan-page-hero-title {
+    font-size: 1.8rem;
+  }
+  
+  .section-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .section-header .lead {
+    font-size: 1rem;
+  }
+  
+  .btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+  
+  .layanan-page-cta-card {
+    text-align: center;
+  }
+  
+  .layanan-page-cta-btn {
+    margin-top: 1rem;
+    width: 100%;
+  }
+}

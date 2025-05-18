@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { motion } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../style/Testimoni.css";
 
 const Testimoni = () => {
@@ -18,7 +19,11 @@ const Testimoni = () => {
   const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
-    AOS.init({ duration: 800, once: true });
+    AOS.init({ 
+      duration: 800, 
+      once: true,
+      easing: 'ease-in-out-quad'
+    });
     fetchTestimoni();
   }, []);
 
@@ -105,39 +110,46 @@ const Testimoni = () => {
 
   return (
     <div className="testimoni-page">
-     {/* Hero Section */}
-<section className="testimoni-hero">
- 
-  <div className="container h-100">
-    <div className="row h-100 align-items-center">
-      <div className="col-lg-8 mx-auto text-center">
-        <motion.h1
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="hero-title"
-        >
-          Bagikan Pengalaman <span className="highlight">Anda</span>
-        </motion.h1>
-        <p className="hero-subtitle">
-          Ceritakan pengalaman menyewa mobil dengan kami dan bantu kami menjadi lebih baik
-        </p>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="btn btn-primary btn-lg rounded-pill px-4 py-2 mt-3"
-          onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
-        >
-          <i className="fas fa-pen me-2"></i>Tulis Testimoni
-        </motion.button>
-      </div>
-    </div>
-  </div>
-</section>
-
+      {/* Hero Section */}
+      <section className="testimoni-hero position-relative overflow-hidden">
+        <div className="hero-overlay"></div>
+        <div className="container h-100 position-relative z-index-1">
+          <div className="row h-100 align-items-center">
+            <div className="col-lg-8 mx-auto text-center">
+              <motion.h1
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                className="hero-title display-3 fw-bold mb-4 text-white"
+                data-aos="fade-up"
+              >
+                Bagikan <span className="text-gradient">Pengalaman</span> Anda
+              </motion.h1>
+              <p 
+                className="hero-subtitle lead text-light opacity-75 mb-5 mx-auto" 
+                style={{ maxWidth: "600px" }}
+                data-aos="fade-up"
+                data-aos-delay="100"
+              >
+                Ceritakan pengalaman menyewa mobil dengan kami dan bantu kami menjadi lebih baik
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow"
+                onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
+                data-aos="fade-up"
+                data-aos-delay="200"
+              >
+                <i className="fas fa-pen me-2"></i>Tulis Testimoni
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Testimoni Form */}
-      <section id="testimoni-form" className="py-5 bg-light">
+      <section id="testimoni-form" className="py-7">
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-lg-8">
@@ -145,15 +157,16 @@ const Testimoni = () => {
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="card border-0 shadow rounded-4 overflow-hidden"
+                className="card border-0 shadow-lg rounded-4 overflow-hidden"
+                data-aos="fade-up"
               >
-                <div className="card-header bg-primary text-white py-3">
-                  <h2 className="mb-0 text-center">
-                    <i className="fas fa-edit me-2"></i>
+                <div className="card-header bg-primary text-white py-4">
+                  <h2 className="mb-0 text-center fw-bold">
+                    <i className="fas fa-edit me-3"></i>
                     Form Testimoni
                   </h2>
                 </div>
-                <div className="card-body p-4 p-md-5">
+                <div className="card-body p-5">
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                       <label htmlFor="nama" className="form-label fw-semibold">
@@ -161,7 +174,7 @@ const Testimoni = () => {
                       </label>
                       <input
                         type="text"
-                        className="form-control form-control-lg rounded-pill"
+                        className="form-control form-control-lg rounded-3"
                         id="nama"
                         placeholder="Nama lengkap"
                         value={nama}
@@ -191,10 +204,12 @@ const Testimoni = () => {
                     </div>
 
                     <div className="d-grid">
-                      <button
+                      <motion.button
                         type="submit"
-                        className="btn btn-primary btn-lg rounded-pill fw-bold py-3"
+                        className="btn btn-primary btn-lg rounded-pill fw-bold py-3 shadow"
                         disabled={loading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         {loading ? (
                           <>
@@ -207,7 +222,7 @@ const Testimoni = () => {
                             Kirim Testimoni
                           </>
                         )}
-                      </button>
+                      </motion.button>
                     </div>
                   </form>
                 </div>
@@ -218,14 +233,14 @@ const Testimoni = () => {
       </section>
 
       {/* Testimoni List */}
-      <section className="testimoni-list py-5">
+      <section className="testimoni-list py-7 bg-light">
         <div className="container">
-          <div className="section-header text-center mb-5">
-            <h2 className="section-title">
-              <i className="fas fa-quote-left text-primary me-2"></i>
+          <div className="section-header text-center mb-6" data-aos="fade-up">
+            <h2 className="section-title display-5 fw-bold mb-3">
+              <i className="fas fa-quote-left text-primary me-3"></i>
               Apa Kata Pelanggan Kami
             </h2>
-            <p className="section-subtitle">
+            <p className="section-subtitle lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
               Testimoni jujur dari pelanggan yang telah menggunakan layanan kami
             </p>
           </div>
@@ -241,17 +256,18 @@ const Testimoni = () => {
                 >
                   <motion.div
                     whileHover={{ y: -10 }}
-                    className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
+                    className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden bg-white"
                   >
                     <div className="card-body p-4 d-flex flex-column">
                       <div className="mb-3">
                         {renderRating(item.rating)}
                       </div>
-                      <p className="card-text flex-grow-1 mb-4 fst-italic">
-                        "{item.pesan}"
+                      <p className="card-text flex-grow-1 mb-4 fst-italic position-relative">
+                        <i className="fas fa-quote-left text-primary opacity-25 fs-1 position-absolute top-0 start-0"></i>
+                        {item.pesan}
                       </p>
-                      <div className="d-flex align-items-center">
-                        <div className="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                      <div className="d-flex align-items-center mt-auto">
+                        <div className="avatar bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style={{ width: "50px", height: "50px" }}>
                           <span className="fs-5 fw-bold">{item.nama.charAt(0).toUpperCase()}</span>
                         </div>
                         <div className="ms-3">
@@ -270,17 +286,18 @@ const Testimoni = () => {
                 </div>
               ))
             ) : (
-              <div className="col-12 text-center py-5">
-                <div className="alert alert-info">
-                  <i className="fas fa-info-circle me-2"></i>
-                  Belum ada testimoni. Jadilah yang pertama!
+              <div className="col-12 text-center py-5" data-aos="fade-up">
+                <div className="alert alert-info d-inline-flex align-items-center py-3 px-4 rounded-pill">
+                  <i className="fas fa-info-circle me-3 fs-4"></i>
+                  <span className="fw-medium">Belum ada testimoni. Jadilah yang pertama!</span>
                 </div>
               </div>
             )}
           </div>
         </div>
       </section>
-      <ToastContainer />
+      
+      <ToastContainer position="top-center" />
     </div>
   );
 };
