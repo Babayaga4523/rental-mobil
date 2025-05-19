@@ -142,11 +142,6 @@ const Navbar = () => {
   </button>
   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
     <li>
-      <Link className="dropdown-item" to="/dashboard">
-        <i className="fas fa-tachometer-alt me-2"></i> Dashboard
-      </Link>
-    </li>
-    <li>
       <Link className="dropdown-item" to="/profile">
         <i className="fas fa-user me-2"></i> Profile
       </Link>

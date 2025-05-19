@@ -10,7 +10,7 @@ const API_URL = "http://localhost:3000/api";
 const BACKEND_URL = "http://localhost:3000"; // tambahkan di atas
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const CarsPage = () => {
+const CarsPage = ({ darkMode, toggleDarkMode }) => {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -25,7 +25,6 @@ const CarsPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
-  const [darkMode, setDarkMode] = useState(false);
   const [formImage, setFormImage] = useState(null); // Tambahkan state untuk file gambar
 
   const token = localStorage.getItem("token");
@@ -193,9 +192,6 @@ const CarsPage = () => {
       showToast("Gagal menyimpan data mobil!", "danger");
     }
   };
-
-  // Dark mode toggle
-  const toggleDarkMode = () => setDarkMode((d) => !d);
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>

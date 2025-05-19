@@ -9,7 +9,7 @@ import { CSVLink } from "react-csv";
 const API_URL = "http://localhost:3000/api";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const UsersPage = () => {
+const UsersPage = ({ darkMode, toggleDarkMode }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -21,7 +21,6 @@ const UsersPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
-  const [darkMode, setDarkMode] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
 
@@ -172,9 +171,6 @@ const UsersPage = () => {
       showToast("Gagal update user!", "danger");
     }
   };
-
-  // Dark mode toggle
-  const toggleDarkMode = () => setDarkMode((d) => !d);
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>

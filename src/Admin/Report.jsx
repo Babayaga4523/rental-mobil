@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Table, Spinner, Alert, Button, Badge, Row, Col, Form, Modal } from "react-bootstrap";
-import { FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch } from "react-icons/fa";
+import { FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch, FaSun, FaMoon } from "react-icons/fa";
 import { CSVLink } from "react-csv";
 import moment from "moment";
 import { Bar } from "react-chartjs-2";
 import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement } from "chart.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement);
 
 
 const API_URL = "http://localhost:3000/api";
 
-const AdminReport = ({ darkMode }) => {
+const AdminReport = ({ darkMode, toggleDarkMode }) => {
   const [orders, setOrders] = useState([]);
   const [cars, setCars] = useState([]);
   const [users, setUsers] = useState([]);
@@ -209,36 +211,146 @@ const AdminReport = ({ darkMode }) => {
   };
 
   // Export PDF
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
+  const handleExportPDF = async () => {
+    const doc = new jsPDF("p", "mm", "a4");
+    let y = 10;
+
     doc.setFontSize(16);
-    doc.text(`Laporan Penjualan & Statistik Tahun ${year}`, 14, 20);
+    doc.text(`Laporan Penjualan & Statistik Tahun ${year}`, 14, y);
+    y += 10;
+
+    // Rekap Penjualan per Bulan
     doc.setFontSize(12);
-    doc.setTextColor(100);
-
-    const tableColumn = ["Bulan", "Jumlah Pesanan", "Total Omzet"];
-    const tableRows = [];
-
-    monthlyReport.forEach(row => {
-      const rowData = [
+    doc.text("Rekap Penjualan per Bulan", 14, y);
+    y += 6;
+    autoTable(doc, {
+      head: [["Bulan", "Jumlah Pesanan", "Total Omzet"]],
+      body: monthlyReport.map(row => [
         row.month,
         row.orderCount.toString(),
         "Rp " + row.omzet.toLocaleString("id-ID")
-      ];
-      tableRows.push(rowData);
-    });
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
+      ]),
+      startY: y,
       styles: { fontSize: 10 },
       headStyles: { fillColor: [41, 128, 185] },
       alternateRowStyles: { fillColor: [240, 240, 240] },
-      margin: { top: 10 }
+      margin: { left: 14, right: 14 }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Grafik Penjualan per Bulan
+    const chart1 = document.querySelector("#chart-penjualan canvas");
+    if (chart1) {
+      const imgData = await html2canvas(chart1).then(c => c.toDataURL("image/png"));
+      doc.text("Grafik Penjualan per Bulan", 14, y);
+      y += 4;
+      doc.addImage(imgData, "PNG", 14, y, 180, 40);
+      y += 45;
+    }
+
+    // Statistik User Baru
+    doc.text("Statistik User Baru per Bulan", 14, y);
+    y += 6;
+    autoTable(doc, {
+      head: [["Bulan", "User Baru"]],
+      body: months.map((m, i) => [m, userMonthly[i]]),
+      startY: y,
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Grafik User Baru
+    const chart2 = document.querySelector("#chart-user canvas");
+    if (chart2) {
+      const imgData = await html2canvas(chart2).then(c => c.toDataURL("image/png"));
+      doc.text("Grafik User Baru", 14, y);
+      y += 4;
+      doc.addImage(imgData, "PNG", 14, y, 180, 40);
+      y += 45;
+    }
+
+    // Mobil Terlaris
+    doc.text("Mobil Terlaris", 14, y);
+    y += 6;
+    autoTable(doc, {
+      head: [["Nama Mobil", "Jumlah Disewa", "Omzet"]],
+      body: carSalesArr.map(car => [
+        car.car,
+        car.count,
+        "Rp" + car.omzet.toLocaleString("id-ID")
+      ]),
+      startY: y,
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 }
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // Grafik Mobil Terlaris
+    const chart3 = document.querySelector("#chart-mobil canvas");
+    if (chart3) {
+      // Buat canvas dengan background putih
+      const imgData = await html2canvas(chart3, { backgroundColor: "#fff" }).then(c => c.toDataURL("image/png"));
+      doc.text("Grafik Mobil Terlaris", 14, y);
+      y += 4;
+      doc.addImage(imgData, "PNG", 14, y, 180, 60); // Tinggi 60mm agar proporsional
+      y += 65;
+    }
+
+    // Mobil Tidak Pernah Disewa
+    doc.text("Mobil Tidak Pernah Disewa", 14, y);
+    y += 6;
+    autoTable(doc, {
+      head: [["Nama Mobil", "Kategori", "Status"]],
+      body: neverRentedCars.map(car => [
+        car.nama,
+        car.kategori,
+        car.status === "available" ? "Tersedia" : "Tidak Tersedia"
+      ]),
+      startY: y,
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 }
     });
 
     doc.save(`laporan-penjualan-${year}.pdf`);
+  };
+
+  // Export Excel
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Rekap Penjualan per Bulan
+    const ws1 = XLSX.utils.json_to_sheet(monthlyReport.map(row => ({
+      Bulan: row.month,
+      "Jumlah Pesanan": row.orderCount,
+      "Total Omzet": row.omzet
+    })));
+    XLSX.utils.book_append_sheet(wb, ws1, "Rekap Bulanan");
+
+    // Sheet 2: Statistik User Baru
+    const ws2 = XLSX.utils.json_to_sheet(months.map((m, i) => ({
+      Bulan: m,
+      "User Baru": userMonthly[i]
+    })));
+    XLSX.utils.book_append_sheet(wb, ws2, "User Baru");
+
+    // Sheet 3: Mobil Terlaris
+    const ws3 = XLSX.utils.json_to_sheet(carSalesArr.map(car => ({
+      "Nama Mobil": car.car,
+      "Jumlah Disewa": car.count,
+      "Omzet": car.omzet
+    })));
+    XLSX.utils.book_append_sheet(wb, ws3, "Mobil Terlaris");
+
+    // Sheet 4: Mobil Tidak Pernah Disewa
+    const ws4 = XLSX.utils.json_to_sheet(neverRentedCars.map(car => ({
+      "Nama Mobil": car.nama,
+      "Kategori": car.kategori,
+      "Status": car.status === "available" ? "Tersedia" : "Tidak Tersedia"
+    })));
+    XLSX.utils.book_append_sheet(wb, ws4, "Mobil Tidak Pernah Disewa");
+
+    XLSX.writeFile(wb, `laporan-penjualan-${year}.xlsx`);
   };
 
   // Tampilkan detail order saat klik bar chart
@@ -299,6 +411,9 @@ const AdminReport = ({ darkMode }) => {
             </Form.Select>
             <Button variant="danger" className="fw-bold" onClick={handleExportPDF}>
               <FaFilePdf className="me-2" />Export PDF
+            </Button>
+            <Button variant="success" className="fw-bold" onClick={handleExportExcel}>
+              <FaFileCsv className="me-2" />Export Excel
             </Button>
           </div>
         </div>
@@ -406,27 +521,43 @@ const AdminReport = ({ darkMode }) => {
                     </div>
                   </Col>
                   <Col md={5} className="d-flex align-items-center">
-                    <Bar
-                      data={chartData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { display: true } },
-                        scales: { y: { beginAtZero: true, precision: 0 } },
-                        onClick: (evt, elems) => handleBarClick(elems, "month")
-                      }}
-                    />
+                    <div id="chart-penjualan" style={{ width: "100%", minHeight: 320 }}>
+                      <Bar
+                        data={chartData}
+                        height={320}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { display: true },
+                            title: {
+                              display: true,
+                              text: "Grafik Penjualan per Bulan",
+                              font: { size: 16 }
+                            }
+                          },
+                          scales: {
+                            x: { title: { display: true, text: "Bulan" } },
+                            y: { beginAtZero: true, title: { display: true, text: "Jumlah Pesanan" }, precision: 0 }
+                          },
+                          onClick: (evt, elems) => handleBarClick(elems, "month")
+                        }}
+                      />
+                    </div>
                   </Col>
                 </Row>
                 <Row className="mt-3">
                   <Col md={12}>
-                    <Bar
-                      data={omzetChartData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { display: true } },
-                        scales: { y: { beginAtZero: true, precision: 0 } }
-                      }}
-                    />
+                    <div id="chart-user">
+                      <Bar
+                        data={omzetChartData}
+                        options={{
+                          responsive: true,
+                          plugins: { legend: { display: true } },
+                          scales: { y: { beginAtZero: true, precision: 0 } }
+                        }}
+                      />
+                    </div>
                   </Col>
                 </Row>
               </Card.Body>
@@ -438,25 +569,38 @@ const AdminReport = ({ darkMode }) => {
                 Statistik User Baru per Bulan {year}
               </Card.Header>
               <Card.Body>
-                <Bar
-                  data={{
-                    labels: months,
-                    datasets: [
-                      {
-                        label: "User Baru",
-                        data: userMonthly,
-                        backgroundColor: "#ffc107",
-                        borderRadius: 8,
-                        maxBarThickness: 40,
+                <div id="chart-user">
+                  <Bar
+                    data={{
+                      labels: months,
+                      datasets: [
+                        {
+                          label: "User Baru",
+                          data: userMonthly,
+                          backgroundColor: "#ffc107",
+                          borderRadius: 8,
+                          maxBarThickness: 40,
+                        }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { display: true },
+                        title: {
+                          display: true,
+                          text: "Grafik User Baru per Bulan",
+                          font: { size: 16 }
+                        }
+                      },
+                      scales: {
+                        x: { title: { display: true, text: "Bulan" } },
+                        y: { beginAtZero: true, title: { display: true, text: "User Baru" }, precision: 0 }
                       }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: { legend: { display: true } },
-                    scales: { y: { beginAtZero: true, precision: 0 } }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </Card.Body>
             </Card>
 
@@ -483,42 +627,70 @@ const AdminReport = ({ darkMode }) => {
                               <td colSpan={3} className="text-center">Belum ada data penjualan.</td>
                             </tr>
                           ) : (
-                            carSalesArr.map((car, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <Button
-                                    variant="link"
-                                    className="p-0"
-                                    onClick={() => handleBarClick([{ index: idx }], "car")}
-                                  >
-                                    {car.car}
-                                  </Button>
-                                </td>
-                                <td>
-                                  <Badge bg="info">{car.count}</Badge>
-                                </td>
-                                <td>
-                                  <span className="fw-bold text-success">
-                                    Rp{car.omzet.toLocaleString("id-ID")}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))
+                            <>
+                              {carSalesArr.map((car, idx) => (
+                                <tr key={idx}>
+                                  <td>
+                                    <Button
+                                      variant="link"
+                                      className="p-0"
+                                      onClick={() => handleBarClick([{ index: idx }], "car")}
+                                    >
+                                      {car.car}
+                                    </Button>
+                                  </td>
+                                  <td>
+                                    <Badge bg="info">{car.count}</Badge>
+                                  </td>
+                                  <td>
+                                    <span className="fw-bold text-success">
+                                      Rp{car.omzet.toLocaleString("id-ID")}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </>
                           )}
                         </tbody>
                       </Table>
                     </div>
                   </Col>
                   <Col md={5} className="d-flex align-items-center">
-                    <Bar
-                      data={carChartData}
-                      options={{
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, precision: 0 } },
-                        onClick: (evt, elems) => handleBarClick(elems, "car")
-                      }}
-                    />
+                    <div id="chart-mobil" style={{ width: "100%", minHeight: 320 }}>
+                      <Bar
+                        data={carChartData}
+                        height={320}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { display: false },
+                            title: {
+                              display: true,
+                              text: "Grafik Mobil Terlaris",
+                              font: { size: 16 }
+                            },
+                            tooltip: {
+                              callbacks: {
+                                label: ctx => `Disewa: ${ctx.parsed.y}x`
+                              }
+                            }
+                          },
+                          scales: {
+                            x: {
+                              title: { display: true, text: "Mobil" },
+                              ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 }
+                            },
+                            y: {
+                              beginAtZero: true,
+                              title: { display: true, text: "Jumlah Disewa" },
+                              precision: 0
+                            }
+                          },
+                          onClick: (evt, elems) => handleBarClick(elems, "car")
+                        }}
+                      />
+                    </div>
                   </Col>
                 </Row>
               </Card.Body>

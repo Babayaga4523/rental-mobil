@@ -112,22 +112,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="footer-bottom">
-        <div className="container">
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-center py-3">
-            <p className="mb-2 mb-md-0">
-              &copy; {new Date().getFullYear()} Rental Mobil. Semua Hak Dilindungi.
-            </p>
-            <div className="footer-legal">
-              <a href="/privacy-policy">Kebijakan Privasi</a>
-              <span className="mx-2">|</span>
-              <a href="/terms">Syarat & Ketentuan</a>
-              <span className="mx-2">|</span>
-              <a href="/sitemap">Peta Situs</a>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </footer>
   );
 };

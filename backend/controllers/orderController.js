@@ -4,15 +4,30 @@ const path = require('path');
 const multer = require('multer');
 const sequelize = require("../config/database");
 const db = require('../models');
+const Notification = db.Notification;
 const { Order, Layanan, User } = db;
+const { sendMail } = require("../utils/email");
 
+// Helper
 const calculateRentalDuration = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = Math.abs(end - start);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // BENAR: selisih hari
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
-// Konfigurasi Multer untuk upload file
+
+const hitungDurasiSewa = (tanggalMulai, tanggalSelesai) => {
+  const diffTime = Math.abs(new Date(tanggalSelesai) - new Date(tanggalMulai));
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+const deleteFileIfExist = (filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+};
+
+// Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = path.join(__dirname, '../uploads/payment_proofs');
@@ -26,7 +41,6 @@ const storage = multer.diskStorage({
     cb(null, 'payment-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
-
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
   if (allowedTypes.includes(file.mimetype)) {
@@ -35,63 +49,37 @@ const fileFilter = (req, file, cb) => {
     cb(new Error('Invalid file type. Only JPEG, PNG, or PDF are allowed.'), false);
   }
 };
-
 exports.upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
-// Fungsi Pembantu
-const hitungDurasiSewa = (tanggalMulai, tanggalSelesai) => {
-  const diffTime = Math.abs(new Date(tanggalSelesai) - new Date(tanggalMulai));
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-const deleteFileIfExist = (filePath) => {
-  if (filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-};
-
-const formatResponOrder = (order, mobil, durasi) => {
-  const namaMobil = `${mobil.merek} ${mobil.model}`;
-  
+// Format response order
+const formatResponOrder = (order, car, durasi) => {
   return {
     id: order.id,
-    user_id: order.user_id,
-    user: order.user ? {
-      name: order.user.name,
-      phone: order.user.phone,
-      address: order.user.address
-    } : null,
-    mobil: {
-      id: mobil.id,
-      nama: namaMobil,
-      nomor_plat: mobil.nomor_plat,
-      image: mobil.image || "/images/default-car.jpg",
-    },
-    tanggal_pesan: order.order_date,
-    tanggal: {
-      pickup: order.pickup_date,
-      return: order.return_date,
-    },
-    durasi,
-    detail_harga: {
-      per_hari: mobil.harga_per_hari,
-      total: order.total_price,
-      pajak: order.total_price * 0.1,
-      sub_total: order.total_price - (order.total_price * 0.1)
-    },
-    pembayaran: {
-      metode: order.payment_method,
-      status: order.payment_status,
-      bukti: order.payment_proof ? `/uploads/payment_proofs/${path.basename(order.payment_proof)}` : null,
-    },
+    order_date: order.order_date,
+    pickup_date: order.pickup_date,
+    return_date: order.return_date,
+    duration: durasi,
+    total_price: order.total_price,
     status: order.status,
-    catatan_tambahan: order.additional_notes,
-    created_at: order.createdAt,
-    updated_at: order.updatedAt,
+    payment_method: order.payment_method,
+    payment_status: order.payment_status,
+    payment_proof: order.payment_proof ? `/uploads/payment_proofs/${path.basename(order.payment_proof)}` : null,
+    additional_notes: order.additional_notes,
+    car: {
+      id: car.id,
+      name: car.nama || "-",
+      license_plate: car.nomor_plat || "-", // jika tidak ada, tetap "-"
+      image_url: car.gambar || "/images/default-car.jpg",
+      type: car.type || "Standard",
+      transmission: car.transmission || "Automatic",
+      fuel_type: car.fuel || "Gasoline",
+      capacity: car.kapasitas || 4,
+      price_per_day: car.harga_per_hari || car.harga || 0
+    }
   };
 };
 
@@ -112,7 +100,8 @@ const cekKetersediaanMobil = async (carId, pickupDate, returnDate, transaction) 
   return orderConflicts.length === 0;
 };
 
-// Controller Functions
+// ========== CONTROLLER FUNCTIONS ==========
+
 exports.createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -131,7 +120,9 @@ exports.createOrder = async (req, res) => {
     // Validasi input
     if (!layanan_id || !pickup_date || !return_date) {
       deleteFileIfExist(payment_proof);
-      await transaction.rollback();
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
       return res.status(400).json({
         success: false,
         message: "Data yang diperlukan tidak lengkap"
@@ -145,7 +136,9 @@ exports.createOrder = async (req, res) => {
 
     if (pickupDate < today) {
       deleteFileIfExist(payment_proof);
-      await transaction.rollback();
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
       return res.status(400).json({
         success: false,
         message: "Tanggal pickup tidak boleh di masa lalu"
@@ -154,7 +147,9 @@ exports.createOrder = async (req, res) => {
 
     if (pickupDate >= returnDate) {
       deleteFileIfExist(payment_proof);
-      await transaction.rollback();
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
       return res.status(400).json({
         success: false,
         message: "Tanggal pengembalian harus setelah tanggal pickup"
@@ -165,7 +160,9 @@ exports.createOrder = async (req, res) => {
     const car = await Layanan.findByPk(layanan_id, { transaction });
     if (!car) {
       deleteFileIfExist(payment_proof);
-      await transaction.rollback();
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
       return res.status(404).json({
         success: false,
         message: "Mobil tidak ditemukan"
@@ -175,7 +172,9 @@ exports.createOrder = async (req, res) => {
     const isAvailable = await cekKetersediaanMobil(layanan_id, pickupDate, returnDate, transaction);
     if (!isAvailable) {
       deleteFileIfExist(payment_proof);
-      await transaction.rollback();
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
       return res.status(400).json({
         success: false,
         message: "Mobil tidak tersedia untuk tanggal yang dipilih"
@@ -203,8 +202,65 @@ exports.createOrder = async (req, res) => {
       additional_notes: additional_notes || null,
       status: "pending"
     }, { transaction });
+    // Trigger notifikasi admin
+    await Notification.create({
+      user_id: null,
+      message: `Pesanan baru #${newOrder.id} dari ${req.user.name}`,
+      type: 'order'
+    });
 
     await transaction.commit();
+
+    // Kirim email ke admin
+    await sendMail({
+      to: "yogacode86@gmail.com", // email admin
+      subject: "Pesanan Baru Masuk",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin:0 auto; border:1px solid #eee; border-radius:8px; overflow:hidden;">
+          <div style="background:#1976d2; color:#fff; padding:18px 24px;">
+            <h2 style="margin:0; font-size:1.3rem;">🚗 Pesanan Baru Rental Mobil</h2>
+          </div>
+          <div style="padding:24px;">
+            <p style="margin-bottom:10px;">Hai Admin, ada pesanan baru masuk:</p>
+            <table style="width:100%; font-size:1rem; margin-bottom:18px;">
+              <tr>
+                <td style="padding:4px 0;">ID Pesanan</td>
+                <td style="padding:4px 0;"><b>${newOrder.id}</b></td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;">Nama Pelanggan</td>
+                <td style="padding:4px 0;"><b>${req.user.name}</b></td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;">Tanggal Sewa</td>
+                <td style="padding:4px 0;">${pickup_date} - ${return_date}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;">Total</td>
+                <td style="padding:4px 0;"><b>Rp${total.toLocaleString("id-ID")}</b></td>
+              </tr>
+            </table>
+            <a href="http://localhost:3001/admin/orders" style="display:inline-block; background:#1976d2; color:#fff; text-decoration:none; padding:10px 22px; border-radius:5px; font-weight:600;">Lihat di Dashboard</a>
+          </div>
+          <div style="background:#f8f9fa; color:#888; text-align:center; font-size:0.95rem; padding:12px 0;">
+            Rental Mobil &copy; ${new Date().getFullYear()}
+          </div>
+        </div>
+      `,
+    });
+
+    // Kirim email ke pelanggan
+    await sendMail({
+      to: req.user.email,
+      subject: "Pesanan Anda Berhasil Dibuat",
+      html: `
+        <h3>Terima kasih telah memesan!</h3>
+        <p>ID Pesanan: <b>${newOrder.id}</b></p>
+        <p>Tanggal Sewa: ${pickup_date} - ${return_date}</p>
+        <p>Total: Rp${total}</p>
+        <p>Kami akan segera memproses pesanan Anda.</p>
+      `,
+    });
 
     return res.status(201).json({
       success: true,
@@ -213,9 +269,11 @@ exports.createOrder = async (req, res) => {
     });
 
   } catch (error) {
-    await transaction.rollback();
+    if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+      await transaction.rollback();
+    }
     deleteFileIfExist(req.file?.path);
-    
+
     console.error("Error membuat pesanan:", error);
     return res.status(500).json({
       success: false,
@@ -225,16 +283,214 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+exports.uploadPaymentProof = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const user_id = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Tidak ada file yang diupload"
+      });
+    }
+
+    const order = await Order.findOne({
+      where: { id, user_id },
+      transaction
+    });
+
+    if (!order) {
+      deleteFileIfExist(req.file?.path);
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
+      return res.status(404).json({
+        success: false,
+        message: "Pesanan tidak ditemukan"
+      });
+    }
+
+    // Only allow upload if status is unpaid
+    if (order.payment_status !== 'unpaid') {
+      deleteFileIfExist(req.file?.path);
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Bukti pembayaran hanya bisa diupload untuk pesanan yang belum dibayar"
+      });
+    }
+
+    // Hapus file lama jika ada
+    deleteFileIfExist(order.payment_proof);
+
+    await order.update({
+      payment_proof: req.file.path,
+      payment_status: 'pending_verification',
+      status: 'pending'
+    }, { transaction });
+
+    const car = await Layanan.findByPk(order.layanan_id, { transaction });
+    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
+
+    await transaction.commit();
+
+    return res.json({
+      success: true,
+      message: "Bukti pembayaran berhasil diupload",
+      data: formatResponOrder(order, car, durasi)
+    });
+
+  } catch (error) {
+    if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+      await transaction.rollback();
+    }
+    deleteFileIfExist(req.file?.path);
+
+    console.error("Error upload bukti pembayaran:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengupload bukti pembayaran"
+    });
+  }
+};
+
+exports.verifyPayment = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // 'paid' or 'rejected'
+
+    if (!['paid', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status pembayaran tidak valid"
+      });
+    }
+
+    const order = await Order.findOne({
+      where: { id },
+      transaction
+    });
+
+    if (!order) {
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
+      return res.status(404).json({
+        success: false,
+        message: "Pesanan tidak ditemukan"
+      });
+    }
+
+    // Only allow verification if status is pending_verification
+    if (order.payment_status !== 'pending_verification') {
+      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+        await transaction.rollback();
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Hanya pesanan dengan status pending_verification yang bisa diverifikasi"
+      });
+    }
+
+    await order.update({
+      payment_status: status,
+      status: status === 'paid' ? 'confirmed' : 'cancelled'
+    }, { transaction });
+    // Trigger notifikasi user
+    await Notification.create({
+      user_id: order.user_id,
+      message: `Pembayaran pesanan #${order.id} telah ${status === 'paid' ? 'diterima' : 'ditolak'}`,
+      type: 'payment'
+    });
+
+    const car = await Layanan.findByPk(order.layanan_id, { transaction });
+    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
+
+    await transaction.commit();
+
+    return res.json({
+      success: true,
+      message: `Status pembayaran berhasil diupdate menjadi ${status}`,
+      data: formatResponOrder(order, car, durasi)
+    });
+
+  } catch (error) {
+    if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
+      await transaction.rollback();
+    }
+    console.error("Error verifikasi pembayaran:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Gagal memverifikasi pembayaran"
+    });
+  }
+};
+
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = { user_id: req.user.id };
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const { count, rows: orders } = await Order.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Layanan,
+          as: 'layanan',
+          attributes: [
+            'id', 'nama', 'harga', 'gambar', 'deskripsi', 'kategori', 'status'
+          ]
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+
+    const formattedOrders = orders.map(order => {
+      const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
+      return formatResponOrder(order, order.layanan, durasi);
+    });
+
+    return res.json({
+      success: true,
+      data: formattedOrders,
+      pagination: {
+        totalItems: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error mengambil pesanan:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil pesanan",
+    });
+  }
+};
+
 exports.getOrderByUserId = async (req, res) => {
   try {
-    const user_id = req.user.id;
+    const user_id = req.params.user_id;
 
     const orders = await Order.findAll({
       where: { user_id },
       include: [
         {
           model: Layanan,
-          as: 'layanan', 
+          as: 'layanan',
           attributes: ['id', 'nama', 'harga']
         },
         {
@@ -269,184 +525,6 @@ exports.getOrderByUserId = async (req, res) => {
   }
 };
 
-
-exports.uploadPaymentProof = async (req, res) => {
-  const transaction = await sequelize.transaction();
-  try {
-    const { id } = req.params;
-    const user_id = req.user.id;
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Tidak ada file yang diupload"
-      });
-    }
-
-    const order = await Order.findOne({
-      where: { id, user_id },
-      transaction
-    });
-
-    if (!order) {
-      deleteFileIfExist(req.file?.path);
-      await transaction.rollback();
-      return res.status(404).json({
-        success: false,
-        message: "Pesanan tidak ditemukan"
-      });
-    }
-
-    // Only allow upload if status is unpaid
-    if (order.payment_status !== 'unpaid') {
-      deleteFileIfExist(req.file?.path);
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: "Bukti pembayaran hanya bisa diupload untuk pesanan yang belum dibayar"
-      });
-    }
-
-    // Hapus file lama jika ada
-    deleteFileIfExist(order.payment_proof);
-
-    await order.update({
-      payment_proof: req.file.path,
-      payment_status: 'pending_verification',
-      status: 'pending'
-    }, { transaction });
-
-    const car = await Layanan.findByPk(order.layanan_id, { transaction });
-    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
-
-    await transaction.commit();
-
-    return res.json({
-      success: true,
-      message: "Bukti pembayaran berhasil diupload",
-      data: formatResponOrder(order, car, durasi)
-    });
-
-  } catch (error) {
-    await transaction.rollback();
-    deleteFileIfExist(req.file?.path);
-    
-    console.error("Error upload bukti pembayaran:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal mengupload bukti pembayaran"
-    });
-  }
-};
-
-exports.verifyPayment = async (req, res) => {
-  const transaction = await sequelize.transaction();
-  try {
-    const { id } = req.params;
-    const { status } = req.body; // 'paid' or 'rejected'
-
-    if (!['paid', 'rejected'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Status pembayaran tidak valid"
-      });
-    }
-
-    const order = await Order.findOne({
-      where: { id },
-      transaction
-    });
-
-    if (!order) {
-      await transaction.rollback();
-      return res.status(404).json({
-        success: false,
-        message: "Pesanan tidak ditemukan"
-      });
-    }
-
-    // Only allow verification if status is pending_verification
-    if (order.payment_status !== 'pending_verification') {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: "Hanya pesanan dengan status pending_verification yang bisa diverifikasi"
-      });
-    }
-
-    await order.update({
-      payment_status: status,
-      status: status === 'paid' ? 'confirmed' : 'cancelled'
-    }, { transaction });
-
-    const car = await Layanan.findByPk(order.layanan_id, { transaction });
-    const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
-
-    await transaction.commit();
-
-    return res.json({
-      success: true,
-      message: `Status pembayaran berhasil diupdate menjadi ${status}`,
-      data: formatResponOrder(order, car, durasi)
-    });
-
-  } catch (error) {
-    await transaction.rollback();
-    console.error("Error verifikasi pembayaran:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal memverifikasi pembayaran"
-    });
-  }
-};
-
-exports.getAllOrders = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, status } = req.query;
-    const offset = (page - 1) * limit;
-
-    const whereClause = { user_id: req.user.id };
-    if (status) {
-      whereClause.status = status;
-    }
-
-    const { count, rows: orders } = await Order.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: Layanan,
-          as: 'car',
-          attributes: ['id', 'merek', 'model', 'nomor_plat', 'harga_per_hari', 'image']
-        }
-      ],
-      order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-    });
-
-    const formattedOrders = orders.map(order => {
-      const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
-      return formatResponOrder(order, order.car, durasi);
-    });
-
-    return res.json({
-      success: true,
-      data: formattedOrders,
-      pagination: {
-        totalItems: count,
-        totalPages: Math.ceil(count / limit),
-        currentPage: parseInt(page),
-        itemsPerPage: parseInt(limit)
-      }
-    });
-  } catch (error) {
-    console.error("Error mengambil pesanan:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Gagal mengambil pesanan",
-    });
-  }
-};
 
 exports.getOrderById = async (req, res) => {
   try {

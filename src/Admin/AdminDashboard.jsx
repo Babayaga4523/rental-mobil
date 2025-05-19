@@ -548,7 +548,7 @@ const DashboardHome = () => {
   );
 };
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
@@ -556,9 +556,16 @@ const AdminDashboard = () => {
   const isDashboardHome = location.pathname === "/admin" || location.pathname === "/admin/";
 
   return (
-    <div className={`wrapper ${sidebarCollapsed ? "sidebar-collapse" : ""}`} style={{ minHeight: "100vh", background: "#f4f6f9" }}>
-      <AdminNavbar toggleSidebar={toggleSidebar} />
-      <AdminSidebar sidebarCollapsed={sidebarCollapsed} />
+    <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
+      <AdminNavbar
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        toggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      <AdminSidebar
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+      />
       <div className="content-wrapper" style={{
         marginLeft: sidebarCollapsed ? 60 : 230,
         transition: "margin-left 0.2s"

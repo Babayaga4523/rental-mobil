@@ -1,5 +1,5 @@
 // App.js
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,7 +30,6 @@ import Payment from "./pages/Payment";
 import OrderReceipt from "./pages/OrderReceipt";
 import { AuthProvider } from './context/AuthContext';
 import AdminReport from "./Admin/Report";
-import OrderDetail from "./pages/OrderDetail";
 import UserOrdersPage from "./pages/UserOrdersPage";
 
 // Bootstrap
@@ -40,6 +39,22 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 function AppContent() {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith("/admin");
+
+  // Tambahkan state darkMode global
+  const [darkMode, setDarkMode] = useState(() => {
+    // Cek localStorage agar dark mode tetap setelah reload
+    const stored = localStorage.getItem("darkMode");
+    return stored ? JSON.parse(stored) : false;
+  });
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", JSON.stringify(darkMode));
+    document.body.className = darkMode ? "bg-dark text-light" : "bg-light text-dark";
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode((d) => !d);
 
   return (
     <>
@@ -66,7 +81,7 @@ function AppContent() {
         
         <Route path="/pesanan/:orderId" element={
           <ProtectedRoute>
-            <OrderDetail />
+            <UserOrdersPage />
           </ProtectedRoute>
         } />
 
@@ -98,14 +113,19 @@ function AppContent() {
         {/* Admin Routes */}
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="admin">
-            <AdminDashboard />
+            <AdminDashboard 
+              darkMode={darkMode} 
+              toggleDarkMode={toggleDarkMode} 
+              sidebarCollapsed={sidebarCollapsed}
+              setSidebarCollapsed={setSidebarCollapsed}
+            />
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="orders" />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="cars" element={<CarsPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="report" element={<AdminReport />} />
+          <Route path="orders" element={<OrdersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="cars" element={<CarsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="users" element={<UsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="report" element={<AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
         </Route>
 
         {/* Error Routes */}

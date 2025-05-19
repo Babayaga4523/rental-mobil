@@ -31,6 +31,7 @@ const layananRoutes = require("./routes/layanan");
 const testimoniRoutes = require("./routes/testimoni");
 const authRoutes = require("./routes/authRoute");
 const userRoutes = require("./routes/userRoute");
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Gunakan route
 app.use("/api/layanan", layananRoutes);
@@ -38,6 +39,7 @@ app.use("/api/testimoni", testimoniRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Tes koneksi
 app.get("/", (req, res) => {

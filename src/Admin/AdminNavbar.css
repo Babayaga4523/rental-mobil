@@ -96,19 +96,36 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.notification-toggle .fa-bell {
+  color: #fff !important;
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 2px #000);
+}
+
 .notification-badge {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: #dc3545;
-  color: white;
+  background: #dc3545;
+  color: #fff;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-weight: bold;
+  box-shadow: 0 0 4px #0002;
+}
+
+.notification-item.unread {
+  background: #23272b !important;
+  font-weight: bold;
+}
+
+.notification-menu.dark {
+  background: #23272b !important;
+  color: #fff;
+  border: 1px solid #2a2a3a;
+  min-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
 }
 
 /* Profile Dropdown */
@@ -215,9 +232,12 @@
 }
 
 .notification-header {
-  font-weight: 600;
-  padding: 10px 15px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: 700;
+  font-size: 1rem;
+  background: #181a20;
+  color: #fff;
+  border-bottom: 1px solid #2a2a3a;
+  padding: 12px 18px;
 }
 
 .notification-menu.dark .notification-header {
@@ -225,8 +245,10 @@
 }
 
 .notification-item {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 12px 15px !important;
+  border-bottom: 1px solid #2a2a3a;
+  padding: 12px 18px !important;
+  transition: background 0.2s;
+  cursor: pointer;
 }
 
 .notification-menu.dark .notification-item {
@@ -234,7 +256,8 @@
 }
 
 .notification-item.unread {
-  background-color: rgba(13, 110, 253, 0.05);
+  background: rgba(13,110,253,0.10) !important;
+  font-weight: bold;
 }
 
 .notification-menu.dark .notification-item.unread {
@@ -243,11 +266,11 @@
 
 .notification-message {
   font-weight: 500;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .notification-time {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   opacity: 0.7;
 }
 

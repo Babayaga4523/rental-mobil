@@ -1,0 +1,72 @@
+.order-card {
+  border-radius: 14px;
+  transition: transform 0.3s cubic-bezier(.4,2,.3,1), box-shadow 0.3s;
+  border: none;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+}
+
+.order-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+}
+
+.car-thumbnail {
+  width: 80px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1.5px solid #e3e3e3;
+  background: #f8f9fa;
+}
+
+.payment-proof-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #dee2e6;
+}
+
+.badge {
+  font-weight: 500;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.card-header {
+  font-weight: 600;
+  background: #f8f9fa !important;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.card-footer {
+  padding: 0.9rem 1.5rem;
+  background: #f8f9fa !important;
+  border-top: 1px solid #e9ecef;
+}
+
+@media (max-width: 768px) {
+  .order-card {
+    margin-bottom: 20px;
+  }
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .car-thumbnail {
+    width: 60px;
+    height: 45px;
+  }
+  .card-body {
+    padding: 0.7rem;
+  }
+}

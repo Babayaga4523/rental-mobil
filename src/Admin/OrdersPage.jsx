@@ -45,7 +45,7 @@ const getStatusBadge = (status) => {
   }
 };
 
-const OrdersPage = () => {
+const OrdersPage = ({ darkMode, toggleDarkMode }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(false);
@@ -63,7 +63,6 @@ const OrdersPage = () => {
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
-  const [darkMode, setDarkMode] = useState(false);
   const [showPaymentStatusModal, setShowPaymentStatusModal] = useState(false);
   const [paymentStatusToEdit, setPaymentStatusToEdit] = useState("");
 
@@ -300,9 +299,6 @@ const OrdersPage = () => {
       <option key={opt.value} value={opt.value}>{opt.label}</option>
     ));
   };
-
-  // Dark mode toggle
-  const toggleDarkMode = () => setDarkMode((d) => !d);
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
