@@ -3,7 +3,8 @@ import {
   FaSignOutAlt, FaUserCog, FaBars,
   FaMoon, FaSun, FaUserEdit,
   FaKey, FaEnvelope, FaPhone,
-  FaUserShield, FaCog, FaBell
+  FaUserShield, FaCog, FaBell,
+  FaTrash
 } from "react-icons/fa";
 import {
   Dropdown, Modal, Button,
@@ -68,6 +69,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
 
   // Fetch notifications from backend
   useEffect(() => {
+    let interval;
     const fetchNotifications = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -79,16 +81,13 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
           setUnreadCount(res.data.filter(n => !n.read).length);
         }
       } catch (err) {
-        // fallback dummy jika gagal
-        setNotifications([
-          { id: 1, message: "Pesanan baru diterima", time: "10 menit lalu", read: false },
-          { id: 2, message: "Pembayaran dikonfirmasi", time: "1 jam lalu", read: true },
-          { id: 3, message: "Mobil baru ditambahkan", time: "2 hari lalu", read: true }
-        ]);
-        setUnreadCount(1);
+        setNotifications([]);
+        setUnreadCount(0);
       }
     };
     fetchNotifications();
+    interval = setInterval(fetchNotifications, 15000); // polling tiap 15 detik
+    return () => clearInterval(interval);
   }, []);
 
   // Logout
@@ -139,15 +138,12 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     ));
     setUnreadCount(notifications.filter(n => !n.read && n.id !== id).length);
 
-    // Update ke backend
     try {
       const token = localStorage.getItem("token");
       await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-    } catch (err) {
-      // Optional: tampilkan error jika gagal update
-    }
+    } catch {}
   };
 
   // Tandai semua notifikasi sebagai sudah dibaca
@@ -159,7 +155,19 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       await axios.put(`${API_URL}/notifications/read-all`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-    } catch (err) {}
+    } catch {}
+  };
+
+  // Hapus notifikasi
+  const deleteNotification = async (id) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+    setUnreadCount(notifications.filter(n => !n.read && n.id !== id).length);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`${API_URL}/notifications/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch {}
   };
 
   const formatLastLogin = (dateString) => {
@@ -194,12 +202,12 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
 
         {/* Right Section */}
         <div className="navbar-right">
-          {/* Dark Mode Toggle */}
+          {/* Tombol Dark Mode */}
           <button className="theme-toggle" onClick={toggleDarkMode} style={{ color: "#fff" }}>
             {darkMode ? <FaSun /> : <FaMoon />}
           </button>
 
-          {/* Notifications */}
+          {/* Icon Notifikasi */}
           <Dropdown align="end" className="notifications-dropdown">
             <Dropdown.Toggle variant="link" className="notification-toggle" style={{ color: "#fff" }}>
               <FaBell />
@@ -226,17 +234,44 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                   Tidak ada notifikasi.
                 </Dropdown.Item>
               ) : (
-                notifications.map(notification => (
-                  <Dropdown.Item
-                    key={notification.id}
-                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                    onClick={() => markAsRead(notification.id)}
-                    style={{ color: "#fff", background: notification.read ? "transparent" : "#23272b" }}
-                  >
-                    <div className="notification-message">{notification.message}</div>
-                    <div className="notification-time">{notification.time}</div>
-                  </Dropdown.Item>
-                ))
+                <>
+                  {notifications.map(notification => (
+                    <Dropdown.Item
+                      key={notification.id}
+                      className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                      style={{ color: "#fff", background: notification.read ? "transparent" : "#23272b", position: "relative" }}
+                    >
+                      <div
+                        onClick={() => markAsRead(notification.id)}
+                        style={{ cursor: "pointer", width: "calc(100% - 32px)" }}
+                      >
+                        <div className="notification-message">{notification.message}</div>
+                        <div className="notification-time">
+                          {new Date(notification.createdAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
+                        </div>
+                      </div>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        style={{
+                          color: "#dc3545",
+                          position: "absolute",
+                          right: 8,
+                          top: 12,
+                          padding: 0,
+                          zIndex: 2
+                        }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          deleteNotification(notification.id);
+                        }}
+                        title="Hapus Notifikasi"
+                      >
+                        <FaTrash />
+                      </Button>
+                    </Dropdown.Item>
+                  ))}
+                </>
               )}
               <Dropdown.Divider />
               <Dropdown.Item className="text-center text-primary" style={{ color: "#0d6efd" }}>
@@ -317,7 +352,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                 <FaPhone className="detail-icon" />
                 <div>
                   <div className="detail-label">Telepon</div>
-                  <div className="detail-value">{admin.phone}</div>
+                  <div className="detail-value">{admin.no_tlpn}</div>
                 </div>
               </div>
               <div className="detail-item">

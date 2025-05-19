@@ -21,6 +21,12 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
+const Notification = require('./notification');
+db.Notification = Notification;
+// Jika ingin relasi ke User:
+db.User.hasMany(Notification, { foreignKey: 'user_id' });
+Notification.belongsTo(db.User, { foreignKey: 'user_id' });
+
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

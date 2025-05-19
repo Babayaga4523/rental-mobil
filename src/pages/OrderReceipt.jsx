@@ -136,8 +136,11 @@ const OrderReceipt = () => {
             <button className="btn btn-outline-primary me-2" onClick={() => navigate(-1)}>
               <FaArrowLeft className="me-1" /> Kembali
             </button>
-            <button className="btn btn-primary" onClick={() => window.print()}>
+            <button className="btn btn-primary me-2" onClick={() => window.print()}>
               <FaPrint className="me-1" /> Cetak
+            </button>
+            <button className="btn btn-success" onClick={() => navigate("/pesanan")}>
+              <FaFileInvoice className="me-1" /> Lihat Daftar Pesanan
             </button>
           </div>
         </div>

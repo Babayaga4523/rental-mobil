@@ -96,6 +96,13 @@ router.get(
   orderController.getOrderById
 );
 
+// Ambil semua pesanan berdasarkan user_id (khusus admin)
+router.get(
+  "/user/:user_id",
+  checkAdmin,
+  orderController.getOrderByUserId
+);
+
 // Verifikasi pembayaran oleh admin
 router.put(
   '/:id/verify',
