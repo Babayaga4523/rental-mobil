@@ -30,26 +30,26 @@ const About = () => {
       <section className="about-hero position-relative overflow-hidden">
         <div className="hero-gradient-overlay"></div>
         <div className="hero-bg-parallax"></div>
-        
-        <div className="container h-100">
+        <div className="container h-100 position-relative z-2">
           <div className="row h-100 align-items-center">
-            <div className="col-lg-8 mx-auto text-center position-relative">
+            <div className="col-lg-8 mx-auto text-center">
               <motion.div
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
               >
                 <div className="hero-tagline mb-3" data-aos="fade-down">
-                  <span className="badge bg-white text-primary fs-6 px-3 py-2 shadow-sm">
-                    <i className="fas fa-star me-2"></i>Premium Car Rental
+                  <span className="badge bg-white text-primary fs-6 px-4 py-2 shadow-lg border border-2 border-primary">
+                    <i className="fas fa-star me-2"></i>
+                    <span className="fw-bold">Premium Car Rental</span>
                   </span>
                 </div>
-                <h1 className="hero-title display-3 fw-bold mb-3" data-aos="fade-up">
-                  <span className="text-white">Tentang</span> <span className="text-gradient-primary">Kami</span>
+                <h1 className="hero-title display-2 fw-bold mb-3 text-gradient-primary" data-aos="fade-up" style={{ letterSpacing: 1 }}>
+                  Tentang <span className="text-gradient-primary">Kami</span>
                 </h1>
-                <p className="hero-subtitle lead text-light opacity-75 mb-4" data-aos="fade-up" data-aos-delay="100">
-                  Menyediakan solusi transportasi premium sejak 2000 dengan komitmen terhadap 
-                  <br className="d-none d-lg-block" /> kualitas dan kepuasan pelanggan
+                <p className="hero-subtitle lead text-light opacity-85 mb-4" data-aos="fade-up" data-aos-delay="100">
+                  Menyediakan solusi transportasi <b>premium</b> sejak 2000<br className="d-none d-lg-block" />
+                  dengan komitmen pada kualitas & kepuasan pelanggan
                 </p>
                 <div className="hero-cta d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
                   <motion.button 
@@ -70,45 +70,20 @@ const About = () => {
                   </motion.button>
                 </div>
               </motion.div>
-              
-              {/* Floating Stats */}
-              <div className="hero-stats-container mt-5 pt-4" data-aos="fade-up" data-aos-delay="300">
-                <motion.div 
-                  whileHover={{ scale: 1.03 }}
-                  className="hero-stats bg-glass rounded-4 shadow-lg p-4 d-inline-flex"
-                >
-                  {[
-                    { number: "23+", label: "Tahun Pengalaman", color: "primary" },
-                    { number: "500+", label: "Armada Mobil", color: "success" },
-                    { number: "10K+", label: "Pelanggan Puas", color: "warning" }
-                  ].map((stat, index) => (
-                    <React.Fragment key={index}>
-                      <div className="stat-item px-3 text-center">
-                        <div className={`stat-number display-6 fw-bold text-${stat.color}`}>{stat.number}</div>
-                        <div className="stat-label text-light opacity-75">{stat.label}</div>
-                      </div>
-                      {index < 2 && <div className="stat-divider bg-light bg-opacity-25 mx-2"></div>}
-                    </React.Fragment>
-                  ))}
-                </motion.div>
-              </div>
             </div>
-          </div>
-          
-          {/* Animated Scroll Down Indicator */}
+          </div> {/* penutup .row */}
+        </div> {/* penutup .container */}
+        {/* Floating Stats di bawah hero, tidak menutupi judul */}
+        <div className="hero-stats-container" data-aos="fade-up" data-aos-delay="300">
           <motion.div 
-            className="scroll-down"
-            onClick={() => window.scrollTo({ top: window.innerHeight, behavior: "smooth" })}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
+            whileHover={{ scale: 1.03 }}
+            className="hero-stats bg-glass rounded-4 shadow-lg p-4 d-inline-flex"
           >
-            <motion.div
-              animate={{ y: [0, 15, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-              className="scroll-line bg-white"
-            ></motion.div>
-            <span className="text-white">Scroll Down</span>
+            {/*
+              { number: "23+", label: "Tahun Pengalaman", icon: "fa-calendar-check", color: "primary" },
+              { number: "500+", label: "Armada Mobil", icon: "fa-car-side", color: "success" },
+              { number: "10K+", label: "Pelanggan Puas", icon: "fa-users", color: "warning" }
+            */}
           </motion.div>
         </div>
       </section>

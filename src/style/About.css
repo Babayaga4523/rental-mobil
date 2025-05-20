@@ -37,6 +37,7 @@
 .text-gradient-primary {
   background: linear-gradient(90deg, #0d6efd, #6610f2);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -46,11 +47,9 @@
 /* HERO SECTION */
 .about-hero {
   position: relative;
-  min-height: 90vh;
-  background: linear-gradient(rgba(13, 30, 70, 0.85), rgba(13, 30, 70, 0.85)), 
-              url('') no-repeat center center;
-  background-size: cover;
-  padding-top: 80px;
+  min-height: 110vh; /* sebelumnya 90vh, sekarang lebih panjang */
+  background: linear-gradient(120deg, #0d1e46 60%, #6610f2 100%);
+  overflow: hidden;
   display: flex;
   align-items: center;
   color: #fff;
@@ -59,13 +58,18 @@
 
 .hero-gradient-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-
+  inset: 0;
+  background: linear-gradient(120deg,rgba(13,30,70,0.92) 60%,rgba(102,16,242,0.85) 100%);
   z-index: 1;
-  opacity: 1;
+}
+
+.hero-bg-parallax {
+  position: absolute;
+  inset: 0;
+  background: url('') repeat center center;
+  opacity: 0.08;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .hero-content {
@@ -75,10 +79,11 @@
 
 .hero-title {
   font-size: 3.5rem;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 1.5rem;
   color: #fff;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  letter-spacing: 1.5px;
 }
 
 .hero-subtitle {
@@ -122,26 +127,16 @@
   justify-content: center;
   align-items: center;
   margin-top: 3rem;
-  background: rgba(255, 255, 255, 0.15);
-  
-  /* Cross-browser backdrop filter with fallback */
-  -webkit-backdrop-filter: blur(10px); /* Safari 9+, iOS 9+ */
-  backdrop-filter: blur(10px); /* Standard syntax */
-  
-  border-radius: 15px;
-  padding: 20px;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  
-  /* Fallback for browsers that don't support backdrop-filter */
-  @supports not (backdrop-filter: blur(10px)) {
-    background: rgba(255, 255, 255, 0.25); /* More opaque fallback */
-  }
-  
-  /* Animation for better visibility */
-  animation: fadeInStats 1s ease-out;
+  background: rgba(255,255,255,0.12);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  box-shadow: 0 8px 32px rgba(13,30,70,0.08);
+}
+
+.stat-icon {
+  margin-bottom: 0.5rem;
 }
 
 /* Keyframes with vendor prefixes */
@@ -200,7 +195,7 @@
 /* Scroll Down Indicator */
 .scroll-down {
   position: absolute;
-  bottom: 30px;
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -210,42 +205,52 @@
   z-index: 10;
   color: #fff;
   animation: fadeIn 2s ease-in-out;
+  opacity: 0.92;
+  transition: opacity 0.3s;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.scroll-down:hover {
+  opacity: 1;
 }
 
 .scroll-line {
-  width: 2px;
-  height: 50px;
-  background: #fff;
+  width: 3px;
+  height: 48px;
+  background: linear-gradient(180deg, #fff 0%, #0d6efd 100%);
+  border-radius: 2px;
   position: relative;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
 }
 
 .scroll-line:before {
   content: '';
   position: absolute;
   top: 0;
-  left: -4px;
-  width: 10px;
-  height: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 2px 8px #0d6efd44;
   animation: scrollIndicator 1.5s infinite;
 }
 
 @keyframes scrollIndicator {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(30px); opacity: 0; }
+  0% { transform: translateX(-50%) translateY(0); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateX(-50%) translateY(32px); opacity: 0; }
 }
 
 .scroll-down span {
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 1px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #fff;
+  text-shadow: 0 2px 8px #0d1e4644;
+  margin-top: 2px;
+  opacity: 0.85;
 }
 
 /* ================ */
@@ -791,7 +796,7 @@ textarea.form-control {
 
 @media (max-width: 991.98px) {
   .about-hero {
-    min-height: 700px;
+    min-height: 850px; /* sebelumnya 700px, sekarang lebih panjang */
   }
   
   .hero-title {
@@ -817,8 +822,8 @@ textarea.form-control {
 @media (max-width: 767.98px) {
   .about-hero {
     height: auto;
-    padding: 120px 0 80px;
-    min-height: auto;
+    padding: 140px 0 100px; /* tambahkan padding atas & bawah */
+    min-height: 600px; /* tambahkan min-height mobile */
   }
   
   .hero-title {
@@ -887,5 +892,26 @@ textarea.form-control {
   
   .social-links {
     justify-content: center;
+  }
+}
+
+.hero-stats-container {
+  position: absolute;
+  left: 50%;
+  bottom: -48px;
+  transform: translateX(-50%);
+  z-index: 11;
+  width: auto;
+  display: flex;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+@media (max-width: 991.98px) {
+  .hero-stats-container {
+    position: static;
+    transform: none;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
   }
 }

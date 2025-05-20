@@ -701,29 +701,46 @@ exports.cancelOrder = async (req, res) => {
 // Ambil semua pesanan untuk admin
 exports.getAllOrdersAdmin = async (req, res) => {
   try {
-    // Pastikan hanya admin yang bisa akses
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ success: false, message: "Akses ditolak" });
+    // Ambil query params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const status = req.query.status || "";
+
+    const offset = (page - 1) * limit;
+
+    // Filter pencarian dan status
+    const where = {};
+    if (status) where.status = status;
+    if (search) {
+      where[Op.or] = [
+        { '$user.name$': { [Op.iLike]: `%${search}%` } },
+        { '$layanan.nama$': { [Op.iLike]: `%${search}%` } },
+        { id: { [Op.eq]: Number(search) || 0 } }
+      ];
     }
 
-    const orders = await Order.findAll({
+    // Query dengan relasi user & layanan
+    const { count, rows } = await Order.findAndCountAll({
+      where,
       include: [
-        {
-          model: Layanan,
-          as: 'layanan',
-          attributes: ['id', 'nama', 'harga']
-        },
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email', 'no_telp']
-        }
+        { model: Layanan, as: 'layanan', attributes: ['id', 'nama', 'harga', 'promo'] },
+        { model: User, as: 'user', attributes: ['id', 'name'] }
       ],
-      order: [['order_date', 'DESC']]
+      order: [['order_date', 'DESC']],
+      limit,
+      offset
     });
-res.json({
+
+    res.json({
       success: true,
-      data: orders
+      data: rows,
+      pagination: {
+        totalItems: count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        itemsPerPage: limit
+      }
     });
   } catch (error) {
     console.error("Error getAllOrdersAdmin:", error);
