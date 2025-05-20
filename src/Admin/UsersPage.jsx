@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, InputGroup, Form, Toast, ToastContainer
+  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, InputGroup, Form, Toast, ToastContainer, Row, Col, Card
 } from "react-bootstrap";
-import { FaEllipsisV, FaEdit, FaTrash, FaFileCsv, FaUser, FaMoon, FaSun, FaSortUp, FaSortDown } from "react-icons/fa";
+import { FaEllipsisV, FaEdit, FaTrash, FaFileCsv, FaUser, FaMoon, FaSun, FaSort, FaSortUp, FaSortDown } from "react-icons/fa";
 import { CSVLink } from "react-csv";
 
 const API_URL = "http://localhost:3000/api";
@@ -102,7 +102,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <span className="ms-1 text-muted"><FaFileCsv /></span>;
+    if (sortConfig.key !== key) return <FaSort className="ms-1 text-muted" />;
     return sortConfig.direction === "asc" ? (
       <FaSortUp className="ms-1" />
     ) : (
@@ -174,77 +174,92 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="mb-0"><FaUser className="me-2" />Daftar Pengguna</h3>
-          <Button
-            variant={darkMode ? "light" : "dark"}
-            onClick={toggleDarkMode}
-            title={darkMode ? "Light Mode" : "Dark Mode"}
-          >
-            {darkMode ? <FaSun /> : <FaMoon />}
-          </Button>
-        </div>
-        <div className={`d-flex flex-wrap gap-2 mb-3 align-items-center shadow-sm p-3 rounded ${darkMode ? "bg-secondary" : "bg-white"}`}>
-          <InputGroup style={{ maxWidth: 260 }}>
-            <Form.Control
-              type="text"
-              placeholder="Cari nama/email/ID..."
-              value={search}
-              onChange={e => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </InputGroup>
-          <Form.Select
-            value={filterRole}
-            onChange={e => {
-              setFilterRole(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 160 }}
-          >
-            <option value="all">Semua Role</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </Form.Select>
-          <Form.Select
-            value={filterStatus}
-            onChange={e => {
-              setFilterStatus(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 160 }}
-          >
-            <option value="all">Semua Status</option>
-            <option value="active">Aktif</option>
-            <option value="inactive">Nonaktif</option>
-          </Form.Select>
-          <Form.Select
-            value={pageSize}
-            onChange={e => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
-            style={{ maxWidth: 120 }}
-          >
-            {PAGE_SIZE_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt} / halaman</option>
-            ))}
-          </Form.Select>
-          <CSVLink
-            data={formatCSVData(sortedUsers)}
-            headers={csvHeaders}
-            filename={`daftar-user-${Date.now()}.csv`}
-            className="btn btn-outline-success"
-            separator=";"
-            enclosingCharacter={'"'}
-          >
-            <FaFileCsv className="me-2" />
-            Export CSV
-          </CSVLink>
-        </div>
+      <div className="container-fluid py-4">
+        <Row className="align-items-center mb-4">
+          <Col xs={12} md={6}>
+            <h3 className="mb-0 fw-bold"><FaUser className="me-2" />Daftar Pengguna</h3>
+          </Col>
+          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
+            <Button
+              variant={darkMode ? "light" : "dark"}
+              onClick={toggleDarkMode}
+              title={darkMode ? "Light Mode" : "Dark Mode"}
+            >
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </Button>
+          </Col>
+        </Row>
+        <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
+          <Card.Body>
+            <Row className="g-2 align-items-center">
+              <Col xs={12} md={3}>
+                <InputGroup>
+                  <Form.Control
+                    type="text"
+                    placeholder="Cari nama/email/ID..."
+                    value={search}
+                    onChange={e => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                </InputGroup>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={filterRole}
+                  onChange={e => {
+                    setFilterRole(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Role</option>
+                  <option value="admin">Admin</option>
+                  <option value="user">User</option>
+                </Form.Select>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={filterStatus}
+                  onChange={e => {
+                    setFilterStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="active">Aktif</option>
+                  <option value="inactive">Nonaktif</option>
+                </Form.Select>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={pageSize}
+                  onChange={e => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  {PAGE_SIZE_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt} / halaman</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col xs={12} md={3} className="text-md-end mt-2 mt-md-0">
+                <CSVLink
+                  data={formatCSVData(sortedUsers)}
+                  headers={csvHeaders}
+                  filename={`daftar-user-${Date.now()}.csv`}
+                  className="btn btn-outline-success w-100"
+                  separator=";"
+                  enclosingCharacter={'"'}
+                >
+                  <FaFileCsv className="me-2" />
+                  Export CSV
+                </CSVLink>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
@@ -314,7 +329,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
         )}
 
         {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
           <div>
             Menampilkan {pagedUsers.length} dari {sortedUsers.length} pengguna
           </div>

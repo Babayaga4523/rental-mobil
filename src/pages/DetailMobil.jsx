@@ -14,7 +14,7 @@ const defaultGalleryImages = [
 ];
 const BACKEND_URL = "http://localhost:3000";
 
-const CarDetail = () => {
+const DetailMobil = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [car, setCar] = useState(null);
@@ -22,8 +22,8 @@ const CarDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("description");
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [galleryImages, setGalleryImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true, easing: 'ease-in-out' });
@@ -72,7 +72,7 @@ const CarDetail = () => {
   };
 
   const harga = car?.harga || 0;
-  const diskon = car?.diskon || 0;
+  const diskon = car?.promo || 0;
   const totalPrice = harga * days;
   const discountedPrice = diskon ? totalPrice - (totalPrice * diskon / 100) : totalPrice;
 
@@ -156,10 +156,13 @@ const CarDetail = () => {
                   {[...Array(5)].map((_, i) => (
                     <i
                       key={i}
-                      className={`fas fa-star ${i < (car.rating || 4) ? 'text-warning' : 'text-light opacity-25'}`}
+                      className={`fas fa-star ${i < Math.round(car.rating || 0) ? 'text-warning' : 'text-light opacity-25'}`}
                     ></i>
                   ))}
-                  <span className="ms-2">({car.reviewCount || 24} reviews)</span>
+                  <span className="ms-2">
+                    {car.rating ? car.rating.toFixed(1) : "-"}
+                    {car.jumlah_review ? ` (${car.jumlah_review} review)` : " Belum ada rating"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -188,11 +191,7 @@ const CarDetail = () => {
             <div className="car-detail-image-section" data-aos="zoom-in">
               <div className="car-detail-image-main-wrapper">
                 <img
-                  src={
-                    car.gambar
-                      ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar)
-                      : defaultCarImage
-                  }
+                  src={galleryImages[currentImageIndex]}
                   alt={car.nama || 'Mobil'}
                   className="car-detail-image-main"
                   onError={e => { e.target.src = defaultCarImage; }}
@@ -240,7 +239,7 @@ const CarDetail = () => {
                     <div className="mt-4">
                       <h6 className="fw-bold car-detail-features-title" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
                       <div className="row mt-3">
-                        {['AC Dual Zone', 'Audio Premium', 'Kamera Mundur', 'GPS Navigation', 'Bluetooth', 'USB Port', 'Kursi Kulit', 'Sunroof'].map((feature, i) => (
+                        {(car.fitur && car.fitur.length > 0 ? car.fitur : ['AC Dual Zone', 'Audio Premium', 'Kamera Mundur', 'GPS Navigation', 'Bluetooth', 'USB Port', 'Kursi Kulit', 'Sunroof']).map((feature, i) => (
                           <div
                             key={i}
                             className="col-md-6 mb-3 car-detail-feature-item"
@@ -265,29 +264,29 @@ const CarDetail = () => {
                       <div className="col-md-6">
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Tipe Mesin</h6>
-                          <p className="fw-bold">2.0L Turbocharged</p>
+                          <p className="fw-bold">{car.tipe_mesin || "2.0L Turbocharged"}</p>
                         </div>
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Transmisi</h6>
-                          <p className="fw-bold">Automatic 8-Speed</p>
+                          <p className="fw-bold">{car.transmisi || "Automatic 8-Speed"}</p>
                         </div>
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Tenaga</h6>
-                          <p className="fw-bold">250 HP @ 5,500 RPM</p>
+                          <p className="fw-bold">{car.tenaga || "250 HP @ 5,500 RPM"}</p>
                         </div>
                       </div>
                       <div className="col-md-6">
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Kapasitas Penumpang</h6>
-                          <p className="fw-bold">5 Orang</p>
+                          <p className="fw-bold">{car.kapasitas || "5 Orang"}</p>
                         </div>
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Bahan Bakar</h6>
-                          <p className="fw-bold">Bensin</p>
+                          <p className="fw-bold">{car.bahan_bakar || "Bensin"}</p>
                         </div>
                         <div className="mb-3">
                           <h6 className="text-muted mb-2">Konsumsi BBM</h6>
-                          <p className="fw-bold">12 km/L</p>
+                          <p className="fw-bold">{car.konsumsi_bbm || "12 km/L"}</p>
                         </div>
                       </div>
                     </div>
@@ -442,4 +441,4 @@ const CarDetail = () => {
   );
 };
 
-export default CarDetail;
+export default DetailMobil;

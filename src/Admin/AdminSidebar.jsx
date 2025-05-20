@@ -19,18 +19,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
         boxShadow: "2px 0 8px rgba(0,0,0,0.08)"
       }}
     >
-      {/* Tombol buka/tutup sidebar */}
-      <div
-        style={{
-          textAlign: "right",
-          padding: "8px 12px",
-          cursor: "pointer"
-        }}
-        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        title={sidebarCollapsed ? "Buka Sidebar" : "Tutup Sidebar"}
-      >
-        <FaBars />
-      </div>
+      
       {/* Brand Admin, klik ke home */}
       <div
         className="brand-link text-center py-3"

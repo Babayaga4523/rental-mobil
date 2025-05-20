@@ -4,15 +4,25 @@ import {
   FaMoon, FaSun, FaUserEdit,
   FaKey, FaEnvelope, FaPhone,
   FaUserShield, FaCog, FaBell,
-  FaTrash
+  FaTrash, FaChevronDown, FaChevronRight,
+  FaCheck, FaTimes
 } from "react-icons/fa";
+import { FiSettings, FiUser, FiLock } from "react-icons/fi";
 import {
   Dropdown, Modal, Button,
-  Form, Badge, Alert
+  Form, Badge, Alert,
+  OverlayTrigger, Tooltip
 } from "react-bootstrap";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./AdminNavbar.css";
+import {
+  fetchNotifications,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  deleteAllNotifications
+} from "./utils/notificationApi";
 
 const API_URL = "http://localhost:3000/api";
 
@@ -25,7 +35,8 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     email: "admin@email.com",
     no_tlpn: "-",
     role: "admin",
-    lastLogin: new Date().toISOString()
+    lastLogin: new Date().toISOString(),
+    avatarColor: "#667eea"
   });
   const [passwordForm, setPasswordForm] = useState({
     old: "",
@@ -35,7 +46,19 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
+  const [expandedNotification, setExpandedNotification] = useState(null);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+  // Generate random avatar color
+  const generateAvatarColor = () => {
+    const colors = [
+      "#667eea", "#764ba2", "#6B8DD6", "#8E37D7",
+      "#4FACFE", "#00F2FE", "#43CBFF", "#38F9D7",
+      "#FF758C", "#FF7EB3", "#FF7676", "#FF9068"
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
   // Fetch admin profile from backend
   useEffect(() => {
@@ -51,44 +74,37 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
             id: res.data.user.id,
             name: res.data.user.name,
             email: res.data.user.email,
-            no_tlpn: res.data.user.no_tlpn || "-",
+            no_telp: res.data.user.no_telp || "-",
             role: res.data.user.role || "admin",
-            lastLogin: res.data.user.lastLogin || new Date().toISOString()
+            lastLogin: res.data.user.lastLogin || new Date().toISOString(),
+            avatarColor: generateAvatarColor()
           });
         }
       } catch (err) {
         setAdmin({
           ...admin,
           name: localStorage.getItem("adminName") || "Admin",
-          email: localStorage.getItem("adminEmail") || "admin@email.com"
+          email: localStorage.getItem("adminEmail") || "admin@email.com",
+          avatarColor: generateAvatarColor()
         });
       }
     };
     fetchAdmin();
   }, []);
 
-  // Fetch notifications from backend
+  // Fetch notifications
   useEffect(() => {
-    let interval;
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.get(`${API_URL}/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (Array.isArray(res.data)) {
-          setNotifications(res.data);
-          setUnreadCount(res.data.filter(n => !n.read).length);
-        }
-      } catch (err) {
-        setNotifications([]);
-        setUnreadCount(0);
-      }
+    const getNotif = async () => {
+      const data = await fetchNotifications(token);
+      setNotifications(data);
+      setUnreadCount(data.filter(n => !n.read).length);
     };
-    fetchNotifications();
-    interval = setInterval(fetchNotifications, 15000); // polling tiap 15 detik
+    getNotif();
+    
+    // Set up interval for polling new notifications (every 30 seconds)
+    const interval = setInterval(getNotif, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [token]);
 
   // Logout
   const handleLogout = () => {
@@ -103,7 +119,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     e.preventDefault();
     setAlert({ show: false, message: "", variant: "" });
     if (passwordForm.new !== passwordForm.confirm) {
-      setAlert({ show: true, message: "Password baru tidak cocok!", variant: "danger" });
+      setAlert({ show: true, message: "New passwords don't match!", variant: "danger" });
       return;
     }
     try {
@@ -116,7 +132,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setAlert({ show: true, message: "Password berhasil diubah!", variant: "success" });
+      setAlert({ show: true, message: "Password changed successfully!", variant: "success" });
       setTimeout(() => {
         setShowSettings(false);
         setPasswordForm({ old: "", new: "", confirm: "" });
@@ -125,53 +141,92 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     } catch (err) {
       setAlert({
         show: true,
-        message: err.response?.data?.message || "Gagal mengubah password",
+        message: err.response?.data?.message || "Failed to change password",
         variant: "danger"
       });
     }
   };
 
-  // Mark notification as read
-  const markAsRead = async (id) => {
-    setNotifications(notifications.map(n =>
-      n.id === id ? { ...n, read: true } : n
-    ));
-    setUnreadCount(notifications.filter(n => !n.read && n.id !== id).length);
-
+  // Hapus semua notifikasi
+  const handleDeleteAllNotifications = async () => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await deleteAllNotifications(token);
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      setAlert({
+        show: true,
+        message: "Failed to delete all notifications",
+        variant: "danger"
       });
-    } catch {}
+    }
+  };
+
+  // Hapus satu notifikasi
+  const handleDeleteNotification = async (id) => {
+    try {
+      // Cari notifikasi yang akan dihapus
+      const notif = notifications.find(n => n.id === id);
+      await deleteNotification(id, token);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      // Jika notifikasi belum dibaca, kurangi unreadCount
+      if (notif && !notif.read) {
+        setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
+      }
+      // Jika notifikasi yang sedang diexpand dihapus, tutup expand
+      if (expandedNotification === id) setExpandedNotification(null);
+    } catch (err) {
+      setAlert({
+        show: true,
+        message: "Failed to delete notification",
+        variant: "danger"
+      });
+    }
+  };
+
+  // Tandai satu notifikasi sebagai sudah dibaca
+  const handleMarkAsRead = async (id) => {
+    try {
+      const notif = notifications.find(n => n.id === id);
+      if (!notif || notif.read) return; // Sudah dibaca, tidak perlu update
+      await markAsRead(id, token);
+      setNotifications(prev =>
+        prev.map(n => n.id === id ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   };
 
   // Tandai semua notifikasi sebagai sudah dibaca
-  const markAllAsRead = async () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
+  const handleMarkAllAsRead = async () => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`${API_URL}/notifications/read-all`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await markAllAsRead(token);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      setAlert({
+        show: true,
+        message: "Failed to mark all as read",
+        variant: "danger"
       });
-    } catch {}
+    }
   };
 
-  // Hapus notifikasi
-  const deleteNotification = async (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-    setUnreadCount(notifications.filter(n => !n.read && n.id !== id).length);
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`${API_URL}/notifications/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    } catch {}
+  // Toggle expand notifikasi
+  const toggleNotification = (id) => {
+    if (expandedNotification === id) {
+      setExpandedNotification(null);
+    } else {
+      setExpandedNotification(id);
+      handleMarkAsRead(id);
+    }
   };
 
+  // Format last login time
   const formatLastLogin = (dateString) => {
-    return new Date(dateString).toLocaleString('id-ID', {
+    return new Date(dateString).toLocaleString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -180,137 +235,238 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     });
   };
 
+  // Format notification time
+  const formatNotificationTime = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+      return `${diffInMinutes} min ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  };
+
   return (
     <>
-      <nav
-        className="admin-navbar dark"
-        style={{
-          background: "#181a20",
-          color: "#fff",
-          fontFamily: "'Poppins', 'Segoe UI', Arial, sans-serif",
-          fontWeight: 600,
-          fontSize: "1rem"
-        }}
-      >
+      <nav className="admin-navbar">
         {/* Left Section */}
         <div className="navbar-left">
-          <button className="sidebar-toggle" onClick={toggleSidebar} style={{ color: "#fff" }}>
-            <FaBars />
-          </button>
-          
+          <OverlayTrigger
+            placement="bottom"
+            overlay={<Tooltip id="sidebar-tooltip">Toggle Sidebar</Tooltip>}
+          >
+            <button className="sidebar-toggle" onClick={toggleSidebar}>
+              <FaBars />
+            </button>
+          </OverlayTrigger>
         </div>
 
         {/* Right Section */}
         <div className="navbar-right">
-          {/* Tombol Dark Mode */}
-          <button className="theme-toggle" onClick={toggleDarkMode} style={{ color: "#fff" }}>
-            {darkMode ? <FaSun /> : <FaMoon />}
-          </button>
+          {/* Dark Mode Toggle */}
+          <OverlayTrigger
+            placement="bottom"
+            overlay={<Tooltip id="theme-tooltip">
+              {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            </Tooltip>}
+          >
+            <button className="theme-toggle" onClick={toggleDarkMode}>
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
+          </OverlayTrigger>
 
-          {/* Icon Notifikasi */}
-          <Dropdown align="end" className="notifications-dropdown">
-            <Dropdown.Toggle variant="link" className="notification-toggle" style={{ color: "#fff" }}>
-              <FaBell />
-              {unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount}</span>
-              )}
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="notification-menu dark">
-              <Dropdown.Header className="notification-header d-flex justify-content-between align-items-center">
-                <span>Notifikasi ({notifications.length})</span>
-                {unreadCount > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline-light"
-                    style={{ fontSize: "0.85rem", padding: "2px 10px" }}
-                    onClick={markAllAsRead}
-                  >
-                    Tandai Semua Dibaca
-                  </Button>
+          {/* Notifications Bell Button */}
+          <Dropdown className="notifications-dropdown d-flex align-items-center" align="end">
+  <OverlayTrigger
+    placement="bottom"
+    overlay={<Tooltip id="notif-tooltip">Notifications</Tooltip>}
+  >
+    <Dropdown.Toggle 
+      as="button" 
+      className="notification-toggle btn btn-link p-0 d-flex align-items-center"
+    >
+      <div className="d-flex align-items-center">
+        <div className="notification-icon-wrapper me-1">
+          <FaBell />
+          {unreadCount > 0 && (
+            <span className="notification-badge">{unreadCount}</span>
+          )}
+        </div>
+      </div>
+    </Dropdown.Toggle>
+  </OverlayTrigger>
+
+  <Dropdown.Menu className="notification-menu">
+    <div className="notification-header">
+      <h5>Notifications ({notifications.length})</h5>
+      <div className="notification-actions">
+        {unreadCount > 0 && (
+          <button 
+            className="mark-all-read"
+            onClick={handleMarkAllAsRead}
+          >
+            Mark all as read
+          </button>
+        )}
+        <button 
+          className="clear-all"
+          onClick={handleDeleteAllNotifications}
+        >
+          Clear all
+        </button>
+      </div>
+    </div>
+    <div className="notification-list">
+      {notifications.length === 0 ? (
+        <div className="empty-notifications">
+          <div className="empty-icon">
+            <FaBell />
+          </div>
+          <p>No notifications yet</p>
+          <small>You'll see important updates here</small>
+        </div>
+      ) : (
+        notifications.map(notification => (
+          <div 
+            key={notification.id}
+            className={`notification-item ${!notification.read ? 'unread' : ''} ${
+              expandedNotification === notification.id ? 'expanded' : ''
+            }`}
+          >
+            <div 
+              className="notification-content"
+              onClick={() => toggleNotification(notification.id)}
+            >
+              <div className="notification-icon">
+                <div className={`icon-bg ${notification.type || 'default'}`}>
+                  {notification.type === 'warning' ? (
+                    <FaTimes />
+                  ) : notification.type === 'success' ? (
+                    <FaCheck />
+                  ) : (
+                    <FaBell />
+                  )}
+                </div>
+              </div>
+              <div className="notification-details">
+                <div className="notification-title">
+                  {notification.title || 'Notification'}
+                </div>
+                <div className="notification-message">
+                  {notification.message}
+                </div>
+                <div className="notification-time">
+                  {formatNotificationTime(notification.createdAt)}
+                </div>
+              </div>
+              <div className="notification-chevron">
+                {expandedNotification === notification.id ? (
+                  <FaChevronDown />
+                ) : (
+                  <FaChevronRight />
                 )}
-              </Dropdown.Header>
-              {notifications.length === 0 ? (
-                <Dropdown.Item className="text-muted text-center">
-                  Tidak ada notifikasi.
-                </Dropdown.Item>
-              ) : (
-                <>
-                  {notifications.map(notification => (
-                    <Dropdown.Item
-                      key={notification.id}
-                      className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                      style={{ color: "#fff", background: notification.read ? "transparent" : "#23272b", position: "relative" }}
-                    >
-                      <div
-                        onClick={() => markAsRead(notification.id)}
-                        style={{ cursor: "pointer", width: "calc(100% - 32px)" }}
-                      >
-                        <div className="notification-message">{notification.message}</div>
-                        <div className="notification-time">
-                          {new Date(notification.createdAt).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
-                        </div>
-                      </div>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        style={{
-                          color: "#dc3545",
-                          position: "absolute",
-                          right: 8,
-                          top: 12,
-                          padding: 0,
-                          zIndex: 2
-                        }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          deleteNotification(notification.id);
-                        }}
-                        title="Hapus Notifikasi"
-                      >
-                        <FaTrash />
-                      </Button>
-                    </Dropdown.Item>
-                  ))}
-                </>
-              )}
-              <Dropdown.Divider />
-              <Dropdown.Item className="text-center text-primary" style={{ color: "#0d6efd" }}>
-                Lihat Semua
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+              </div>
+            </div>
+            
+            {expandedNotification === notification.id && (
+              <div className="notification-expanded">
+                <div className="notification-full-message">
+                  {notification.message}
+                </div>
+                <div className="notification-actions">
+                  <button 
+                    className="delete-notification"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteNotification(notification.id);
+                    }}
+                  >
+                    <FaTrash /> Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+    <div className="notification-footer">
+      <button className="view-all">
+        View all notifications
+      </button>
+    </div>
+  </Dropdown.Menu>
+</Dropdown>
 
           {/* User Profile Dropdown */}
-          <Dropdown align="end" className="profile-dropdown">
-            <Dropdown.Toggle variant="link" className="profile-toggle" style={{ color: "#fff" }}>
-              <div className="profile-avatar" style={{
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "#fff"
-              }}>
+          <Dropdown className="profile-dropdown" align="end">
+            <Dropdown.Toggle className="profile-toggle">
+              <div 
+                className="profile-avatar"
+                style={{ backgroundColor: admin.avatarColor }}
+              >
                 {admin.name.charAt(0).toUpperCase()}
               </div>
               <div className="profile-info">
-                <div className="profile-name" style={{ color: "#fff", fontWeight: 700 }}>{admin.name}</div>
-                <div className="profile-role" style={{ color: "#bdbdbd" }}>{admin.role}</div>
+                <div className="profile-name">{admin.name}</div>
+                <div className="profile-role">{admin.role}</div>
               </div>
+              <FaChevronDown className="profile-chevron" />
             </Dropdown.Toggle>
-            <Dropdown.Menu className="profile-menu dark">
-              <Dropdown.Item onClick={() => setShowProfile(true)} style={{ color: "#fff" }}>
-                <FaUserEdit className="menu-icon" />
-                Profil Saya
+
+            <Dropdown.Menu className="profile-menu">
+              <Dropdown.Header className="profile-menu-header">
+                <div 
+                  className="menu-avatar"
+                  style={{ backgroundColor: admin.avatarColor }}
+                >
+                  {admin.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="menu-profile-info">
+                  <div className="menu-profile-name">{admin.name}</div>
+                  <div className="menu-profile-email">{admin.email}</div>
+                </div>
+              </Dropdown.Header>
+
+              <Dropdown.Item 
+                className="profile-menu-item"
+                onClick={() => setShowProfile(true)}
+              >
+                <FiUser className="menu-icon" />
+                <span>My Profile</span>
               </Dropdown.Item>
-              <Dropdown.Item onClick={() => setShowSettings(true)} style={{ color: "#fff" }}>
-                <FaKey className="menu-icon" />
-                Ganti Password
+
+              <Dropdown.Item 
+                className="profile-menu-item"
+                onClick={() => setShowSettings(true)}
+              >
+                <FiLock className="menu-icon" />
+                <span>Change Password</span>
               </Dropdown.Item>
-              <Dropdown.Item style={{ color: "#fff" }}>
-                <FaCog className="menu-icon" />
-                Pengaturan
+
+              <Dropdown.Item className="profile-menu-item">
+                <FiSettings className="menu-icon" />
+                <span>Settings</span>
               </Dropdown.Item>
+
               <Dropdown.Divider />
-              <Dropdown.Item onClick={handleLogout} className="logout-item" style={{ color: "#dc3545", fontWeight: 700 }}>
+
+              <Dropdown.Item 
+                className="profile-menu-item logout"
+                onClick={handleLogout}
+              >
                 <FaSignOutAlt className="menu-icon" />
-                Keluar
+                <span>Logout</span>
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
@@ -322,54 +478,79 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
         show={showProfile}
         onHide={() => setShowProfile(false)}
         centered
-        className="dark-modal"
+        className="admin-modal"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Profil Admin</Modal.Title>
+          <Modal.Title>
+            <FiUser className="modal-title-icon" />
+            Admin Profile
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="profile-modal-content">
             <div className="profile-avatar-large">
-              {admin.name.charAt(0).toUpperCase()}
-              <div className="online-status"></div>
+              <div 
+                className="avatar-circle"
+                style={{ backgroundColor: admin.avatarColor }}
+              >
+                {admin.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="profile-status">
+                <div className="status-badge online">Online</div>
+              </div>
             </div>
+
             <div className="profile-details">
               <div className="detail-item">
-                <FaUserEdit className="detail-icon" />
-                <div>
-                  <div className="detail-label">Nama</div>
+                <div className="detail-icon">
+                  <FiUser />
+                </div>
+                <div className="detail-content">
+                  <div className="detail-label">Name</div>
                   <div className="detail-value">{admin.name}</div>
                 </div>
               </div>
+
               <div className="detail-item">
-                <FaEnvelope className="detail-icon" />
-                <div>
+                <div className="detail-icon">
+                  <FaEnvelope />
+                </div>
+                <div className="detail-content">
                   <div className="detail-label">Email</div>
                   <div className="detail-value">{admin.email}</div>
                 </div>
               </div>
+
               <div className="detail-item">
-                <FaPhone className="detail-icon" />
-                <div>
-                  <div className="detail-label">Telepon</div>
-                  <div className="detail-value">{admin.no_tlpn}</div>
+                <div className="detail-icon">
+                  <FaPhone />
+                </div>
+                <div className="detail-content">
+                  <div className="detail-label">Phone</div>
+                  <div className="detail-value">{admin.no_telp}</div>
                 </div>
               </div>
+
               <div className="detail-item">
-                <FaUserShield className="detail-icon" />
-                <div>
+                <div className="detail-icon">
+                  <FaUserShield />
+                </div>
+                <div className="detail-content">
                   <div className="detail-label">Role</div>
                   <div className="detail-value">
-                    <Badge bg={admin.role === 'admin' ? 'primary' : 'secondary'}>
+                    <Badge bg="primary" pill>
                       {admin.role}
                     </Badge>
                   </div>
                 </div>
               </div>
+
               <div className="detail-item">
-                <FaCog className="detail-icon" />
-                <div>
-                  <div className="detail-label">Terakhir Login</div>
+                <div className="detail-icon">
+                  <FaCog />
+                </div>
+                <div className="detail-content">
+                  <div className="detail-label">Last Login</div>
                   <div className="detail-value">{formatLastLogin(admin.lastLogin)}</div>
                 </div>
               </div>
@@ -377,11 +558,11 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            variant="outline-light"
-            onClick={() => setShowProfile(false)}
-          >
-            Tutup
+          <Button variant="outline-secondary" onClick={() => setShowProfile(false)}>
+            Close
+          </Button>
+          <Button variant="primary">
+            Edit Profile
           </Button>
         </Modal.Footer>
       </Modal>
@@ -395,57 +576,75 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
           setPasswordForm({ old: "", new: "", confirm: "" });
         }}
         centered
-        className="dark-modal"
+        className="admin-modal"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Ganti Password</Modal.Title>
+          <Modal.Title>
+            <FiLock className="modal-title-icon" />
+            Change Password
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {alert.show && (
-            <Alert variant={alert.variant} className="mb-3">
+            <Alert variant={alert.variant} className="mb-4">
               {alert.message}
             </Alert>
           )}
           <Form onSubmit={handleChangePassword}>
-            <Form.Group className="mb-3">
-              <Form.Label>Password Lama</Form.Label>
-              <Form.Control
-                type="password"
-                value={passwordForm.old}
-                onChange={e => setPasswordForm({ ...passwordForm, old: e.target.value })}
-                placeholder="Masukkan password lama"
-                required
-              />
+            <Form.Group className="mb-3 form-group-custom">
+              <Form.Label>Current Password</Form.Label>
+              <div className="input-with-icon">
+                <FiLock className="input-icon" />
+                <Form.Control
+                  type="password"
+                  value={passwordForm.old}
+                  onChange={e => setPasswordForm({ ...passwordForm, old: e.target.value })}
+                  placeholder="Enter your current password"
+                  required
+                />
+              </div>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password Baru</Form.Label>
-              <Form.Control
-                type="password"
-                value={passwordForm.new}
-                onChange={e => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                placeholder="Masukkan password baru"
-                required
-                minLength={6}
-              />
+
+            <Form.Group className="mb-3 form-group-custom">
+              <Form.Label>New Password</Form.Label>
+              <div className="input-with-icon">
+                <FiLock className="input-icon" />
+                <Form.Control
+                  type="password"
+                  value={passwordForm.new}
+                  onChange={e => setPasswordForm({ ...passwordForm, new: e.target.value })}
+                  placeholder="Enter new password"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Form.Text className="text-muted">
+                Minimum 6 characters
+              </Form.Text>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Konfirmasi Password Baru</Form.Label>
-              <Form.Control
-                type="password"
-                value={passwordForm.confirm}
-                onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                placeholder="Konfirmasi password baru"
-                required
-                minLength={6}
-              />
+
+            <Form.Group className="mb-4 form-group-custom">
+              <Form.Label>Confirm New Password</Form.Label>
+              <div className="input-with-icon">
+                <FiLock className="input-icon" />
+                <Form.Control
+                  type="password"
+                  value={passwordForm.confirm}
+                  onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                  placeholder="Confirm new password"
+                  required
+                  minLength={6}
+                />
+              </div>
             </Form.Group>
+
             <Button
               variant="primary"
               type="submit"
-              className="w-100 mt-3"
+              className="w-100 submit-btn"
               disabled={!passwordForm.old || !passwordForm.new || !passwordForm.confirm}
             >
-              Simpan Perubahan
+              Change Password
             </Button>
           </Form>
         </Modal.Body>

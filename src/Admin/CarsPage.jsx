@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form, InputGroup, Toast, ToastContainer
+  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form, InputGroup, Toast, ToastContainer, Row, Col, Card
 } from "react-bootstrap";
 import { FaEllipsisV, FaEdit, FaTrash, FaPlus, FaSort, FaSortUp, FaSortDown, FaFileCsv, FaCar, FaMoon, FaSun, FaEye } from "react-icons/fa";
 import { CSVLink } from "react-csv";
 
 const API_URL = "http://localhost:3000/api";
-const BACKEND_URL = "http://localhost:3000"; // tambahkan di atas
+const BACKEND_URL = "http://localhost:3000";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const CarsPage = ({ darkMode, toggleDarkMode }) => {
@@ -25,7 +25,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
-  const [formImage, setFormImage] = useState(null); // Tambahkan state untuk file gambar
+  const [formImage, setFormImage] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -173,6 +173,10 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     data.append("status", form.status.value);
     data.append("deskripsi", form.deskripsi.value);
     if (formImage) data.append("gambar", formImage);
+    if (form.promo.value) data.append("promo", form.promo.value);
+    if (form.transmisi.value) data.append("transmisi", form.transmisi.value);
+    if (form.kapasitas.value) data.append("kapasitas", form.kapasitas.value);
+    if (form.fitur.value) data.append("fitur", form.fitur.value);
 
     try {
       if (editCar) {
@@ -193,12 +197,21 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     }
   };
 
+  const getHargaSetelahPromo = (car) => {
+    if (car.promo && car.promo > 0) {
+      return Math.round(car.harga - (car.harga * car.promo / 100));
+    }
+    return car.harga;
+  };
+
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="mb-0"><FaCar className="me-2" />Daftar Mobil</h3>
-          <div>
+      <div className="container-fluid py-4">
+        <Row className="align-items-center mb-4">
+          <Col xs={12} md={6}>
+            <h3 className="mb-0 fw-bold"><FaCar className="me-2" />Daftar Mobil</h3>
+          </Col>
+          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
             <Button
               variant={darkMode ? "light" : "dark"}
               onClick={toggleDarkMode}
@@ -210,56 +223,66 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
             <Button variant="success" onClick={() => handleShowFormModal()} className="fw-bold">
               <FaPlus className="me-2" />Tambah Mobil
             </Button>
-          </div>
-        </div>
-        <div className={`d-flex flex-wrap gap-2 mb-3 align-items-center shadow-sm p-3 rounded ${darkMode ? "bg-secondary" : "bg-white"}`}>
-          <InputGroup style={{ maxWidth: 260 }}>
-            <Form.Control
-              type="text"
-              placeholder="Cari nama/kategori/ID..."
-              value={search}
-              onChange={e => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </InputGroup>
-          <Form.Select
-            value={filterStatus}
-            onChange={e => {
-              setFilterStatus(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 180 }}
-          >
-            <option value="all">Semua Status</option>
-            <option value="available">Tersedia</option>
-            <option value="unavailable">Tidak Tersedia</option>
-          </Form.Select>
-          <Form.Select
-            value={pageSize}
-            onChange={e => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
-            style={{ maxWidth: 120 }}
-          >
-            {PAGE_SIZE_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt} / halaman</option>
-            ))}
-          </Form.Select>
-          <CSVLink
-            data={formatCSVData(sortedCars)}
-            headers={csvHeaders}
-            filename={`daftar-mobil-${Date.now()}.csv`}
-            className="btn btn-outline-success"
-            separator=";"
-            enclosingCharacter={'"'}
-          >
-            <FaFileCsv className="me-2" />
-            Export CSV
-          </CSVLink>
-        </div>
+          </Col>
+        </Row>
+        <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
+          <Card.Body>
+            <Row className="g-2 align-items-center">
+              <Col xs={12} md={4}>
+                <InputGroup>
+                  <Form.Control
+                    type="text"
+                    placeholder="Cari nama/kategori/ID..."
+                    value={search}
+                    onChange={e => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                </InputGroup>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={filterStatus}
+                  onChange={e => {
+                    setFilterStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="available">Tersedia</option>
+                  <option value="unavailable">Tidak Tersedia</option>
+                </Form.Select>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={pageSize}
+                  onChange={e => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  {PAGE_SIZE_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt} / halaman</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col xs={12} md={4} className="text-md-end mt-2 mt-md-0">
+                <CSVLink
+                  data={formatCSVData(sortedCars)}
+                  headers={csvHeaders}
+                  filename={`daftar-mobil-${Date.now()}.csv`}
+                  className="btn btn-outline-success w-100"
+                  separator=";"
+                  enclosingCharacter={'"'}
+                >
+                  <FaFileCsv className="me-2" />
+                  Export CSV
+                </CSVLink>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
@@ -311,7 +334,20 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     </td>
                     <td>{car.nama}</td>
                     <td>{car.kategori || '-'}</td>
-                    <td>Rp {car.harga?.toLocaleString('id-ID') || '-'}</td>
+                    <td>
+                      {car.promo && car.promo > 0 ? (
+                        <>
+                          <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                            Rp {car.harga?.toLocaleString('id-ID')}
+                          </span>
+                          <span className="fw-bold text-warning">
+                            Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}
+                          </span>
+                        </>
+                      ) : (
+                        <>Rp {car.harga?.toLocaleString('id-ID')}</>
+                      )}
+                    </td>
                     <td>
                       <Badge pill bg={car.status === 'available' ? 'success' : 'danger'}>
                         {car.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
@@ -343,7 +379,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
         )}
 
         {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
           <div>
             Menampilkan {pagedCars.length} dari {sortedCars.length} mobil
           </div>
@@ -408,7 +444,20 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                 <p><strong>ID:</strong> #{detailCar.id}</p>
                 <p><strong>Nama Mobil:</strong> {detailCar.nama}</p>
                 <p><strong>Kategori:</strong> {detailCar.kategori || '-'}</p>
-                <p><strong>Harga:</strong> Rp {detailCar.harga?.toLocaleString('id-ID') || '-'}</p>
+                <p><strong>Harga:</strong>{" "}
+                  {detailCar.promo && detailCar.promo > 0 ? (
+                    <>
+                      <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                        Rp {detailCar.harga?.toLocaleString('id-ID')}
+                      </span>
+                      <span className="fw-bold text-warning">
+                        Rp {getHargaSetelahPromo(detailCar).toLocaleString('id-ID')}
+                      </span>
+                    </>
+                  ) : (
+                    <>Rp {detailCar.harga?.toLocaleString('id-ID')}</>
+                  )}
+                </p>
                 <p><strong>Deskripsi:</strong> {detailCar.deskripsi || '-'}</p>
                 <p>
                   <strong>Status:</strong>{" "}
@@ -416,6 +465,11 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     {detailCar.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
                   </Badge>
                 </p>
+                <p><strong>Promo:</strong> {detailCar.promo ? `${detailCar.promo}%` : '-'}</p>
+                <p><strong>Transmisi:</strong> {detailCar.transmisi || '-'}</p>
+                <p><strong>Kapasitas:</strong> {detailCar.kapasitas || '-'}</p>
+                <p><strong>Fitur:</strong> {Array.isArray(detailCar.fitur) ? detailCar.fitur.join(", ") : '-'}</p>
+                <p><strong>Rating:</strong> {detailCar.rating || '-'} ({detailCar.jumlah_review || 0} review)</p>
               </div>
             )}
           </Modal.Body>
@@ -467,13 +521,32 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                 {editCar?.gambar && (
                   <div className="mt-2">
                     <img
-                      src={editCar.gambar}
+                      src={editCar.gambar.startsWith("http") ? editCar.gambar : BACKEND_URL + editCar.gambar}
                       alt="Preview"
                       style={{ maxWidth: 120, borderRadius: 8, border: "1px solid #ccc" }}
                     />
                   </div>
                 )}
                 <Form.Text>Upload foto mobil (jpg/png/webp).</Form.Text>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Promo (%)</Form.Label>
+                <Form.Control name="promo" type="number" min={0} max={100} defaultValue={editCar?.promo || ""} />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Transmisi</Form.Label>
+                <Form.Select name="transmisi" defaultValue={editCar?.transmisi || "Automatic"}>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Manual">Manual</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Kapasitas</Form.Label>
+                <Form.Control name="kapasitas" type="number" min={1} max={20} defaultValue={editCar?.kapasitas || ""} />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Fitur (pisahkan dengan koma)</Form.Label>
+                <Form.Control name="fitur" defaultValue={Array.isArray(editCar?.fitur) ? editCar.fitur.join(", ") : ""} />
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>

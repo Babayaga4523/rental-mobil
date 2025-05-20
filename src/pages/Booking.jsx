@@ -23,6 +23,13 @@ import "../style/BookingPage.css";
   
 const BACKEND_URL = "http://localhost:3000";
 
+const getHargaSetelahPromo = (price, promo) => {
+  if (promo && promo > 0) {
+    return Math.round(price - (price * promo / 100));
+  }
+  return price;
+};
+
 const Booking = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,11 +37,16 @@ const Booking = () => {
     carId,
     carName,
     price,
-    days = 1,
-    totalPrice,
-    image,
     discount,
+    image,
+    kapasitas,
+    transmisi,
+    fitur,
+    days = 1,
   } = location.state || {};
+
+  const hargaPromo = getHargaSetelahPromo(price, discount);
+  const totalHarga = hargaPromo * days;
 
   const [formData, setFormData] = useState({
     layanan_id: carId,
@@ -42,7 +54,7 @@ const Booking = () => {
     return_date: "",
     payment_method: "bank_transfer",
     additional_notes: "",
-    total_price: totalPrice,
+    total_price: totalHarga,
     payment_proof: null,
   });
 
@@ -174,7 +186,7 @@ const Booking = () => {
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append('layanan_id', formData.layanan_id);
+      formDataToSend.append('layanan_id', Number(formData.layanan_id)); // pastikan integer
       formDataToSend.append('pickup_date', formData.pickup_date);
       formDataToSend.append('return_date', formData.return_date);
       formDataToSend.append('payment_method', formData.payment_method);
@@ -302,7 +314,18 @@ const Booking = () => {
                             <FaMoneyBillWave className="text-primary me-2 flex-shrink-0" />
                             <span>
                               Harga per hari:{" "}
-                              <strong>Rp {price?.toLocaleString("id-ID")}</strong>
+                              {discount > 0 ? (
+                                <>
+                                  <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                                    Rp {price?.toLocaleString("id-ID")}
+                                  </span>
+                                  <span className="fw-bold text-warning">
+                                    Rp {hargaPromo?.toLocaleString("id-ID")}
+                                  </span>
+                                </>
+                              ) : (
+                                <strong>Rp {price?.toLocaleString("id-ID")}</strong>
+                              )}
                             </span>
                           </li>
                           <li className="mb-2 d-flex align-items-center">
@@ -324,7 +347,7 @@ const Booking = () => {
                           <div className="d-flex justify-content-between align-items-center">
                             <h4 className="h6 mb-0">Total Harga:</h4>
                             <h3 className="h5 mb-0 total-price-badge">
-                              Rp {totalPrice?.toLocaleString("id-ID")}
+                              Rp {totalHarga?.toLocaleString("id-ID")}
                             </h3>
                           </div>
                           <small className="text-muted d-block mt-1">

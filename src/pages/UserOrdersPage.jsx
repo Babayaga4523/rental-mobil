@@ -11,6 +11,8 @@ import {
   Card,
   Button,
   Modal,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import {
@@ -21,9 +23,16 @@ import {
   FaInfoCircle,
   FaEye,
   FaTimes,
+  FaStar,
+  FaUser,
+  FaCogs,
+  FaUsers,
+  FaTag,
 } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 import "../style/UserOrdersPage.css";
+
+const BACKEND_URL = "http://localhost:3000";
 
 const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -42,7 +51,7 @@ const UserOrdersPage = () => {
     }
     const fetchOrders = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/orders", {
+        const res = await axios.get(`${BACKEND_URL}/api/orders`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(res.data.data || []);
@@ -106,11 +115,18 @@ const UserOrdersPage = () => {
     }).format(amount);
   };
 
+  const getHargaSetelahPromo = (car) => {
+    if (car.promo && car.promo > 0) {
+      return Math.round(car.harga - (car.harga * car.promo / 100));
+    }
+    return car.harga;
+  };
+
   // Modal Bukti Pembayaran
   const handleShowProof = (payment_proof) => {
     if (!payment_proof) return;
     const ext = payment_proof.split(".").pop().toLowerCase();
-    setProofUrl(`http://localhost:3000${payment_proof}`);
+    setProofUrl(`${BACKEND_URL}${payment_proof}`);
     setProofType(ext);
     setShowProof(true);
   };
@@ -125,15 +141,20 @@ const UserOrdersPage = () => {
     if (!payment_proof)
       return <span className="text-muted">Belum diupload</span>;
     return (
-      <Button
-        variant="outline-primary"
-        size="sm"
-        className="d-flex align-items-center"
-        onClick={() => handleShowProof(payment_proof)}
+      <OverlayTrigger
+        placement="top"
+        overlay={<Tooltip>Lihat Bukti Pembayaran</Tooltip>}
       >
-        <FaEye className="me-2" />
-        Lihat Bukti Pembayaran
-      </Button>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          className="d-flex align-items-center"
+          onClick={() => handleShowProof(payment_proof)}
+        >
+          <FaEye className="me-2" />
+          Bukti
+        </Button>
+      </OverlayTrigger>
     );
   };
 
@@ -194,7 +215,7 @@ const UserOrdersPage = () => {
       <Row xs={1} md={2} lg={3} className="g-4">
         {orders.map((order) => (
           <Col key={order.id}>
-            <Card className="h-100 shadow-sm order-card">
+            <Card className="h-100 shadow-sm order-card border-0">
               <Card.Header
                 className={`bg-${getStatusBadge(
                   order.status
@@ -224,25 +245,58 @@ const UserOrdersPage = () => {
                   <div className="flex-shrink-0 me-3">
                     <img
                       src={
-                        order.car?.image_url
-                          ? order.car.image_url.startsWith("/")
-                            ? `http://localhost:3000${order.car.image_url}`
-                            : order.car.image_url
+                        order.layanan?.gambar
+                          ? order.layanan.gambar.startsWith("/")
+                            ? `${BACKEND_URL}${order.layanan.gambar}`
+                            : order.layanan.gambar
                           : "https://via.placeholder.com/80x60?text=No+Image"
                       }
-                      alt={order.car?.name}
+                      alt={order.layanan?.nama}
                       className="car-thumbnail"
                     />
                   </div>
                   <div>
-                    <h5 className="mb-1">
-                      {order.car?.name || "Mobil Tidak Tersedia"}
+                    <h5 className="mb-1 fw-bold">
+                      {order.layanan?.nama || "Mobil Tidak Tersedia"}
                     </h5>
-                    <small className="text-muted">
-                      <FaCar className="me-1" />
-                      {order.car?.license_plate || "-"}
-                    </small>
+                    <div className="d-flex align-items-center gap-2">
+                      <Badge bg="light" text="dark" className="border border-secondary">
+                        <FaTag className="me-1" />
+                        {order.layanan?.kategori || "-"}
+                      </Badge>
+                      <Badge bg="info" className="ms-1">
+                        {order.layanan?.transmisi}
+                      </Badge>
+                      <Badge bg="secondary" className="ms-1">
+                        <FaUsers className="me-1" />
+                        {order.layanan?.kapasitas} Orang
+                      </Badge>
+                      {order.layanan?.promo > 0 && (
+                        <Badge bg="danger" className="ms-1">
+                          Promo {order.layanan.promo}%
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                <div className="mb-2">
+                  <span className="text-muted">
+                    <FaStar className="text-warning me-1" />
+                    {order.layanan?.rating
+                      ? `${order.layanan.rating.toFixed(1)} (${order.layanan.jumlah_review || 0} review)`
+                      : "Belum ada rating"}
+                  </span>
+                </div>
+
+                <div className="mb-2">
+                  <span className="text-muted">
+                    <FaCogs className="me-1" />
+                    Fitur:{" "}
+                    {Array.isArray(order.layanan?.fitur) && order.layanan.fitur.length > 0
+                      ? order.layanan.fitur.slice(0, 3).join(", ")
+                      : "-"}
+                  </span>
                 </div>
 
                 <hr />
@@ -275,6 +329,23 @@ const UserOrdersPage = () => {
                   <div className="ps-4">
                     <div>
                       <strong>Total:</strong> {formatCurrency(order.total_price)}
+                    </div>
+                    <div>
+                      <span>
+                        Harga per hari:{" "}
+                        {order.layanan?.promo > 0 ? (
+                          <>
+                            <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                              Rp {order.layanan.harga?.toLocaleString("id-ID")}
+                            </span>
+                            <span className="fw-bold text-warning">
+                              Rp {getHargaSetelahPromo(order.layanan).toLocaleString("id-ID")}
+                            </span>
+                          </>
+                        ) : (
+                          <>Rp {order.layanan?.harga?.toLocaleString("id-ID")}</>
+                        )}
+                      </span>
                     </div>
                     <div className="mt-2">
                       <strong>Bukti:</strong> {renderPaymentProofButton(order.payment_proof)}
@@ -310,7 +381,7 @@ const UserOrdersPage = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
-          {["jpg", "jpeg", "png"].includes(proofType) ? (
+          {["jpg", "jpeg", "png", "webp"].includes(proofType) ? (
             <img
               src={proofUrl}
               alt="Bukti Pembayaran"

@@ -4,6 +4,8 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/HomePage.css";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -60,68 +62,113 @@ const Home = () => {
         title="Chat via WhatsApp"
         data-aos="fade-left"
       >
-        <img src="/images/wa.svg" alt="WhatsApp" width="40" />
+        {/* Tambahkan icon WhatsApp di dalam button */}
+        <i className="bi bi-whatsapp me-2" style={{ fontSize: 24 }}></i>
         <span className="ms-2 d-none d-sm-inline">Hubungi Kami</span>
       </a>
 
       {/* HERO SECTION */}
-      <section className="home-page-hero-section position-relative d-flex align-items-center">
-        <div className="home-page-hero-overlay"></div>
-        <div className="container home-page-hero-content position-relative z-index-1">
-          <div className="row align-items-center">
-            <div className="col-lg-6" data-aos="fade-right">
-              <h1 className="home-page-hero-title mb-4 fw-bold display-4">
-                Sewa Mobil <span className="text-gradient">Premium</span> dengan Layanan Terbaik
-              </h1>
-              <p className="home-page-hero-subtitle mb-4 lead">
-                Solusi transportasi profesional untuk perjalanan bisnis, liburan, atau acara khusus. Armada terawat dengan standar tinggi dan pelayanan prima.
-              </p>
-              <div className="home-page-hero-cta mb-4 d-flex flex-wrap gap-3">
-                <a
-                  href="#cars"
-                  className="btn btn-gold btn-lg px-4 py-3 fw-bold rounded-pill"
-                >
-                  <i className="bi bi-car-front me-2"></i>Lihat Armada
-                </a>
-                <a
-                  href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`}
-                  className="btn btn-outline-light btn-lg px-4 py-3 fw-bold rounded-pill"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <i className="bi bi-whatsapp me-2"></i>Konsultasi Gratis
-                </a>
-              </div>
-              <div className="d-flex flex-column gap-2 mt-3">
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill text-gold me-2"></i>
-                  <span>Driver profesional & berpengalaman</span>
-                </div>
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill text-gold me-2"></i>
-                  <span>Armada terbaru & kondisi prima</span>
-                </div>
-                <div className="d-flex align-items-center">
-                  <i className="bi bi-check-circle-fill text-gold me-2"></i>
-                  <span>Dukungan 24/7 selama penyewaan</span>
-                </div>
-              </div>
-            </div>
-            <div className="col-lg-6 d-none d-lg-block" data-aos="fade-left" data-aos-delay="300">
-              <div className="home-page-hero-img-container position-relative">
-                <img
-                  src="/images/hero-car.png"
-                  alt="Rental Mobil Premium"
-                  className="img-fluid home-page-hero-img"
-                />
-                <div className="home-page-hero-badge bg-gold text-dark fw-bold rounded-pill p-2 px-3 shadow">
-                  <i className="bi bi-star-fill me-1"></i> Rating 4.9/5.0
-                </div>
-              </div>
-            </div>
+      <section className="landing-hero position-relative d-flex align-items-center py-5" style={{ minHeight: "100vh", background: "linear-gradient(120deg, #1e3c72 0%, #2a5298 100%)" }}>
+  <div className="home-page-hero-overlay"></div>
+  <div className="container position-relative z-index-2">
+    <div className="row align-items-center">
+      <div className="col-lg-6 text-center text-lg-start">
+        <motion.h1
+          className="display-3 fw-bold mb-4 home-page-hero-title"
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          Sewa Mobil <span className="text-gradient">Premium</span> & Nyaman
+        </motion.h1>
+        <motion.p
+          className="lead mb-4 text-light home-page-hero-subtitle"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
+        >
+          Solusi rental mobil terbaik untuk bisnis, liburan, dan perjalanan keluarga. Armada terawat, harga transparan, layanan 24 jam.
+        </motion.p>
+        {/* Search Bar */}
+        <form className="home-search-bar mb-4" onSubmit={e => { e.preventDefault(); document.getElementById('cars').scrollIntoView({ behavior: 'smooth' }); }}>
+          <input type="text" className="form-control rounded-pill shadow-sm" placeholder="Cari mobil (Avanza, Innova, Alphard...)" style={{ maxWidth: 350, display: 'inline-block' }} />
+          <button type="submit" className="btn btn-gold rounded-pill ms-2 px-4">
+            <i className="bi bi-search"></i>
+          </button>
+        </form>
+        <motion.div
+          className="d-flex flex-wrap gap-3 mb-4 justify-content-center justify-content-lg-start home-page-hero-cta"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <Link to="#cars" className="btn btn-gold btn-lg px-4 rounded-pill shadow">
+            <i className="bi bi-car-front me-2"></i>Pilih Mobil
+          </Link>
+          <a href="https://wa.me/6281381339149" target="_blank" rel="noopener noreferrer"
+             className="btn btn-outline-light btn-lg px-4 rounded-pill shadow">
+            <i className="bi bi-whatsapp me-2"></i>Chat Admin
+          </a>
+        </motion.div>
+        <motion.ul
+          className="list-unstyled mt-3 text-light hero-features"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+        >
+          <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Driver profesional & ramah</li>
+          <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Armada terbaru & bersih</li>
+          <li><i className="bi bi-check-circle-fill text-gold me-2"></i>Booking mudah & cepat</li>
+        </motion.ul>
+      </div>
+      <div className="col-lg-6 text-center mt-5 mt-lg-0 position-relative">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.7 }}
+          whileHover={{ scale: 1.04 }}
+          className="hero-img-container"
+        >
+          <img
+            src="/images/hero-car.png"
+            alt="Rental Mobil"
+            className="img-fluid rounded-4 shadow-lg landing-hero-img"
+            style={{ maxWidth: "90%", transition: "transform 0.4s" }}
+          />
+          <motion.div
+            className="hero-badge bg-gold text-dark px-4 py-2 rounded-pill fw-bold shadow"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            style={{ position: "absolute", top: 30, right: 30, fontSize: "1.1rem" }}
+          >
+            PROMO HARI INI!
+          </motion.div>
+        </motion.div>
+        {/* Statistik animasi di bawah gambar */}
+        <div className="home-hero-stats d-flex justify-content-center gap-4 mt-4">
+          <div className="stat-item text-center">
+            <div className="stat-number display-6 fw-bold text-gold">{counters.cars}+</div>
+            <div className="stat-label text-light">Armada</div>
+          </div>
+          <div className="stat-item text-center">
+            <div className="stat-number display-6 fw-bold text-gold">{counters.customers}+</div>
+            <div className="stat-label text-light">Pelanggan</div>
+          </div>
+          <div className="stat-item text-center">
+            <div className="stat-number display-6 fw-bold text-gold">{counters.years}+</div>
+            <div className="stat-label text-light">Tahun</div>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+    {/* Scroll Down Indicator */}
+    <div className="scroll-down" onClick={() => document.getElementById('cars').scrollIntoView({ behavior: 'smooth' })}>
+      <div className="scroll-line bg-white"></div>
+      <span className="text-white">Scroll Down</span>
+    </div>
+  </div>
+</section>
 
       {/* COUNTERS */}
       <section className="home-page-counters-section py-5 bg-white position-relative">
@@ -244,42 +291,102 @@ const Home = () => {
             <div className="row g-4">
               {popularCars.slice(0, 8).map((car, idx) => (
                 <div className="col-md-6 col-lg-3" key={car.id} data-aos="fade-up" data-aos-delay={idx * 100}>
-                  <div className="home-page-car-card shadow-sm rounded-4 overflow-hidden border-0 h-100">
+                  <motion.div
+                    className="home-page-car-card shadow-sm rounded-4 overflow-hidden border-0 h-100"
+                    whileHover={{ y: -8, scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                  >
                     <div className="home-page-car-img-container position-relative">
                       <img
                         src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
                         alt={car.nama}
                         className="img-fluid w-100 home-page-car-image"
+                        style={{ height: 180, objectFit: "cover", transition: "transform 0.4s" }}
                       />
-                      <div className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
+                      {car.promo > 0 && (
+                        <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
+                          <i className="bi bi-bolt-fill me-1"></i>Promo {car.promo}%
+                        </span>
+                      )}
+                      <span className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
                         POPULER
-                      </div>
+                      </span>
                     </div>
                     <div className="p-4">
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <h5 className="fw-bold mb-1">{car.nama}</h5>
-                        <div className="home-page-car-rating text-gold small">
-                          <i className="bi bi-star-fill"></i> 4.8
+                        <div className="home-page-car-rating text-gold small d-flex align-items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <i
+                              key={i}
+                              className={`bi bi-star-fill${i < Math.round(car.rating || 0) ? "" : " text-secondary opacity-25"}`}
+                              style={{ fontSize: "1rem" }}
+                            />
+                          ))}
+                          <span className="ms-2 text-muted small">
+                            {car.rating ? `${car.rating.toFixed(1)} (${car.jumlah_review || 0})` : "Belum ada rating"}
+                          </span>
                         </div>
                       </div>
                       <p className="text-muted mb-3">
-                        <i className="bi bi-gear me-1"></i> {car.transmisi || 'Automatic'} • 
+                        <i className="bi bi-gear me-1"></i> {car.transmisi || 'Automatic'} •
                         <i className="bi bi-people me-1 ms-2"></i> {car.kapasitas || '4-6'} Orang
                       </p>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <span className="text-dark fw-bold">Rp {car.harga?.toLocaleString('id-ID') || '500.000'}</span>
-                          <span className="text-muted small"> /hari</span>
-                        </div>
-                        <a
-                          href={`/detail-mobil/${car.id}`}
-                          className="btn btn-sm btn-outline-gold rounded-pill px-3"
-                        >
-                          Detail
-                        </a>
+                      <div className="mb-2">
+                        {car.promo > 0 ? (
+                          <>
+                            <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                              Rp {car.harga?.toLocaleString('id-ID')}
+                            </span>
+                            <span className="fw-bold text-warning fs-5">
+                              Rp {(car.harga - (car.harga * car.promo / 100)).toLocaleString('id-ID')}
+                            </span>
+                            <span className="text-muted ms-1">/hari</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-dark fw-bold fs-5">Rp {car.harga?.toLocaleString('id-ID') || '500.000'}</span>
+                            <span className="text-muted ms-1">/hari</span>
+                          </>
+                        )}
                       </div>
+                      <div className="d-flex flex-wrap gap-2 mb-3">
+                        {Array.isArray(car.fitur) && car.fitur.slice(0, 2).map((f, i) => (
+                          <span key={i} className="badge bg-light text-dark border border-primary">
+                            <i className="bi bi-check-circle text-success me-1"></i>{f}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="d-flex gap-2 mt-auto">
+  <Link
+    to={`/detail/${car.id}`}
+    className="btn btn-outline-primary btn-lg flex-fill rounded-pill fw-semibold d-flex align-items-center justify-content-center"
+    style={{ minWidth: 0, fontSize: "1rem", height: 44 }}
+  >
+    <i className="bi bi-info-circle me-2"></i>
+    Detail
+  </Link>
+  <Link
+    to="/booking"
+    state={{
+      carId: car.id,
+      carName: car.nama,
+      price: car.harga,
+      discount: car.promo,
+      image: car.gambar,
+      kapasitas: car.kapasitas,
+      transmisi: car.transmisi,
+      fitur: car.fitur,
+    }}
+    className="btn btn-gold btn-lg flex-fill rounded-pill fw-semibold d-flex align-items-center justify-content-center"
+    style={{ minWidth: 0, fontSize: "1rem", height: 44 }}
+  >
+    <i className="bi bi-calendar-check me-2"></i>
+    Pesan
+  </Link>
+</div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               ))}
             </div>
@@ -338,24 +445,28 @@ const Home = () => {
           </p>
         </div>
       </div>
-      
+
       {/* Step 3 */}
-      <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
-        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
+      <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all"
              style={{ backgroundColor: 'white', minHeight: '300px' }}>
-          <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle" 
-               style={{ width: '50px', height: '50px', backgroundColor: '#e67e22', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
+          <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle"
+               style={{ width: '50px', height: '50px', backgroundColor: '#2ecc71', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
             3
           </div>
-          <div className="step-icon mb-3" style={{ fontSize: '2.5rem', color: '#e67e22' }}>
-            <i className="bi bi-telephone-check"></i>
+          {/* Icon utama konfirmasi di dalam card */}
+          <div className="step-icon mb-3 d-flex align-items-center justify-content-center"
+               style={{ fontSize: '2.5rem', color: '#2ecc71', background: '#eafaf1', borderRadius: '50%', width: 60, height: 60, margin: '0 auto' }}>
+            <i className="bi bi-patch-check-fill"></i>
           </div>
-          <h5 className="home-page-step-icon mb-3" style={{ color: '#2c3e50' }}>Konfirmasi</h5>
+          <h5 className="fw-bold mb-3" style={{ color: '#2c3e50' }}>Konfirmasi</h5>
           <p className="text-muted mb-0" style={{ lineHeight: '1.6' }}>
             Tim kami akan menghubungi Anda untuk verifikasi pesanan dalam waktu cepat.
           </p>
         </div>
       </div>
+      
+      
       
       {/* Step 4 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
@@ -505,12 +616,12 @@ const Home = () => {
             Pesan sekarang dan dapatkan pengalaman berkendara yang tak terlupakan dengan layanan premium kami.
           </p>
           <div className="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-            <a
-              href="#cars"
+            <Link
+              to="#cars"
               className="btn btn-dark btn-lg px-4 py-3 fw-bold rounded-pill"
             >
               <i className="bi bi-car-front me-2"></i>Pilih Mobil
-            </a>
+            </Link>
             <a
               href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`}
               className="btn btn-outline-dark btn-lg px-4 py-3 fw-bold rounded-pill"

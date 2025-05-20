@@ -32,6 +32,36 @@ const Layanan = sequelize.define('Layanan', {
     type: DataTypes.ENUM('available', 'unavailable'),
     allowNull: false,
     defaultValue: 'available'
+  },
+  promo: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: null
+  },
+  rating: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    defaultValue: null
+  },
+  jumlah_review: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  transmisi: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: "Automatic"
+  },
+  kapasitas: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 4
+  },
+  fitur: {
+    type: DataTypes.JSON, // atau TEXT jika array string
+    allowNull: true,
+    defaultValue: []
   }
 }, 
 {

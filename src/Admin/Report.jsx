@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Table, Spinner, Alert, Button, Badge, Row, Col, Form, Modal } from "react-bootstrap";
-import { FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch, FaSun, FaMoon } from "react-icons/fa";
+import {
+  Card, Table, Spinner, Alert, Button, Badge, Row, Col, Form, Modal
+} from "react-bootstrap";
+import {
+  FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch, FaSun, FaMoon
+} from "react-icons/fa";
 import { CSVLink } from "react-csv";
 import moment from "moment";
-import { Bar } from "react-chartjs-2";
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement } from "chart.js";
+import { Bar, Line } from "react-chartjs-2";
+import {
+  Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement
+} from "chart.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement);
-
 
 const API_URL = "http://localhost:3000/api";
 
@@ -158,55 +163,68 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     omzet: row.omzet.toLocaleString("id-ID")
   }));
 
-  // Grafik penjualan per bulan
+  // Grafik penjualan per bulan (Line Curve)
   const chartData = {
     labels: months,
     datasets: [
       {
-        label: `Pesanan ${year}`,
+        type: "line",
+        label: `Jumlah Pesanan`,
         data: monthlyReport.map(r => r.orderCount),
-        backgroundColor: "#0d6efd",
-        borderRadius: 8,
-        maxBarThickness: 40,
+        borderColor: "#0d6efd",
+        backgroundColor: "rgba(13,110,253,0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#0d6efd",
+        yAxisID: "y",
       },
       {
-        label: `User Baru ${year}`,
+        type: "line",
+        label: `Omzet (Rp)`,
+        data: monthlyReport.map(r => r.omzet),
+        borderColor: "#198754",
+        backgroundColor: "rgba(25,135,84,0.15)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#198754",
+        yAxisID: "y1",
+      },
+      {
+        type: "line",
+        label: `User Baru`,
         data: userMonthly,
-        backgroundColor: "#ffc107",
-        borderRadius: 8,
-        maxBarThickness: 40,
-        type: "line"
+        borderColor: "#ffc107",
+        backgroundColor: "rgba(255,193,7,0.15)",
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: "#ffc107",
+        yAxisID: "y2",
       }
     ],
   };
 
-  // Grafik omzet per bulan
-  const omzetChartData = {
-    labels: months,
-    datasets: [
-      {
-        label: `Omzet ${year}`,
-        data: monthlyReport.map(r => r.omzet),
-        backgroundColor: "#198754",
-        borderRadius: 8,
-        maxBarThickness: 40,
-      }
-    ]
-  };
-
-  // Grafik mobil terlaris
+  // Grafik mobil terlaris (Line Curve)
   const carChartData = {
     labels: carSalesArr.map(c => c.car),
     datasets: [
       {
+        type: "line",
         label: "Jumlah Disewa",
         data: carSalesArr.map(c => c.count),
-        backgroundColor: [
-          "#0d6efd", "#198754", "#ffc107", "#dc3545", "#6610f2", "#20c997", "#fd7e14"
-        ],
-        borderRadius: 8,
-        maxBarThickness: 40,
-      },
+        borderColor: "#0d6efd",
+        backgroundColor: "rgba(13,110,253,0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#0d6efd",
+      }
     ],
   };
 
@@ -289,11 +307,10 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     // Grafik Mobil Terlaris
     const chart3 = document.querySelector("#chart-mobil canvas");
     if (chart3) {
-      // Buat canvas dengan background putih
       const imgData = await html2canvas(chart3, { backgroundColor: "#fff" }).then(c => c.toDataURL("image/png"));
       doc.text("Grafik Mobil Terlaris", 14, y);
       y += 4;
-      doc.addImage(imgData, "PNG", 14, y, 180, 60); // Tinggi 60mm agar proporsional
+      doc.addImage(imgData, "PNG", 14, y, 180, 60);
       y += 65;
     }
 
@@ -369,54 +386,87 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     }
   };
 
+  // Mobil tersedia & tidak tersedia
+  const availableCars = cars.filter(car => car.status === "available");
+  const unavailableCars = cars.filter(car => car.status !== "available");
+
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
       <div className="container py-4">
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
-          <h3 className="mb-0"><FaChartBar className="me-2" />Laporan Penjualan & Statistik</h3>
-          <div className="d-flex gap-2">
-            <Form.Select
-              value={year}
-              onChange={e => setYear(Number(e.target.value))}
-              style={{ maxWidth: 120 }}
-              className={darkMode ? "bg-dark text-light" : ""}
-            >
-              {yearOptions.map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </Form.Select>
-            <Form.Select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              style={{ maxWidth: 160 }}
-              className={darkMode ? "bg-dark text-light" : ""}
-            >
-              <option value="all">Semua Status</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="paid">Paid</option>
-            </Form.Select>
-            <Form.Select
-              value={carFilter}
-              onChange={e => setCarFilter(e.target.value)}
-              style={{ maxWidth: 200 }}
-              className={darkMode ? "bg-dark text-light" : ""}
-            >
-              <option value="all">Semua Mobil</option>
-              {cars.map(car => (
-                <option key={car.id} value={car.id}>{car.nama}</option>
-              ))}
-            </Form.Select>
-            <Button variant="danger" className="fw-bold" onClick={handleExportPDF}>
-              <FaFilePdf className="me-2" />Export PDF
-            </Button>
-            <Button variant="success" className="fw-bold" onClick={handleExportExcel}>
-              <FaFileCsv className="me-2" />Export Excel
-            </Button>
-          </div>
-        </div>
+        {/* Header & Filter */}
+        <Row className="align-items-center mb-4 g-2 flex-nowrap">
+          <Col xs="auto" className="flex-grow-1">
+            <h3 className="mb-0 d-flex align-items-center" style={{ whiteSpace: "nowrap" }}>
+              <FaChartBar className="me-2" />
+              Laporan Penjualan & Statistik
+            </h3>
+          </Col>
+          <Col xs="auto">
+            <div className="d-flex align-items-center gap-2 flex-nowrap">
+              <Form.Select
+                value={year}
+                onChange={e => setYear(Number(e.target.value))}
+                style={{ maxWidth: 110 }}
+                className={darkMode ? "bg-dark text-light" : ""}
+              >
+                {yearOptions.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </Form.Select>
+              <Form.Select
+                value={carFilter}
+                onChange={e => setCarFilter(e.target.value)}
+                style={{ maxWidth: 180 }}
+                className={darkMode ? "bg-dark text-light" : ""}
+              >
+                <option value="all">Semua Mobil</option>
+                {cars.map(car => (
+                  <option key={car.id} value={car.id}>{car.nama}</option>
+                ))}
+              </Form.Select>
+              <Form.Select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                style={{ maxWidth: 140 }}
+                className={darkMode ? "bg-dark text-light" : ""}
+              >
+                <option value="all">Semua Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="paid">Paid</option>
+              </Form.Select>
+              <Button
+                variant="success"
+                className="fw-bold d-flex align-items-center"
+                onClick={handleExportExcel}
+                title="Export Excel"
+                style={{ minWidth: 90, justifyContent: "center" }}
+              >
+                <FaFileCsv className="me-2" /> Excel
+              </Button>
+              <Button
+                variant="danger"
+                className="fw-bold d-flex align-items-center"
+                onClick={handleExportPDF}
+                title="Export PDF"
+                style={{ minWidth: 90, justifyContent: "center" }}
+              >
+                <FaFilePdf className="me-2" /> PDF
+              </Button>
+              <Button
+                variant={darkMode ? "light" : "dark"}
+                onClick={toggleDarkMode}
+                title={darkMode ? "Light Mode" : "Dark Mode"}
+                className="d-flex align-items-center"
+                style={{ minWidth: 40, justifyContent: "center" }}
+              >
+                {darkMode ? <FaSun /> : <FaMoon />}
+              </Button>
+            </div>
+          </Col>
+        </Row>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
@@ -426,32 +476,32 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
           <>
             {/* Ringkasan */}
             <Row className="mb-4 g-3">
-              <Col md={3}>
-                <Card className="text-center">
+              <Col xs={12} md={3}>
+                <Card className="text-center shadow-sm">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Omzet</div>
                     <div className="fs-4 text-success">Rp{totalOmzet.toLocaleString("id-ID")}</div>
                   </Card.Body>
                 </Card>
               </Col>
-              <Col md={3}>
-                <Card className="text-center">
+              <Col xs={12} md={3}>
+                <Card className="text-center shadow-sm">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Pesanan</div>
                     <div className="fs-4">{totalOrders}</div>
                   </Card.Body>
                 </Card>
               </Col>
-              <Col md={3}>
-                <Card className="text-center">
+              <Col xs={12} md={3}>
+                <Card className="text-center shadow-sm">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Mobil</div>
                     <div className="fs-4">{totalCars}</div>
                   </Card.Body>
                 </Card>
               </Col>
-              <Col md={3}>
-                <Card className="text-center">
+              <Col xs={12} md={3}>
+                <Card className="text-center shadow-sm">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Pengguna</div>
                     <div className="fs-4">{totalUsers}</div>
@@ -460,163 +510,84 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
               </Col>
             </Row>
 
-            {/* Rekap Penjualan per Bulan */}
-            <Card className="mb-4">
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <span>Rekap Penjualan per Bulan {year}</span>
-                <div className="d-flex gap-2">
-                  <CSVLink
-                    data={csvData}
-                    headers={csvHeaders}
-                    filename={`laporan-penjualan-${year}.csv`}
-                    className="btn btn-outline-success btn-sm"
-                    separator=";"
-                    enclosingCharacter={'"'}
-                  >
-                    <FaFileCsv className="me-2" />
-                    Export CSV
-                  </CSVLink>
-                  <Button variant="outline-danger" size="sm" onClick={handleExportPDF}>
-                    <FaFilePdf className="me-2" />
-                    Export PDF
-                  </Button>
-                </div>
+            {/* Grafik Penjualan & Omzet */}
+            <Card className="mb-4 shadow-sm">
+              <Card.Header className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <span>Grafik Jumlah Pesanan, Omzet & User Baru {year}</span>
               </Card.Header>
               <Card.Body>
-                <Row>
-                  <Col md={7}>
-                    <div className="table-responsive">
-                      <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                        <thead>
-                          <tr>
-                            <th>Bulan</th>
-                            <th>Jumlah Pesanan</th>
-                            <th>Total Omzet</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {monthlyReport.map((row, idx) => (
-                            <tr key={row.month}>
-                              <td>
-                                <Button
-                                  variant="link"
-                                  className="p-0"
-                                  onClick={() => handleBarClick([{ index: idx }], "month")}
-                                >
-                                  {row.month}
-                                </Button>
-                              </td>
-                              <td>
-                                <Badge bg="primary">{row.orderCount}</Badge>
-                              </td>
-                              <td>
-                                <span className="fw-bold text-success">
-                                  Rp{row.omzet.toLocaleString("id-ID")}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </Col>
-                  <Col md={5} className="d-flex align-items-center">
-                    <div id="chart-penjualan" style={{ width: "100%", minHeight: 320 }}>
-                      <Bar
-                        data={chartData}
-                        height={320}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: { display: true },
-                            title: {
-                              display: true,
-                              text: "Grafik Penjualan per Bulan",
-                              font: { size: 16 }
-                            }
-                          },
-                          scales: {
-                            x: { title: { display: true, text: "Bulan" } },
-                            y: { beginAtZero: true, title: { display: true, text: "Jumlah Pesanan" }, precision: 0 }
-                          },
-                          onClick: (evt, elems) => handleBarClick(elems, "month")
-                        }}
-                      />
-                    </div>
-                  </Col>
-                </Row>
-                <Row className="mt-3">
-                  <Col md={12}>
-                    <div id="chart-user">
-                      <Bar
-                        data={omzetChartData}
-                        options={{
-                          responsive: true,
-                          plugins: { legend: { display: true } },
-                          scales: { y: { beginAtZero: true, precision: 0 } }
-                        }}
-                      />
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-
-            {/* Statistik User Baru */}
-            <Card className="mb-4">
-              <Card.Header>
-                Statistik User Baru per Bulan {year}
-              </Card.Header>
-              <Card.Body>
-                <div id="chart-user">
-                  <Bar
-                    data={{
-                      labels: months,
-                      datasets: [
-                        {
-                          label: "User Baru",
-                          data: userMonthly,
-                          backgroundColor: "#ffc107",
-                          borderRadius: 8,
-                          maxBarThickness: 40,
-                        }
-                      ]
-                    }}
+                <div style={{ minHeight: 350 }}>
+                  <Line
+                    data={chartData}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
                       plugins: {
-                        legend: { display: true },
+                        legend: { display: true, position: "top" },
                         title: {
                           display: true,
-                          text: "Grafik User Baru per Bulan",
-                          font: { size: 16 }
+                          text: "Jumlah Pesanan, Omzet & User Baru per Bulan",
+                          font: { size: 18 }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: ctx => {
+                              if (ctx.dataset.label === "Omzet (Rp)") {
+                                return `Omzet: Rp${ctx.parsed.y.toLocaleString("id-ID")}`;
+                              }
+                              if (ctx.dataset.label === "Jumlah Pesanan") {
+                                return `Pesanan: ${ctx.parsed.y}`;
+                              }
+                              if (ctx.dataset.label === "User Baru") {
+                                return `User Baru: ${ctx.parsed.y}`;
+                              }
+                              return ctx.parsed.y;
+                            }
+                          }
                         }
                       },
                       scales: {
                         x: { title: { display: true, text: "Bulan" } },
-                        y: { beginAtZero: true, title: { display: true, text: "User Baru" }, precision: 0 }
-                      }
+                        y: {
+                          beginAtZero: true,
+                          title: { display: true, text: "Pesanan" },
+                          position: "left",
+                          grid: { color: "#eee" }
+                        },
+                        y1: {
+                          beginAtZero: true,
+                          title: { display: true, text: "Omzet (Rp)" },
+                          position: "right",
+                          grid: { drawOnChartArea: false }
+                        },
+                        y2: {
+                          beginAtZero: true,
+                          display: false
+                        }
+                      },
+                      onClick: (evt, elems) => handleBarClick(elems, "month")
                     }}
+                    height={350}
                   />
                 </div>
               </Card.Body>
             </Card>
 
             {/* Mobil Terlaris */}
-            <Card className="mb-4">
+            <Card className="mb-4 shadow-sm">
               <Card.Header className="d-flex align-items-center">
-                <FaCarSide className="me-2" /> Mobil Terlaris {year}
+                <FaCarSide className="me-2" /> Grafik Mobil Terlaris {year}
               </Card.Header>
               <Card.Body>
                 <Row>
-                  <Col md={7}>
+                  <Col xs={12} md={7}>
                     <div className="table-responsive">
                       <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
                         <thead>
                           <tr>
                             <th>Nama Mobil</th>
+                            <th>Promo</th>
+                            <th>Fitur</th>
                             <th>Jumlah Disewa</th>
                             <th>Omzet</th>
                           </tr>
@@ -624,50 +595,65 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                         <tbody>
                           {carSalesArr.length === 0 ? (
                             <tr>
-                              <td colSpan={3} className="text-center">Belum ada data penjualan.</td>
+                              <td colSpan={5} className="text-center">Belum ada data penjualan.</td>
                             </tr>
                           ) : (
                             <>
-                              {carSalesArr.map((car, idx) => (
-                                <tr key={idx}>
-                                  <td>
-                                    <Button
-                                      variant="link"
-                                      className="p-0"
-                                      onClick={() => handleBarClick([{ index: idx }], "car")}
-                                    >
-                                      {car.car}
-                                    </Button>
-                                  </td>
-                                  <td>
-                                    <Badge bg="info">{car.count}</Badge>
-                                  </td>
-                                  <td>
-                                    <span className="fw-bold text-success">
-                                      Rp{car.omzet.toLocaleString("id-ID")}
-                                    </span>
-                                  </td>
-                                </tr>
-                              ))}
+                              {carSalesArr.map((car, idx) => {
+                                const carDetail = cars.find(c => c.nama === car.car);
+                                return (
+                                  <tr key={idx}>
+                                    <td>
+                                      <Button
+                                        variant="link"
+                                        className="p-0"
+                                        onClick={() => handleBarClick([{ index: idx }], "car")}
+                                      >
+                                        {car.car}
+                                      </Button>
+                                    </td>
+                                    <td>
+                                      {carDetail?.promo
+                                        ? <Badge bg="warning" className="text-dark">{carDetail.promo}%</Badge>
+                                        : <span className="text-muted">-</span>}
+                                    </td>
+                                    <td>
+                                      {Array.isArray(carDetail?.fitur) && carDetail.fitur.length > 0
+                                        ? carDetail.fitur.map((f, i) => (
+                                            <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                          ))
+                                        : <span className="text-muted">-</span>}
+                                    </td>
+                                    <td>
+                                      <Badge bg="info">{car.count}</Badge>
+                                    </td>
+                                    <td>
+                                      <span className="fw-bold text-success">
+                                        Rp{car.omzet.toLocaleString("id-ID")}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </>
                           )}
                         </tbody>
                       </Table>
                     </div>
                   </Col>
-                  <Col md={5} className="d-flex align-items-center">
+                  <Col xs={12} md={5} className="d-flex align-items-center">
                     <div id="chart-mobil" style={{ width: "100%", minHeight: 320 }}>
-                      <Bar
+                      <Line
                         data={carChartData}
                         height={320}
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
                           plugins: {
-                            legend: { display: false },
+                            legend: { display: true, position: "top" },
                             title: {
                               display: true,
-                              text: "Grafik Mobil Terlaris",
+                              text: "Jumlah Disewa Mobil Terlaris (Curve)",
                               font: { size: 16 }
                             },
                             tooltip: {
@@ -711,6 +697,8 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                         <th>Nama Mobil</th>
                         <th>Kategori</th>
                         <th>Status</th>
+                        <th>Promo</th>
+                        <th>Fitur</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -722,6 +710,112 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                             <Badge bg={car.status === "available" ? "success" : "danger"}>
                               {car.status === "available" ? "Tersedia" : "Tidak Tersedia"}
                             </Badge>
+                          </td>
+                          <td>
+                            {car.promo
+                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                              : <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            {Array.isArray(car.fitur) && car.fitur.length > 0
+                              ? car.fitur.map((f, i) => (
+                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                ))
+                              : <span className="text-muted">-</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                )}
+              </Card.Body>
+            </Card>
+
+            {/* Mobil Tersedia */}
+            <Card className="mb-4">
+              <Card.Header>
+                <FaCarSide className="me-2" /> Daftar Mobil Tersedia
+              </Card.Header>
+              <Card.Body>
+                {availableCars.length === 0 ? (
+                  <Alert variant="danger">Tidak ada mobil yang tersedia.</Alert>
+                ) : (
+                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                    <thead>
+                      <tr>
+                        <th>Nama Mobil</th>
+                        <th>Kategori</th>
+                        <th>Promo</th>
+                        <th>Fitur</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableCars.map(car => (
+                        <tr key={car.id}>
+                          <td>{car.nama}</td>
+                          <td>{car.kategori}</td>
+                          <td>
+                            {car.promo
+                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                              : <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            {Array.isArray(car.fitur) && car.fitur.length > 0
+                              ? car.fitur.map((f, i) => (
+                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                ))
+                              : <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            <Badge bg="success">Tersedia</Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                )}
+              </Card.Body>
+            </Card>
+
+            {/* Mobil Tidak Tersedia */}
+            <Card className="mb-4">
+              <Card.Header>
+                <FaCarSide className="me-2" /> Daftar Mobil Tidak Tersedia
+              </Card.Header>
+              <Card.Body>
+                {unavailableCars.length === 0 ? (
+                  <Alert variant="success">Semua mobil tersedia.</Alert>
+                ) : (
+                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                    <thead>
+                      <tr>
+                        <th>Nama Mobil</th>
+                        <th>Kategori</th>
+                        <th>Promo</th>
+                        <th>Fitur</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {unavailableCars.map(car => (
+                        <tr key={car.id}>
+                          <td>{car.nama}</td>
+                          <td>{car.kategori}</td>
+                          <td>
+                            {car.promo
+                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                              : <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            {Array.isArray(car.fitur) && car.fitur.length > 0
+                              ? car.fitur.map((f, i) => (
+                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                ))
+                              : <span className="text-muted">-</span>}
+                          </td>
+                          <td>
+                            <Badge bg="danger">Tidak Tersedia</Badge>
                           </td>
                         </tr>
                       ))}

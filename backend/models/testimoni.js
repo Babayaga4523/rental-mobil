@@ -11,7 +11,15 @@ const Testimoni = sequelize.define('Testimoni', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'user', // Sesuaikan dengan nama tabel user Anda
+      model: 'user',
+      key: 'id'
+    }
+  },
+  layanan_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'layanan',
       key: 'id'
     }
   },
@@ -36,10 +44,10 @@ const Testimoni = sequelize.define('Testimoni', {
     defaultValue: DataTypes.NOW
   }
 }, {
-  tableName: 'testimoni', // Nama tabel di database
-  timestamps: true, // Aktifkan createdAt dan updatedAt
-  createdAt: 'tanggal', // Gunakan kolom 'tanggal' sebagai createdAt
-  updatedAt: false // Nonaktifkan updatedAt
+  tableName: 'testimoni',
+  timestamps: true,
+  createdAt: 'tanggal',
+  updatedAt: false
 });
 
 module.exports = Testimoni;

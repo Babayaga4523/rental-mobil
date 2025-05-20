@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form,
-  OverlayTrigger, Tooltip, Toast, ToastContainer, InputGroup
+  OverlayTrigger, Tooltip, Toast, ToastContainer, InputGroup, Row, Col, Card
 } from "react-bootstrap";
 import moment from "moment";
 import {
@@ -215,7 +215,6 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
       const res = await axios.get(`${API_URL}/orders/${order.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Pastikan response backend: { success, data: { ...orderDetail } }
       setSelectedOrder(res.data.data || order);
     } catch (err) {
       setSelectedOrder(order);
@@ -302,89 +301,105 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container py-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h3 className="mb-0">Daftar Pesanan</h3>
-          <Button
-            variant={darkMode ? "light" : "dark"}
-            onClick={toggleDarkMode}
-            title={darkMode ? "Light Mode" : "Dark Mode"}
-          >
-            {darkMode ? <FaSun /> : <FaMoon />}
-          </Button>
-        </div>
-        <div className={`d-flex flex-wrap gap-2 mb-3 align-items-center shadow-sm p-3 rounded ${darkMode ? "bg-secondary" : "bg-white"}`}>
-          <InputGroup style={{ maxWidth: 260 }}>
-            <Form.Control
-              type="text"
-              placeholder="Cari nama pelanggan, mobil, atau ID..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
-          </InputGroup>
-          <Form.Select
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 180 }}
-          >
-            <option value="all">Semua Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="rejected">Rejected</option>
-          </Form.Select>
-          <Form.Control
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 160 }}
-            placeholder="Dari tanggal"
-          />
-          <span>-</span>
-          <Form.Control
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setPage(1);
-            }}
-            style={{ maxWidth: 160 }}
-            placeholder="Sampai tanggal"
-          />
-          <Form.Select
-            value={pageSize}
-            onChange={e => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
-            style={{ maxWidth: 120 }}
-          >
-            {PAGE_SIZE_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt} / halaman</option>
-            ))}
-          </Form.Select>
-          <CSVLink
-            data={formatCSVData(sortedOrders)}
-            headers={csvHeaders}
-            filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
-            className="btn btn-outline-success"
-            separator=";"
-            enclosingCharacter={'"'}
-          >
-            <FaFileCsv className="me-2" />
-            Export CSV
-          </CSVLink>
-        </div>
+      <div className="container-fluid py-4">
+        <Row className="align-items-center mb-4">
+          <Col xs={12} md={6}>
+            <h3 className="mb-0 fw-bold">Daftar Pesanan</h3>
+          </Col>
+          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
+            <Button
+              variant={darkMode ? "light" : "dark"}
+              onClick={toggleDarkMode}
+              title={darkMode ? "Light Mode" : "Dark Mode"}
+              className="rounded-circle"
+            >
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </Button>
+          </Col>
+        </Row>
+        <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
+          <Card.Body>
+            <Row className="g-2 align-items-center">
+              <Col xs={12} md={3}>
+                <InputGroup>
+                  <Form.Control
+                    type="text"
+                    placeholder="Cari pelanggan, mobil, atau ID..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                  />
+                </InputGroup>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Select
+                  value={filterStatus}
+                  onChange={(e) => {
+                    setFilterStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="rejected">Rejected</option>
+                </Form.Select>
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Control
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Dari tanggal"
+                />
+              </Col>
+              <Col xs={6} md={2}>
+                <Form.Control
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Sampai tanggal"
+                />
+              </Col>
+              <Col xs={6} md={1}>
+                <Form.Select
+                  value={pageSize}
+                  onChange={e => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                >
+                  {PAGE_SIZE_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt} / halaman</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col xs={12} md={2} className="text-md-end mt-2 mt-md-0">
+                <CSVLink
+                  data={formatCSVData(sortedOrders)}
+                  headers={csvHeaders}
+                  filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
+                  className="btn btn-outline-success w-100"
+                  separator=";"
+                  enclosingCharacter={'"'}
+                >
+                  <FaFileCsv className="me-2" />
+                  Export CSV
+                </CSVLink>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
@@ -432,14 +447,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                 </thead>
                 <tbody>
                   {pagedOrders.map((order) => (
-                    <tr
-                      key={order.id}
-                      style={
-                        order.payment_status === "pending_verification"
-                          ? { background: darkMode ? "#665c00" : "#fffbe6" }
-                          : {}
-                      }
-                    >
+                    <tr key={order.id}>
                       <td>
                         <Badge bg="secondary" className="fw-bold">
                           #{order.id}
@@ -467,9 +475,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                           : "-"}
                       </td>
                       <td>
-                        <span className="fw-bold text-success">
-                          Rp{(order.total_price || 0).toLocaleString("id-ID")}
-                        </span>
+                        Rp{(order.total_price || 0).toLocaleString('id-ID')}
                       </td>
                       <td>
                         <Badge pill bg={getStatusBadge(order.status)}>
@@ -550,7 +556,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
               </Table>
             </div>
             {/* Pagination */}
-            <div className="d-flex justify-content-between align-items-center mt-3">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
               <div>
                 Menampilkan {pagedOrders.length} dari {sortedOrders.length} pesanan
               </div>
@@ -604,92 +610,98 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
               </div>
             ) : selectedOrder ? (
               <div>
-                <p>
-                  <strong>ID:</strong>{" "}
-                  <Badge bg="secondary">#{selectedOrder.id}</Badge>
-                </p>
-                <p>
-                  <strong>Pelanggan:</strong> {selectedOrder.user?.name}
-                </p>
-                <p>
-                  <strong>Mobil:</strong> {selectedOrder.layanan?.nama}
-                </p>
-                <p>
-                  <strong>Tanggal Sewa:</strong>{" "}
-                  {formatDate(selectedOrder.pickup_date)} -{" "}
-                  {formatDate(selectedOrder.return_date)}
-                </p>
-                <p>
-                  <strong>Durasi:</strong>{" "}
-                  {selectedOrder.pickup_date && selectedOrder.return_date
-                    ? moment(selectedOrder.return_date).diff(
-                        moment(selectedOrder.pickup_date),
-                        "days"
-                      ) + " hari"
-                    : "-"}
-                </p>
-                <p>
-                  <strong>Total:</strong>{" "}
-                  <span className="fw-bold text-success">
-                    Rp{formatCurrency(selectedOrder.total_price)}
-                  </span>
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
-                  <Badge bg={getStatusBadge(selectedOrder.status)}>
-                    {formatStatus(selectedOrder.status)}
-                  </Badge>
-                </p>
-                <p>
-                  <strong>Status Pembayaran:</strong>{" "}
-                  <Badge
-                    bg={
-                      selectedOrder.payment_status === "paid"
-                        ? "success"
-                        : selectedOrder.payment_status === "pending_verification"
-                        ? "warning"
-                        : selectedOrder.payment_status === "rejected"
-                        ? "danger"
-                        : "secondary"
-                    }
-                  >
-                    {formatPaymentStatus(selectedOrder.payment_status)}
-                  </Badge>
-                </p>
-                <p>
-                  <strong>Metode Pembayaran:</strong>{" "}
-                  {selectedOrder.payment_method}
-                </p>
-                <p>
-                  <strong>Catatan:</strong> {selectedOrder.additional_notes || "-"}
-                </p>
-                {selectedOrder.payment_proof && (
-                  <div className="mb-2">
-                    <strong>Bukti Pembayaran:</strong>
-                    <br />
-                    <a
-                      href={`http://localhost:3000${selectedOrder.payment_proof}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <img
-                        src={`http://localhost:3000${selectedOrder.payment_proof}`}
-                        alt="Bukti Pembayaran"
-                        style={{
-                          maxWidth: 200,
-                          maxHeight: 200,
-                          border: "1px solid #ccc",
-                          borderRadius: 8,
-                          marginTop: 8,
-                        }}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/no-image.png";
-                        }}
-                      />
-                    </a>
-                  </div>
-                )}
+                <Row>
+                  <Col md={6}>
+                    <p>
+                      <strong>ID:</strong>{" "}
+                      <Badge bg="secondary">#{selectedOrder.id}</Badge>
+                    </p>
+                    <p>
+                      <strong>Pelanggan:</strong> {selectedOrder.user?.name}
+                    </p>
+                    <p>
+                      <strong>Mobil:</strong> {selectedOrder.layanan?.nama}
+                    </p>
+                    <p>
+                      <strong>Tanggal Sewa:</strong>{" "}
+                      {formatDate(selectedOrder.pickup_date)} -{" "}
+                      {formatDate(selectedOrder.return_date)}
+                    </p>
+                    <p>
+                      <strong>Durasi:</strong>{" "}
+                      {selectedOrder.pickup_date && selectedOrder.return_date
+                        ? moment(selectedOrder.return_date).diff(
+                            moment(selectedOrder.pickup_date),
+                            "days"
+                          ) + " hari"
+                        : "-"}
+                    </p>
+                  </Col>
+                  <Col md={6}>
+                    <p>
+                      <strong>Total:</strong>{" "}
+                      <span className="fw-bold text-success">
+                        Rp{Number(selectedOrder.total_price).toLocaleString('id-ID')}
+                      </span>
+                    </p>
+                    <p>
+                      <strong>Status:</strong>{" "}
+                      <Badge bg={getStatusBadge(selectedOrder.status)}>
+                        {formatStatus(selectedOrder.status)}
+                      </Badge>
+                    </p>
+                    <p>
+                      <strong>Status Pembayaran:</strong>{" "}
+                      <Badge
+                        bg={
+                          selectedOrder.payment_status === "paid"
+                            ? "success"
+                            : selectedOrder.payment_status === "pending_verification"
+                            ? "warning"
+                            : selectedOrder.payment_status === "rejected"
+                            ? "danger"
+                            : "secondary"
+                        }
+                      >
+                        {formatPaymentStatus(selectedOrder.payment_status)}
+                      </Badge>
+                    </p>
+                    <p>
+                      <strong>Metode Pembayaran:</strong>{" "}
+                      {selectedOrder.payment_method}
+                    </p>
+                    <p>
+                      <strong>Catatan:</strong> {selectedOrder.additional_notes || "-"}
+                    </p>
+                    {selectedOrder.payment_proof && (
+                      <div className="mb-2">
+                        <strong>Bukti Pembayaran:</strong>
+                        <br />
+                        <a
+                          href={`http://localhost:3000${selectedOrder.payment_proof}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={`http://localhost:3000${selectedOrder.payment_proof}`}
+                            alt="Bukti Pembayaran"
+                            style={{
+                              maxWidth: 200,
+                              maxHeight: 200,
+                              border: "1px solid #ccc",
+                              borderRadius: 8,
+                              marginTop: 8,
+                            }}
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/no-image.png";
+                            }}
+                          />
+                        </a>
+                      </div>
+                    )}
+                  </Col>
+                </Row>
               </div>
             ) : (
               <Spinner />
