@@ -281,8 +281,8 @@ const Booking = () => {
                 <div className="row g-4">
                   {/* Summary Section */}
                   <div className="col-lg-5">
-                    <div className="booking-page-summary card h-100 border-0 shadow-sm">
-                      <div className="booking-page-card-img-top ratio ratio-16x9 bg-light">
+                    <div className="booking-page-summary card border-0 shadow-sm p-0">
+                      <div className="booking-page-card-img-top-custom">
                         <img
                           src={
                             image
@@ -292,12 +292,11 @@ const Booking = () => {
                               : "/images/default-car.jpg"
                           }
                           alt={carName}
-                          className="booking-page-img-cover"
+                          className="booking-page-img-cover-custom"
                         />
                       </div>
-                      <div className="card-body">
+                      <div className="card-body pb-3">
                         <h3 className="h5 fw-bold mb-3">{carName}</h3>
-
                         <ul className="list-unstyled mb-4">
                           <li className="mb-2 d-flex align-items-center">
                             <FaMoneyBillWave className="text-primary me-2 flex-shrink-0" />
@@ -321,11 +320,10 @@ const Booking = () => {
                             </li>
                           )}
                         </ul>
-
                         <div className="border-top pt-3">
                           <div className="d-flex justify-content-between align-items-center">
                             <h4 className="h6 mb-0">Total Harga:</h4>
-                            <h3 className="h5 mb-0 text-success fw-bold">
+                            <h3 className="h5 mb-0 total-price-badge">
                               Rp {totalPrice?.toLocaleString("id-ID")}
                             </h3>
                           </div>
@@ -341,6 +339,18 @@ const Booking = () => {
                   <div className="col-lg-7">
                     <div className="card h-100 border-0 shadow-sm">
                       <div className="card-body">
+                        <div className="booking-step-indicator mb-4">
+                          <div className={`step ${activeTab === "booking" ? "active" : ""}`}>
+                            <span className="step-number">1</span>
+                            <span className="step-label">Pemesanan</span>
+                          </div>
+                          <div className="step-divider" />
+                          <div className={`step ${activeTab === "payment" ? "active" : ""}`}>
+                            <span className="step-number">2</span>
+                            <span className="step-label">Pembayaran</span>
+                          </div>
+                        </div>
+
                         <ul className="nav nav-tabs mb-4">
                           <li className="nav-item">
                             <button
@@ -420,7 +430,7 @@ const Booking = () => {
                                 <label className="form-label fw-bold d-block mb-3">
                                   Metode Pembayaran
                                 </label>
-                                <div className="d-flex gap-3">
+                                <div className="d-flex gap-3 flex-wrap">
                                   {[
                                     { value: "bank_transfer", label: "Transfer Bank", icon: FaUniversity },
                                     { value: "credit_card", label: "Kartu Kredit", icon: FaCreditCard },
@@ -431,10 +441,10 @@ const Booking = () => {
                                       <button
                                         key={method.value}
                                         type="button"
-                                        className={`btn ${formData.payment_method === method.value ? "btn-primary" : "btn-outline-primary"} flex-grow-1`}
+                                        className={`btn payment-method-btn flex-grow-1 ${formData.payment_method === method.value ? "btn-primary active" : "btn-outline-primary"}`}
                                         onClick={() => handleChange({ target: { name: "payment_method", value: method.value } })}
                                       >
-                                        <Icon className="me-2" />
+                                        <Icon className="me-2 fs-4" />
                                         {method.label}
                                       </button>
                                     );

@@ -137,7 +137,7 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
+    <div className="register-container" style={{ paddingTop: 70 }}>
       <div className="auth-card">
         <div className="logo-container">
           <img 
@@ -259,7 +259,6 @@ const Register = () => {
           Sudah punya akun? <a href="/login" className="auth-link">Masuk di sini</a>
         </div>
       </div>
-
       <ToastContainer />
     </div>
   );
