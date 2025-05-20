@@ -119,7 +119,7 @@ const OrderReceipt = () => {
   const user = receipt.user;
 
   return (
-    <div className="receipt-page">
+    <div className="receipt-page" style={{ paddingTop: 70 }}>
       <div className="receipt-container">
         <div className="receipt-header">
           <div className="logo-title">

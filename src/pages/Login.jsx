@@ -83,7 +83,7 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
+    <div className="login-container" style={{ paddingTop: 70 }}>
       <ToastContainer />
       <div className="login-card">
         <div className="logo-container">

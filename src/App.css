@@ -36,3 +36,11 @@
     transform: rotate(360deg);
   }
 }
+
+/* App.css atau file global lain */
+.main-content,
+.content-wrapper,
+.page-content,
+.admin-content {
+  padding-top: 70px; /* Sesuaikan dengan tinggi navbar */
+}
