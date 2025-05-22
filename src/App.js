@@ -31,7 +31,8 @@ import OrderReceipt from "./pages/OrderReceipt";
 import { AuthProvider } from './context/AuthContext';
 import AdminReport from "./Admin/Report";
 import UserOrdersPage from "./pages/UserOrdersPage";
-
+import Gallery from "./pages/Gallery";
+import Profile from "./pages/Profile";
 // Bootstrap
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -71,7 +72,7 @@ function AppContent() {
         <Route path="/search" element={<SearchResults />} />
         <Route path="/detail/:id" element={<DetailMobil />} />
         <Route path="/testimoni" element={<Testimoni />} />
-
+        <Route path="/gallery" element={<Gallery />} />
         {/* User Order Routes */}
         <Route path="/pesanan" element={
           <ProtectedRoute>
@@ -125,12 +126,15 @@ function AppContent() {
           <Route path="orders" element={<OrdersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
           <Route path="cars" element={<CarsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
           <Route path="users" element={<UsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-          <Route path="report" element={<AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+          <Route path="report" element={
+            <AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+          } />
         </Route>
 
         {/* Error Routes */}
         <Route path="/not-found" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/not-found" replace />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
       
       <ToastContainer 

@@ -175,9 +175,12 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
       <div className="container-fluid py-4">
-        <Row className="align-items-center mb-4">
+        {/* Header & Dark Mode Toggle */}
+        <Row className="align-items-center mb-4 g-2">
           <Col xs={12} md={6}>
-            <h3 className="mb-0 fw-bold"><FaUser className="me-2" />Daftar Pengguna</h3>
+            <h3 className="mb-0 fw-bold d-flex align-items-center">
+              <FaUser className="me-2" />Daftar Pengguna
+            </h3>
           </Col>
           <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
             <Button
@@ -189,10 +192,11 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
             </Button>
           </Col>
         </Row>
+        {/* Filter & Export */}
         <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
           <Card.Body>
-            <Row className="g-2 align-items-center">
-              <Col xs={12} md={3}>
+            <Row className="g-2 align-items-stretch">
+              <Col xs={12} sm={6} md={3}>
                 <InputGroup>
                   <Form.Control
                     type="text"
@@ -205,7 +209,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
                   />
                 </InputGroup>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Select
                   value={filterRole}
                   onChange={e => {
@@ -218,7 +222,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
                   <option value="user">User</option>
                 </Form.Select>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Select
                   value={filterStatus}
                   onChange={e => {
@@ -231,7 +235,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
                   <option value="inactive">Nonaktif</option>
                 </Form.Select>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Select
                   value={pageSize}
                   onChange={e => {
@@ -260,6 +264,7 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
             </Row>
           </Card.Body>
         </Card>
+        {/* Table */}
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />

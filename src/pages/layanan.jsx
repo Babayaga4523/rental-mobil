@@ -226,6 +226,30 @@ const Layanan = () => {
             <p className="section-subtitle text-muted">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
           </div>
 
+          {/* Keterangan Dalam Kota & Luar Kota */}
+          <div
+            className="alert alert-info rounded-4 shadow-sm mb-4"
+            data-aos="fade-up"
+            data-aos-delay="100"
+            style={{ fontSize: "1.08rem", fontWeight: 500 }}
+          >
+            <i className="fas fa-info-circle me-2"></i>
+            <span>
+              <b>Layanan ini khusus untuk rental dalam kota (Jabodetabek).</b>
+              <br className="d-none d-md-block" />
+              Untuk <b>luar kota, drop-off bandara, atau perjalanan khusus</b>, silakan&nbsp;
+              <a
+                href="https://wa.me/6281381339149"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fw-bold text-primary"
+              >
+                chat admin
+              </a>
+              &nbsp;untuk konsultasi & penawaran terbaik!
+            </span>
+          </div>
+
           {loading ? (
             <div className="text-center py-5" data-aos="zoom-in">
               <div className="spinner-grow text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
@@ -388,7 +412,7 @@ const Layanan = () => {
                           <div className="d-flex gap-2 mt-auto pt-2">
                             <button
                               className="btn btn-outline-primary w-50 rounded-pill py-2"
-                              onClick={() => handleQuickView(car)}
+                              onClick={() => navigate(`/detail/${car.id}`)}
                             >
                               <i className="fas fa-eye me-2"></i>Lihat Detail
                             </button>

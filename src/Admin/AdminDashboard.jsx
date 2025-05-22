@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
 import axios from "axios";
-import { Card, Table, Spinner, Badge, Alert, ProgressBar } from "react-bootstrap";
+import { Card, Table, Spinner, Badge, Alert, ProgressBar, Container, Row, Col } from "react-bootstrap";
 import {
   FiFileText, FiTruck, FiUsers, FiDollarSign,
   FiAlertCircle, FiTrendingUp, FiSettings, FiUser
@@ -388,30 +388,55 @@ const DashboardHome = () => {
                   <Spinner animation="border" variant="success" />
                 </div>
               ) : (
-                <div className="chart-container">
+                <div style={{ width: "100%", minHeight: 350 }}>
                   <Line
-                    data={revenueData}
+                    data={{
+                      labels: chartData.labels,
+                      datasets: [
+                        {
+                          label: chartData.datasets[0].label,
+                          data: chartData.datasets[0].data,
+                          borderColor: "#6366f1",
+                          backgroundColor: "rgba(99,102,241,0.15)",
+                          borderWidth: 3,
+                          fill: true,
+                          tension: 0.4, // membuat garis curve
+                          pointRadius: 5,
+                          pointBackgroundColor: "#6366f1",
+                          pointBorderColor: "#fff",
+                          pointHoverRadius: 7,
+                        }
+                      ]
+                    }}
                     options={{
                       responsive: true,
+                      maintainAspectRatio: false,
                       plugins: {
-                        legend: {
-                          position: 'top',
+                        legend: { display: true, position: "top" },
+                        title: {
+                          display: true,
+                          text: "Jumlah Pesanan per Bulan",
+                          font: { size: 18 }
                         },
+                        tooltip: {
+                          callbacks: {
+                            label: ctx => `Pesanan: ${ctx.parsed.y}`
+                          }
+                        }
                       },
                       scales: {
+                        x: {
+                          title: { display: true, text: "Bulan" },
+                          grid: { display: false }
+                        },
                         y: {
                           beginAtZero: true,
-                          grid: {
-                            drawBorder: false,
-                          }
-                        },
-                        x: {
-                          grid: {
-                            display: false
-                          }
+                          title: { display: true, text: "Pesanan" },
+                          grid: { color: "#eee" }
                         }
                       }
                     }}
+                    height={350}
                   />
                 </div>
               )}
@@ -620,6 +645,36 @@ const DashboardHome = () => {
           </Card>
         </div>
       </div>
+
+      {/* New Dashboard Section */}
+      <Container fluid className="py-4">
+        <Row>
+          <Col xs={12} md={4} className="mb-3">
+            <Card>
+              <Card.Body>
+                <Card.Title>Total Mobil</Card.Title>
+                <Card.Text>{stats.cars}</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={12} md={4} className="mb-3">
+            <Card>
+              <Card.Body>
+                <Card.Title>Total Transaksi</Card.Title>
+                <Card.Text>{stats.orders}</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={12} md={4} className="mb-3">
+            <Card>
+              <Card.Body>
+                <Card.Title>Total User</Card.Title>
+                <Card.Text>{stats.users}</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

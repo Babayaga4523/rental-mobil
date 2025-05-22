@@ -130,6 +130,90 @@ const ContactPage = () => {
           title="Lokasi Kami"
         ></iframe>
       </div>
+
+      {/* Info Armada Section */}
+      <div className="container my-5" data-aos="fade-up">
+        <div className="alert alert-info rounded-4 shadow-sm mb-4" data-aos="fade-up" data-aos-delay="100">
+          <strong>Info:</strong> Semua mobil yang tampil di halaman ini <b>khusus untuk rental dalam kota</b> (Jabodetabek). 
+          <br className="d-none d-md-block" />
+          Untuk kebutuhan <b>luar kota, drop-off bandara, atau perjalanan khusus</b>, silakan <a href="https://wa.me/6281381339149" target="_blank" rel="noopener noreferrer" className="fw-bold text-primary">chat admin</a> untuk konsultasi & penawaran terbaik!
+        </div>
+        <h2 className="text-center mb-4 fw-bold">Armada Kami</h2>
+        <div className="row">
+          {/* Daftar mobil akan ditampilkan di sini */}
+          <div className="col-md-4 mb-4">
+            <div className="card shadow-sm">
+              <img src="https://via.placeholder.com/350x200" className="card-img-top" alt="Mobil 1" />
+              <div className="card-body">
+                <h5 className="card-title">Toyota Avanza</h5>
+                <p className="card-text">
+                  Kapasitas: 7 Penumpang
+                  <br />
+                  AC: Ya
+                  <br />
+                  Transmisi: Manual
+                </p>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-primary w-100" onClick={() => alert("Pesan Toyota Avanza")}>
+                    Pesan Sekarang
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-4">
+            <div className="card shadow-sm">
+              <img src="https://via.placeholder.com/350x200" className="card-img-top" alt="Mobil 2" />
+              <div className="card-body">
+                <h5 className="card-title">Honda Jazz</h5>
+                <p className="card-text">
+                  Kapasitas: 5 Penumpang
+                  <br />
+                  AC: Ya
+                  <br />
+                  Transmisi: Otomatis
+                </p>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-primary w-100" onClick={() => alert("Pesan Honda Jazz")}>
+                    Pesan Sekarang
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4 mb-4">
+            <div className="card shadow-sm">
+              <img src="https://via.placeholder.com/350x200" className="card-img-top" alt="Mobil 3" />
+              <div className="card-body">
+                <h5 className="card-title">Suzuki Ertiga</h5>
+                <p className="card-text">
+                  Kapasitas: 7 Penumpang
+                  <br />
+                  AC: Ya
+                  <br />
+                  Transmisi: Manual
+                </p>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-primary w-100" onClick={() => alert("Pesan Suzuki Ertiga")}>
+                    Pesan Sekarang
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* WhatsApp Floating Button */}
+      <a
+        href="https://wa.me/6281381339149"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="floating-wa-cta"
+        title="Chat Admin Rental Mobil HS"
+      >
+        <i className="fab fa-whatsapp"></i>
+      </a>
     </div>
   );
 };

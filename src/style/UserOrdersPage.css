@@ -1,72 +1,472 @@
+.user-orders-container {
+  max-width: 1200px;
+}
+
+.page-header {
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 30px;
+}
+
+.page-title {
+  font-weight: 700;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
 .order-card {
-  border-radius: 14px;
-  transition: transform 0.3s cubic-bezier(.4,2,.3,1), box-shadow 0.3s;
-  border: none;
+  border-radius: 10px;
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
 }
 
 .order-card:hover {
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
 }
 
-.car-thumbnail {
+.order-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 15px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.order-id {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  letter-spacing: 0.5px;
+}
+
+.order-date {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.status-badges .badge {
+  font-size: 0.75rem;
+  padding: 5px 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.car-info {
+  text-align: center;
+}
+
+.car-image-container {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 180px;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.car-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.car-image-container:hover .car-image {
+  transform: scale(1.05);
+}
+
+.promo-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4757;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.car-name {
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.car-specs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.order-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.detail-section {
+  margin-bottom: 15px;
+}
+
+.detail-section h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.detail-content {
+  padding-left: 24px;
+}
+
+.date-range {
+  margin-bottom: 8px;
+}
+
+.date-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.date-label {
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.date-value {
+  font-weight: 600;
+  color: #495057;
+}
+
+.duration-badge {
+  font-weight: 600;
+  padding: 5px 10px;
+}
+
+.price-info {
+  width: 100%;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+.price-row.total {
+  border-top: 1px solid #dee2e6;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.total-price {
+  color: #28a745;
+  font-weight: 700;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #6c757d;
+  margin-right: 8px;
+}
+
+.discounted-price {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.payment-proof {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.notes {
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.order-actions {
+  display: flex;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.empty-state {
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: #6c757d;
+  opacity: 0.5;
+}
+
+.no-results {
+  background: #f8f9fa;
+  padding: 40px;
+  border-radius: 10px;
+}
+
+.modal-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Tambahan & Penyesuaian untuk tampilan badge promo, rating, dan bukti pembayaran */
+
+/* Promo badge di bawah nama mobil */
+.promo-badge-inline {
+  display: inline-block;
+  background: linear-gradient(90deg, #ff4757 60%, #ff6b81 100%);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 5px 16px;
+  font-size: 1rem;
+  margin-top: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(220,53,69,0.12);
+  letter-spacing: 1px;
+  transition: background 0.2s;
+}
+
+.promo-badge-inline .fa-tag {
+  margin-right: 6px;
+}
+
+.order-card .car-thumbnail {
   width: 80px;
   height: 60px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1.5px solid #e3e3e3;
+  border: 1px solid #e9ecef;
   background: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.06);
 }
 
-.payment-proof-thumbnail {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 5px;
-  border: 1px solid #dee2e6;
-}
-
-.badge {
-  font-weight: 500;
-  padding: 6px 10px;
-  font-size: 0.85rem;
+.order-card .fw-bold.text-primary {
+  font-size: 1.15rem;
   letter-spacing: 0.5px;
 }
 
-.card-header {
-  font-weight: 600;
-  background: #f8f9fa !important;
-  border-bottom: 1px solid #e9ecef;
+.order-card .badge {
+  font-size: 0.92rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
 }
 
-.card-body {
-  padding: 1.5rem;
+.order-card .badge.bg-danger {
+  background: linear-gradient(90deg, #ff4757 60%, #ff6b81 100%) !important;
+  color: #fff !important;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
-.card-footer {
-  padding: 0.9rem 1.5rem;
+.order-card .badge.bg-info {
+  background: #1e90ff !important;
+  color: #fff !important;
+}
+
+.order-card .badge.bg-secondary {
+  background: #6c757d !important;
+  color: #fff !important;
+}
+
+.order-card .badge.bg-light {
   background: #f8f9fa !important;
-  border-top: 1px solid #e9ecef;
+  color: #495057 !important;
+  border: 1px solid #dee2e6;
+}
+
+.order-card .badge.bg-warning {
+  background: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.order-card .badge.bg-success {
+  background: #28a745 !important;
+  color: #fff !important;
+}
+
+.order-card .badge.bg-primary {
+  background: #007bff !important;
+  color: #fff !important;
+}
+
+/* Rating */
+.order-card .fa-star {
+  color: #ffc107 !important;
+  font-size: 1.1em;
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.order-card .text-muted {
+  font-size: 0.97rem;
+}
+
+/* Bukti pembayaran button */
+.order-card .btn-outline-primary {
+  border-radius: 20px;
+  font-size: 0.95rem;
+  padding: 4px 14px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.order-card .btn-outline-primary:hover {
+  background: #007bff;
+  color: #fff;
+}
+
+/* Modal bukti pembayaran */
+.proof-modal-body {
+  padding: 20px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proof-image {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.proof-iframe {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.download-proof {
+  text-align: center;
+  padding: 30px;
+}
+
+.no-proof {
+  text-align: center;
+  padding: 30px;
+  color: #888;
+}
+
+/* Hero Section for User Orders */
+.user-orders-hero {
+  min-height: 110vh !important;
+  height: 110vh;
+  background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
+  color: #fff;
+  position: relative;
+  padding-top: 80px;
+  padding-bottom: 40px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.user-orders-hero-overlay {
+  position: absolute;
+  inset: 0;
+  
+  z-index: 1;
+}
+
+.user-orders-hero .display-4 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.user-orders-hero .lead {
+  font-size: 1.15rem;
+  color: #e3e8f3;
 }
 
 @media (max-width: 768px) {
-  .order-card {
-    margin-bottom: 20px;
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
   }
-  .card-body {
-    padding: 1rem;
+  
+  .filters .btn {
+    margin-bottom: 8px;
+    margin-right: 0;
   }
-}
+  
+  .car-image-container {
+    height: 150px;
+  }
 
-@media (max-width: 576px) {
-  .car-thumbnail {
+  .order-card .car-thumbnail {
     width: 60px;
     height: 45px;
   }
-  .card-body {
-    padding: 0.7rem;
+  .promo-badge-inline {
+    font-size: 0.95rem;
+    padding: 4px 10px;
+  }
+  
+  .user-orders-hero {
+    min-height: 60vh !important;
+    height: 60vh;
+    padding-top: 60px;
+    padding-bottom: 20px;
+  }
+  .user-orders-hero .display-4 {
+    font-size: 1.5rem;
   }
 }

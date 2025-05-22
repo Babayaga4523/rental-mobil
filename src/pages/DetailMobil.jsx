@@ -194,6 +194,9 @@ const DetailMobil = () => {
                   src={galleryImages[currentImageIndex]}
                   alt={car.nama || 'Mobil'}
                   className="car-detail-image-main"
+                  width={500}
+                  height={300}
+                  style={{ objectFit: "cover", width: "100%", height: "auto" }}
                   onError={e => { e.target.src = defaultCarImage; }}
                 />
               </div>

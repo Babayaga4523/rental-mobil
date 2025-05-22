@@ -42,13 +42,12 @@ const Navbar = () => {
   const navLinks = [
     { name: "Home", path: "/", icon: "fa-home" },
     { name: "Tentang Kami", path: "/about", icon: "fa-info-circle" },
+    { name: "Gallery", path: "/gallery", icon: "fa-images" }, // <-- gunakan '/gallery' (huruf kecil)
     { name: "Layanan", path: "/layanan", icon: "fa-car" },
-
-  ...(localStorage.getItem("token")
-    ? [{ name: "Status Pesanan", path: "/pesanan", icon: "fa-clipboard-list" }]
-    : []),
+    ...(localStorage.getItem("token")
+      ? [{ name: "Status Pesanan", path: "/pesanan", icon: "fa-clipboard-list" }]
+      : []),
     { name: "Testimoni", path: "/testimoni", icon: "fa-comments" },
-
   ];
 
   return (

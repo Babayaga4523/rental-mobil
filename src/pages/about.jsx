@@ -26,10 +26,10 @@ const About = () => {
       transition={{ duration: 0.5 }}
       className="about-page"
     >
-      {/* Premium Hero Section with Parallax Effect */}
-      <section className="about-hero position-relative overflow-hidden">
-        <div className="hero-gradient-overlay"></div>
-        <div className="hero-bg-parallax"></div>
+      {/* HERO SECTION: gunakan prefix about- pada semua class */}
+      <section className="about-hero-section position-relative overflow-hidden">
+        <div className="about-hero-gradient-overlay"></div>
+        <div className="about-hero-bg-parallax"></div>
         <div className="container h-100 position-relative z-2">
           <div className="row h-100 align-items-center">
             <div className="col-lg-8 mx-auto text-center">
@@ -38,20 +38,20 @@ const About = () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
               >
-                <div className="hero-tagline mb-3" data-aos="fade-down">
+                <div className="about-hero-tagline mb-3" data-aos="fade-down">
                   <span className="badge bg-white text-primary fs-6 px-4 py-2 shadow-lg border border-2 border-primary">
                     <i className="fas fa-star me-2"></i>
                     <span className="fw-bold">Premium Car Rental</span>
                   </span>
                 </div>
-                <h1 className="hero-title display-2 fw-bold mb-3 text-gradient-primary" data-aos="fade-up" style={{ letterSpacing: 1 }}>
+                <h1 className="about-hero-title display-2 fw-bold mb-3 text-gradient-primary" data-aos="fade-up" style={{ letterSpacing: 1 }}>
                   Tentang <span className="text-gradient-primary">Kami</span>
                 </h1>
-                <p className="hero-subtitle lead text-light opacity-85 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <p className="about-hero-subtitle lead text-light opacity-85 mb-4" data-aos="fade-up" data-aos-delay="100">
                   Menyediakan solusi transportasi <b>premium</b> sejak 2000<br className="d-none d-lg-block" />
                   dengan komitmen pada kualitas & kepuasan pelanggan
                 </p>
-                <div className="hero-cta d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                <div className="about-hero-cta d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
                   <motion.button 
                     whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(13, 110, 253, 0.3)" }}
                     whileTap={{ scale: 0.95 }}
@@ -74,16 +74,12 @@ const About = () => {
           </div> {/* penutup .row */}
         </div> {/* penutup .container */}
         {/* Floating Stats di bawah hero, tidak menutupi judul */}
-        <div className="hero-stats-container" data-aos="fade-up" data-aos-delay="300">
+        <div className="about-hero-stats-container" data-aos="fade-up" data-aos-delay="300">
           <motion.div 
             whileHover={{ scale: 1.03 }}
-            className="hero-stats bg-glass rounded-4 shadow-lg p-4 d-inline-flex"
+            className="about-hero-stats bg-glass rounded-4 shadow-lg p-4 d-inline-flex"
           >
-            {/*
-              { number: "23+", label: "Tahun Pengalaman", icon: "fa-calendar-check", color: "primary" },
-              { number: "500+", label: "Armada Mobil", icon: "fa-car-side", color: "success" },
-              { number: "10K+", label: "Pelanggan Puas", icon: "fa-users", color: "warning" }
-            */}
+            {/* Stats content here */}
           </motion.div>
         </div>
       </section>

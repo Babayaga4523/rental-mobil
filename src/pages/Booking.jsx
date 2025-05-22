@@ -20,6 +20,9 @@ import axios from "axios";
 import { format, addDays, isBefore } from "date-fns";
 import PropTypes from "prop-types";
 import "../style/BookingPage.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { QRCodeSVG } from "qrcode.react";
   
 const BACKEND_URL = "http://localhost:3000";
 
@@ -28,6 +31,22 @@ const getHargaSetelahPromo = (price, promo) => {
     return Math.round(price - (price * promo / 100));
   }
   return price;
+};
+
+const BANK_INFO = {
+  bank: "BCA",
+  norek: "123 456 7890",
+  nama: "Rental Mobil Jaya",
+};
+const EWALLET_INFO = [
+  { label: "Gopay", nomor: "0812 3456 7890" },
+  { label: "OVO", nomor: "0812 3456 7890" },
+  { label: "Dana", nomor: "0812 3456 7890" },
+];
+
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text);
+  toast.success("Berhasil disalin!");
 };
 
 const Booking = () => {
@@ -242,6 +261,10 @@ const Booking = () => {
     }
   };
 
+  useEffect(() => {
+    AOS.init({ duration: 800, once: true });
+  }, []);
+
   if (isSessionExpired) {
     return null;
   }
@@ -269,7 +292,49 @@ const Booking = () => {
   }
 
   return (
-    <div className="booking-page-root bg-light py-5">
+    <div className="booking-page-root bg-light">
+      {/* HERO SECTION */}
+      <section className="booking-hero-section position-relative d-flex align-items-center justify-content-center">
+        <div className="booking-hero-overlay"></div>
+        <div className="container position-relative z-2 text-center">
+          <h1
+            className="display-4 fw-bold mb-3 booking-hero-title"
+            data-aos="fade-down"
+          >
+            <span className="booking-hero-gradient-text">
+              Booking Mobil Mudah & Cepat
+            </span>
+          </h1>
+          <p
+            className="lead text-white-50 mb-4 booking-hero-subtitle"
+            data-aos="fade-up"
+            data-aos-delay="100"
+          >
+            Isi formulir pemesanan di bawah ini untuk pengalaman rental mobil terbaik bersama kami.<br />
+            Proses mudah, aman, dan transparan. Armada siap antar ke mana saja!
+          </p>
+          <div className="d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+            <button
+              className="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow"
+              onClick={() => window.scrollTo({ top: 600, behavior: "smooth" })}
+            >
+              <FaCar className="me-2" />
+              Mulai Booking
+            </button>
+            <a
+              href="https://wa.me/6281381339149"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline-light btn-lg rounded-pill px-4 py-3"
+            >
+              <FaFileAlt className="me-2" />
+              Chat Admin
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTENT SECTION */}
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-10">
@@ -456,7 +521,6 @@ const Booking = () => {
                                 <div className="d-flex gap-3 flex-wrap">
                                   {[
                                     { value: "bank_transfer", label: "Transfer Bank", icon: FaUniversity },
-                                    { value: "credit_card", label: "Kartu Kredit", icon: FaCreditCard },
                                     { value: "e_wallet", label: "E-Wallet", icon: FaMoneyCheckAlt },
                                   ].map((method) => {
                                     const Icon = method.icon;
@@ -475,116 +539,163 @@ const Booking = () => {
                                 </div>
                               </div>
 
-                              {formData.payment_method !== "credit_card" && (
-                                <div className="mb-4">
-                                  <label className="form-label fw-bold d-block mb-3">
-                                    Unggah Bukti Pembayaran
-                                  </label>
-                                  <div className="border rounded-3 p-3">
-                                    {formData.payment_proof ? (
-                                      <div className="position-relative">
-                                        {previewImage ? (
-                                          <img
-                                            src={previewImage}
-                                            alt="Preview bukti pembayaran"
-                                            className="img-fluid rounded mb-3"
-                                            style={{ maxHeight: "200px" }}
+                              {/* BANK TRANSFER */}
+                              {formData.payment_method === "bank_transfer" && (
+                                <div className="alert alert-info mt-3 d-flex flex-wrap align-items-center gap-4">
+                                  <div>
+                                    <div className="fw-bold mb-1">Transfer ke Rekening:</div>
+                                    <div className="mb-1">
+                                      <span className="me-1"><strong>Bank:</strong> {BANK_INFO.bank}</span>
+                                    </div>
+                                    <div className="mb-1">
+                                      <span className="me-1"><strong>Nomor Rekening:</strong> {BANK_INFO.norek}</span>
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-primary ms-1"
+                                        onClick={() => copyToClipboard(BANK_INFO.norek)}
+                                        title="Salin nomor rekening"
+                                      >
+                                        Salin
+                                      </button>
+                                    </div>
+                                    <div className="mb-2">
+                                      <span className="me-1"><strong>Atas Nama:</strong> {BANK_INFO.nama}</span>
+                                    </div>
+                                    <small className="text-muted">
+                                      Cantumkan <b>ID pesanan</b> di keterangan transfer.
+                                    </small>
+                                  </div>
+                                  <div className="qrcode-box text-center ms-auto">
+                                    <QRCodeSVG
+                                      value={BANK_INFO.norek}
+                                      size={90}
+                                      bgColor="#fff"
+                                      fgColor="#1e3c72"
+                                      level="H"
+                                      className="qrcode-img"
+                                    />
+                                    <div className="small text-muted mt-2">QR Nomor Rekening</div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* E-WALLET */}
+                              {formData.payment_method === "e_wallet" && (
+                                <div className="alert alert-info mt-3">
+                                  <div className="row">
+                                    {EWALLET_INFO.map((ew, idx) => (
+                                      <div className="col-12 col-md-4 mb-3" key={ew.label}>
+                                        <div className="ewallet-card p-3 h-100 d-flex flex-column align-items-center justify-content-center">
+                                          <div className="fw-bold mb-1">{ew.label}</div>
+                                          <div className="mb-1">
+                                            <span>{ew.nomor}</span>
+                                            <button
+                                              type="button"
+                                              className="btn btn-sm btn-outline-primary ms-2"
+                                              onClick={() => copyToClipboard(ew.nomor)}
+                                              title={`Salin nomor ${ew.label}`}
+                                            >
+                                              Salin
+                                            </button>
+                                          </div>
+                                          <QRCodeSVG
+                                            value={ew.nomor}
+                                            size={70}
+                                            bgColor="#fff"
+                                            fgColor="#1e3c72"
+                                            level="H"
+                                            className="qrcode-img"
                                           />
-                                        ) : (
-                                          <div className="p-4 bg-light rounded text-center mb-3">
-                                            <FaFileAlt className="fs-1 text-muted mb-2" />
-                                            <p className="mb-0">{formData.payment_proof.name}</p>
-                                          </div>
-                                        )}
-                                        <button
-                                          type="button"
-                                          className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
-                                          onClick={removePaymentProof}
-                                          aria-label="Hapus bukti pembayaran"
-                                        >
-                                          <FaTimesCircle />
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <label
-                                          htmlFor="paymentProof"
-                                          className="d-block cursor-pointer text-center p-4 border-2 border-dashed rounded"
-                                        >
-                                          <FaUpload className="fs-1 text-muted mb-3" />
-                                          <p className="mb-1 fw-bold">Klik untuk mengunggah bukti pembayaran</p>
-                                          <small className="text-muted">
-                                            (Format: JPG, PNG, PDF, maksimal 5MB)
-                                          </small>
-                                        </label>
-                                        <input
-                                          type="file"
-                                          id="paymentProof"
-                                          className="d-none"
-                                          onChange={handleFileChange}
-                                          accept="image/jpeg,image/png,application/pdf"
-                                        />
-                                      </>
-                                    )}
-                                    {errors.payment_proof && (
-                                      <div className="text-danger small mt-2">{errors.payment_proof}</div>
-                                    )}
-                                    {isUploading && (
-                                      <div className="mt-3">
-                                        <div className="progress">
-                                          <div
-                                            className="progress-bar progress-bar-striped progress-bar-animated"
-                                            style={{ width: `${uploadProgress}%` }}
-                                            aria-valuenow={uploadProgress}
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
-                                          >
-                                            {uploadProgress}%
-                                          </div>
+                                          <div className="small text-muted mt-2">QR {ew.label}</div>
                                         </div>
                                       </div>
-                                    )}
+                                    ))}
                                   </div>
-
-                                  {formData.payment_method === "bank_transfer" && (
-                                    <div className="alert alert-info mt-3">
-                                      <h6 className="alert-heading">Informasi Rekening</h6>
-                                      <ul className="mb-0">
-                                        <li><strong>Bank:</strong> BCA</li>
-                                        <li><strong>Nomor Rekening:</strong> 123 456 7890</li>
-                                        <li><strong>Atas Nama:</strong> Rental Mobil Jaya</li>
-                                      </ul>
-                                      <p className="mb-0 mt-2">
-                                        Harap mencantumkan ID pesanan dalam keterangan transfer.
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {formData.payment_method === "e_wallet" && (
-                                    <div className="alert alert-info mt-3">
-                                      <h6 className="alert-heading">Informasi E-Wallet</h6>
-                                      <ul className="mb-0">
-                                        <li><strong>Gopay:</strong> 0812 3456 7890</li>
-                                        <li><strong>OVO:</strong> 0812 3456 7890</li>
-                                        <li><strong>Dana:</strong> 0812 3456 7890</li>
-                                      </ul>
-                                      <p className="mb-0 mt-2">
-                                        Harap mencantumkan ID pesanan dalam keterangan transfer.
-                                      </p>
-                                    </div>
-                                  )}
+                                  <small className="text-muted">
+                                    Cantumkan <b>ID pesanan</b> di keterangan transfer.
+                                  </small>
                                 </div>
                               )}
 
-                              {formData.payment_method === "credit_card" && (
-                                <div className="alert alert-success">
-                                  <h6 className="alert-heading">Pembayaran Aman</h6>
-                                  <p className="mb-0">
-                                    Pembayaran dengan kartu kredit diproses secara aman. Kami tidak menyimpan informasi kartu kredit Anda.
-                                  </p>
+                              {/* Upload Bukti Pembayaran */}
+                              <div className="mb-4">
+                                <label className="form-label fw-bold d-block mb-3">
+                                  Unggah Bukti Pembayaran
+                                </label>
+                                <div className="border rounded-3 p-3">
+                                  {formData.payment_proof ? (
+                                    <div className="position-relative">
+                                      {previewImage ? (
+                                        <img
+                                          src={previewImage}
+                                          alt="Preview bukti pembayaran"
+                                          className="img-fluid rounded mb-3"
+                                          style={{ maxHeight: "200px" }}
+                                        />
+                                      ) : (
+                                        <div className="p-4 bg-light rounded text-center mb-3">
+                                          <FaFileAlt className="fs-1 text-muted mb-2" />
+                                          <p className="mb-0">{formData.payment_proof.name}</p>
+                                        </div>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                                        onClick={removePaymentProof}
+                                        aria-label="Hapus bukti pembayaran"
+                                      >
+                                        <FaTimesCircle />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <label
+                                        htmlFor="paymentProof"
+                                        className="d-block cursor-pointer text-center p-4 border-2 border-dashed rounded"
+                                      >
+                                        <FaUpload className="fs-1 text-muted mb-3" />
+                                        <p className="mb-1 fw-bold">Klik untuk mengunggah bukti pembayaran</p>
+                                        <small className="text-muted">
+                                          (Format: JPG, PNG, PDF, maksimal 5MB)
+                                        </small>
+                                      </label>
+                                      <input
+                                        type="file"
+                                        id="paymentProof"
+                                        className="d-none"
+                                        onChange={handleFileChange}
+                                        accept="image/jpeg,image/png,application/pdf"
+                                      />
+                                    </>
+                                  )}
+                                  {errors.payment_proof && (
+                                    <div className="text-danger small mt-2">{errors.payment_proof}</div>
+                                  )}
+                                  {isUploading && (
+                                    <div className="mt-3">
+                                      <div className="progress">
+                                        <div
+                                          className="progress-bar progress-bar-striped progress-bar-animated"
+                                          style={{ width: `${uploadProgress}%` }}
+                                          aria-valuenow={uploadProgress}
+                                          aria-valuemin="0"
+                                          aria-valuemax="100"
+                                        >
+                                          {uploadProgress}%
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              </div>
 
+                              {/* Notifikasi Otomatis */}
+                              <div className="alert alert-success d-flex align-items-center gap-2 mb-4">
+                                <FaCheckCircle className="me-2" />
+                                Setelah pembayaran dan upload bukti, Anda akan menerima notifikasi otomatis via WhatsApp/email.
+                              </div>
+
+                              {/* Catatan Tambahan & Tombol */}
                               <div className="mb-4">
                                 <label htmlFor="additional_notes" className="form-label fw-bold">
                                   Catatan Tambahan
@@ -599,7 +710,6 @@ const Booking = () => {
                                   placeholder="Contoh: Alamat pengambilan, permintaan khusus, dll."
                                 ></textarea>
                               </div>
-
                               <div className="d-flex gap-3">
                                 <button
                                   type="button"
@@ -632,6 +742,7 @@ const Booking = () => {
                       </div>
                     </div>
                   </div>
+                  {/* ...end col-lg-7 */}
                 </div>
               </div>
             </div>

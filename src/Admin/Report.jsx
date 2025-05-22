@@ -6,9 +6,8 @@ import {
 import {
   FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch, FaSun, FaMoon
 } from "react-icons/fa";
-import { CSVLink } from "react-csv";
 import moment from "moment";
-import { Bar, Line } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import {
   Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement
 } from "chart.js";
@@ -217,13 +216,13 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
         type: "line",
         label: "Jumlah Disewa",
         data: carSalesArr.map(c => c.count),
-        borderColor: "#0d6efd",
-        backgroundColor: "rgba(13,110,253,0.1)",
+        borderColor: "#6366f1",
+        backgroundColor: "rgba(99,102,241,0.15)",
         borderWidth: 3,
         fill: true,
-        tension: 0.4,
+        tension: 0.4, // membuat garis curve/lengkung
         pointRadius: 4,
-        pointBackgroundColor: "#0d6efd",
+        pointBackgroundColor: "#6366f1",
       }
     ],
   };
@@ -392,17 +391,17 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container py-4">
+      <div className="container-fluid py-4">
         {/* Header & Filter */}
-        <Row className="align-items-center mb-4 g-2 flex-nowrap">
-          <Col xs="auto" className="flex-grow-1">
+        <Row className="align-items-center mb-4 g-2">
+          <Col xs={12} md={4} className="mb-2 mb-md-0">
             <h3 className="mb-0 d-flex align-items-center" style={{ whiteSpace: "nowrap" }}>
               <FaChartBar className="me-2" />
               Laporan Penjualan & Statistik
             </h3>
           </Col>
-          <Col xs="auto">
-            <div className="d-flex align-items-center gap-2 flex-nowrap">
+          <Col xs={12} md={8}>
+            <div className="d-flex flex-column flex-md-row flex-wrap align-items-stretch align-items-md-center gap-2">
               <Form.Select
                 value={year}
                 onChange={e => setYear(Number(e.target.value))}
@@ -477,7 +476,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
             {/* Ringkasan */}
             <Row className="mb-4 g-3">
               <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm">
+                <Card className="text-center shadow-sm h-100">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Omzet</div>
                     <div className="fs-4 text-success">Rp{totalOmzet.toLocaleString("id-ID")}</div>
@@ -485,7 +484,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 </Card>
               </Col>
               <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm">
+                <Card className="text-center shadow-sm h-100">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Pesanan</div>
                     <div className="fs-4">{totalOrders}</div>
@@ -493,7 +492,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 </Card>
               </Col>
               <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm">
+                <Card className="text-center shadow-sm h-100">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Mobil</div>
                     <div className="fs-4">{totalCars}</div>
@@ -501,7 +500,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 </Card>
               </Col>
               <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm">
+                <Card className="text-center shadow-sm h-100">
                   <Card.Body>
                     <div className="fw-bold" style={{ fontSize: 18 }}>Total Pengguna</div>
                     <div className="fs-4">{totalUsers}</div>
@@ -516,7 +515,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <span>Grafik Jumlah Pesanan, Omzet & User Baru {year}</span>
               </Card.Header>
               <Card.Body>
-                <div style={{ minHeight: 350 }}>
+                <div id="chart-penjualan" style={{ minHeight: 350, width: "100%", overflowX: "auto" }}>
                   <Line
                     data={chartData}
                     options={{
@@ -641,10 +640,27 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                       </Table>
                     </div>
                   </Col>
-                  <Col xs={12} md={5} className="d-flex align-items-center">
-                    <div id="chart-mobil" style={{ width: "100%", minHeight: 320 }}>
+                  <Col xs={12} md={5} className="d-flex align-items-center mt-3 mt-md-0">
+                    <div style={{ width: "100%", minHeight: 320 }}>
                       <Line
-                        data={carChartData}
+                        data={{
+                          labels: carSalesArr.map(c => c.car),
+                          datasets: [
+                            {
+                              label: "Jumlah Disewa",
+                              data: carSalesArr.map(c => c.count),
+                              borderColor: "#6366f1",
+                              backgroundColor: "rgba(99,102,241,0.15)",
+                              borderWidth: 3,
+                              fill: true,
+                              tension: 0.4, // membuat garis curve
+                              pointRadius: 5,
+                              pointBackgroundColor: "#6366f1",
+                              pointBorderColor: "#fff",
+                              pointHoverRadius: 7,
+                            }
+                          ],
+                        }}
                         height={320}
                         options={{
                           responsive: true,
@@ -653,7 +669,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                             legend: { display: true, position: "top" },
                             title: {
                               display: true,
-                              text: "Jumlah Disewa Mobil Terlaris (Curve)",
+                              text: "Jumlah Disewa Mobil Terlaris",
                               font: { size: 16 }
                             },
                             tooltip: {
@@ -665,15 +681,16 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                           scales: {
                             x: {
                               title: { display: true, text: "Mobil" },
-                              ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 }
+                              ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 },
+                              grid: { display: false }
                             },
                             y: {
                               beginAtZero: true,
                               title: { display: true, text: "Jumlah Disewa" },
-                              precision: 0
+                              precision: 0,
+                              grid: { color: "#eee" }
                             }
-                          },
-                          onClick: (evt, elems) => handleBarClick(elems, "car")
+                          }
                         }}
                       />
                     </div>
@@ -688,46 +705,48 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <FaSearch className="me-2" /> Mobil Tidak Pernah Disewa {year}
               </Card.Header>
               <Card.Body>
-                {neverRentedCars.length === 0 ? (
-                  <Alert variant="success">Semua mobil pernah disewa tahun ini.</Alert>
-                ) : (
-                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                    <thead>
-                      <tr>
-                        <th>Nama Mobil</th>
-                        <th>Kategori</th>
-                        <th>Status</th>
-                        <th>Promo</th>
-                        <th>Fitur</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {neverRentedCars.map(car => (
-                        <tr key={car.id}>
-                          <td>{car.nama}</td>
-                          <td>{car.kategori}</td>
-                          <td>
-                            <Badge bg={car.status === "available" ? "success" : "danger"}>
-                              {car.status === "available" ? "Tersedia" : "Tidak Tersedia"}
-                            </Badge>
-                          </td>
-                          <td>
-                            {car.promo
-                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                              : <span className="text-muted">-</span>}
-                          </td>
-                          <td>
-                            {Array.isArray(car.fitur) && car.fitur.length > 0
-                              ? car.fitur.map((f, i) => (
-                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                ))
-                              : <span className="text-muted">-</span>}
-                          </td>
+                <div className="table-responsive">
+                  {neverRentedCars.length === 0 ? (
+                    <Alert variant="success">Semua mobil pernah disewa tahun ini.</Alert>
+                  ) : (
+                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                      <thead>
+                        <tr>
+                          <th>Nama Mobil</th>
+                          <th>Kategori</th>
+                          <th>Status</th>
+                          <th>Promo</th>
+                          <th>Fitur</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                )}
+                      </thead>
+                      <tbody>
+                        {neverRentedCars.map(car => (
+                          <tr key={car.id}>
+                            <td>{car.nama}</td>
+                            <td>{car.kategori}</td>
+                            <td>
+                              <Badge bg={car.status === "available" ? "success" : "danger"}>
+                                {car.status === "available" ? "Tersedia" : "Tidak Tersedia"}
+                              </Badge>
+                            </td>
+                            <td>
+                              {car.promo
+                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                                : <span className="text-muted">-</span>}
+                            </td>
+                            <td>
+                              {Array.isArray(car.fitur) && car.fitur.length > 0
+                                ? car.fitur.map((f, i) => (
+                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                  ))
+                                : <span className="text-muted">-</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </div>
               </Card.Body>
             </Card>
 
@@ -737,44 +756,46 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <FaCarSide className="me-2" /> Daftar Mobil Tersedia
               </Card.Header>
               <Card.Body>
-                {availableCars.length === 0 ? (
-                  <Alert variant="danger">Tidak ada mobil yang tersedia.</Alert>
-                ) : (
-                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                    <thead>
-                      <tr>
-                        <th>Nama Mobil</th>
-                        <th>Kategori</th>
-                        <th>Promo</th>
-                        <th>Fitur</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availableCars.map(car => (
-                        <tr key={car.id}>
-                          <td>{car.nama}</td>
-                          <td>{car.kategori}</td>
-                          <td>
-                            {car.promo
-                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                              : <span className="text-muted">-</span>}
-                          </td>
-                          <td>
-                            {Array.isArray(car.fitur) && car.fitur.length > 0
-                              ? car.fitur.map((f, i) => (
-                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                ))
-                              : <span className="text-muted">-</span>}
-                          </td>
-                          <td>
-                            <Badge bg="success">Tersedia</Badge>
-                          </td>
+                <div className="table-responsive">
+                  {availableCars.length === 0 ? (
+                    <Alert variant="danger">Tidak ada mobil yang tersedia.</Alert>
+                  ) : (
+                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                      <thead>
+                        <tr>
+                          <th>Nama Mobil</th>
+                          <th>Kategori</th>
+                          <th>Promo</th>
+                          <th>Fitur</th>
+                          <th>Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                )}
+                      </thead>
+                      <tbody>
+                        {availableCars.map(car => (
+                          <tr key={car.id}>
+                            <td>{car.nama}</td>
+                            <td>{car.kategori}</td>
+                            <td>
+                              {car.promo
+                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                                : <span className="text-muted">-</span>}
+                            </td>
+                            <td>
+                              {Array.isArray(car.fitur) && car.fitur.length > 0
+                                ? car.fitur.map((f, i) => (
+                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                  ))
+                                : <span className="text-muted">-</span>}
+                            </td>
+                            <td>
+                              <Badge bg="success">Tersedia</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </div>
               </Card.Body>
             </Card>
 
@@ -784,44 +805,46 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <FaCarSide className="me-2" /> Daftar Mobil Tidak Tersedia
               </Card.Header>
               <Card.Body>
-                {unavailableCars.length === 0 ? (
-                  <Alert variant="success">Semua mobil tersedia.</Alert>
-                ) : (
-                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                    <thead>
-                      <tr>
-                        <th>Nama Mobil</th>
-                        <th>Kategori</th>
-                        <th>Promo</th>
-                        <th>Fitur</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {unavailableCars.map(car => (
-                        <tr key={car.id}>
-                          <td>{car.nama}</td>
-                          <td>{car.kategori}</td>
-                          <td>
-                            {car.promo
-                              ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                              : <span className="text-muted">-</span>}
-                          </td>
-                          <td>
-                            {Array.isArray(car.fitur) && car.fitur.length > 0
-                              ? car.fitur.map((f, i) => (
-                                  <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                ))
-                              : <span className="text-muted">-</span>}
-                          </td>
-                          <td>
-                            <Badge bg="danger">Tidak Tersedia</Badge>
-                          </td>
+                <div className="table-responsive">
+                  {unavailableCars.length === 0 ? (
+                    <Alert variant="success">Semua mobil tersedia.</Alert>
+                  ) : (
+                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                      <thead>
+                        <tr>
+                          <th>Nama Mobil</th>
+                          <th>Kategori</th>
+                          <th>Promo</th>
+                          <th>Fitur</th>
+                          <th>Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                )}
+                      </thead>
+                      <tbody>
+                        {unavailableCars.map(car => (
+                          <tr key={car.id}>
+                            <td>{car.nama}</td>
+                            <td>{car.kategori}</td>
+                            <td>
+                              {car.promo
+                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                                : <span className="text-muted">-</span>}
+                            </td>
+                            <td>
+                              {Array.isArray(car.fitur) && car.fitur.length > 0
+                                ? car.fitur.map((f, i) => (
+                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                                  ))
+                                : <span className="text-muted">-</span>}
+                            </td>
+                            <td>
+                              <Badge bg="danger">Tidak Tersedia</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </div>
               </Card.Body>
             </Card>
 
@@ -831,80 +854,82 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <Modal.Title>{modalTitle}</Modal.Title>
               </Modal.Header>
               <Modal.Body>
-                {modalOrders.length === 0 ? (
-                  <Alert variant="info">Tidak ada pesanan.</Alert>
-                ) : (
-                  <Table striped bordered hover>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Pelanggan</th>
-                        <th>Mobil</th>
-                        <th>Tanggal</th>
-                        <th>Status</th>
-                        <th>Pembayaran</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {modalOrders.map(order => (
-                        <tr key={order.id}>
-                          <td>#{order.id}</td>
-                          <td>{order.user?.name || order.User?.name || "-"}</td>
-                          <td>{order.layanan?.nama || order.Layanan?.nama || "-"}</td>
-                          <td>
-                            {moment(order.createdAt || order.created_at || order.order_date).format("D MMM YYYY")}
-                          </td>
-                          <td>
-                            <Badge bg={
-                              order.status === "completed"
-                                ? "success"
-                                : order.status === "cancelled"
-                                ? "danger"
-                                : order.status === "confirmed"
-                                ? "info"
-                                : order.status === "pending"
-                                ? "warning"
-                                : "secondary"
-                            }>
-                              {order.status === "completed"
-                                ? "Selesai"
-                                : order.status === "cancelled"
-                                ? "Dibatalkan"
-                                : order.status === "confirmed"
-                                ? "Dikonfirmasi"
-                                : order.status === "pending"
-                                ? "Pending"
-                                : order.status}
-                            </Badge>
-                          </td>
-                          <td>
-                            <Badge bg={
-                              order.payment_status === "paid"
-                                ? "success"
-                                : order.payment_status === "pending_verification"
-                                ? "warning"
-                                : order.payment_status === "rejected"
-                                ? "danger"
-                                : "secondary"
-                            }>
-                              {order.payment_status === "paid"
-                                ? "Lunas"
-                                : order.payment_status === "pending_verification"
-                                ? "Menunggu Verifikasi"
-                                : order.payment_status === "rejected"
-                                ? "Ditolak"
-                                : order.payment_status}
-                            </Badge>
-                          </td>
-                          <td>
-                            Rp{Number(order.total_price).toLocaleString("id-ID")}
-                          </td>
+                <div className="table-responsive">
+                  {modalOrders.length === 0 ? (
+                    <Alert variant="info">Tidak ada pesanan.</Alert>
+                  ) : (
+                    <Table striped bordered hover>
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Pelanggan</th>
+                          <th>Mobil</th>
+                          <th>Tanggal</th>
+                          <th>Status</th>
+                          <th>Pembayaran</th>
+                          <th>Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                )}
+                      </thead>
+                      <tbody>
+                        {modalOrders.map(order => (
+                          <tr key={order.id}>
+                            <td>#{order.id}</td>
+                            <td>{order.user?.name || order.User?.name || "-"}</td>
+                            <td>{order.layanan?.nama || order.Layanan?.nama || "-"}</td>
+                            <td>
+                              {moment(order.createdAt || order.created_at || order.order_date).format("D MMM YYYY")}
+                            </td>
+                            <td>
+                              <Badge bg={
+                                order.status === "completed"
+                                  ? "success"
+                                  : order.status === "cancelled"
+                                  ? "danger"
+                                  : order.status === "confirmed"
+                                  ? "info"
+                                  : order.status === "pending"
+                                  ? "warning"
+                                  : "secondary"
+                              }>
+                                {order.status === "completed"
+                                  ? "Selesai"
+                                  : order.status === "cancelled"
+                                  ? "Dibatalkan"
+                                  : order.status === "confirmed"
+                                  ? "Dikonfirmasi"
+                                  : order.status === "pending"
+                                  ? "Pending"
+                                  : order.status}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Badge bg={
+                                order.payment_status === "paid"
+                                  ? "success"
+                                  : order.payment_status === "pending_verification"
+                                  ? "warning"
+                                  : order.payment_status === "rejected"
+                                  ? "danger"
+                                  : "secondary"
+                              }>
+                                {order.payment_status === "paid"
+                                  ? "Lunas"
+                                  : order.payment_status === "pending_verification"
+                                  ? "Menunggu Verifikasi"
+                                  : order.payment_status === "rejected"
+                                  ? "Ditolak"
+                                  : order.payment_status}
+                              </Badge>
+                            </td>
+                            <td>
+                              Rp{Number(order.total_price).toLocaleString("id-ID")}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  )}
+                </div>
               </Modal.Body>
             </Modal>
           </>

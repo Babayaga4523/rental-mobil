@@ -37,18 +37,17 @@ const Home = () => {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true, easing: 'ease-out-cubic' });
 
-    fetch("http://localhost:3000/api/testimoni")
-      .then(res => res.json())
-      .then(data => setTestimonials(data))
-      .catch(err => console.error("Error fetching testimonials:", err));
-
-    fetch("http://localhost:3000/api/layanan?limit=8")
-      .then(res => res.json())
-      .then(data => {
-        setPopularCars(Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : []);
-        setIsLoading(false);
-      })
-      .catch(err => console.error("Error fetching cars:", err));
+    // --- PERBAIKAN: Fetch data paralel dan setIsLoading lebih awal ---
+    setIsLoading(true);
+    Promise.all([
+      fetch("http://localhost:3000/api/testimoni").then(res => res.json()).catch(() => []),
+      fetch("http://localhost:3000/api/layanan?limit=8").then(res => res.json()).catch(() => ({ data: [] }))
+    ]).then(([testiData, carsData]) => {
+      setTestimonials(Array.isArray(testiData.data) ? testiData.data : Array.isArray(testiData) ? testiData : []);
+      setPopularCars(Array.isArray(carsData.data) ? carsData.data : Array.isArray(carsData) ? carsData : []);
+      setIsLoading(false);
+    });
+    // --- END PERBAIKAN ---
   }, []);
 
   return (
@@ -68,16 +67,17 @@ const Home = () => {
       </a>
 
       {/* HERO SECTION */}
-      <section className="landing-hero position-relative d-flex align-items-center py-5" style={{ minHeight: "100vh", background: "linear-gradient(120deg, #1e3c72 0%, #2a5298 100%)" }}>
+      <section className="landing-hero position-relative d-flex align-items-center py-5" style={{ minHeight: "100vh" }}>
   <div className="home-page-hero-overlay"></div>
   <div className="container position-relative z-index-2">
     <div className="row align-items-center">
-      <div className="col-lg-6 text-center text-lg-start">
+      <div className="col-lg-6 text-center text-lg-start" data-aos="fade-right">
         <motion.h1
           className="display-3 fw-bold mb-4 home-page-hero-title"
           initial={{ opacity: 0, y: -40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
+          data-aos="fade-down"
         >
           Sewa Mobil <span className="text-gradient">Premium</span> & Nyaman
         </motion.h1>
@@ -121,48 +121,21 @@ const Home = () => {
           <li><i className="bi bi-check-circle-fill text-gold me-2"></i>Booking mudah & cepat</li>
         </motion.ul>
       </div>
-      <div className="col-lg-6 text-center mt-5 mt-lg-0 position-relative">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.7 }}
-          whileHover={{ scale: 1.04 }}
-          className="hero-img-container"
-        >
-          <img
-            src="/images/hero-car.png"
-            alt="Rental Mobil"
-            className="img-fluid rounded-4 shadow-lg landing-hero-img"
-            style={{ maxWidth: "90%", transition: "transform 0.4s" }}
-          />
-          <motion.div
-            className="hero-badge bg-gold text-dark px-4 py-2 rounded-pill fw-bold shadow"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.5 }}
-            style={{ position: "absolute", top: 30, right: 30, fontSize: "1.1rem" }}
-          >
-            PROMO HARI INI!
-          </motion.div>
-        </motion.div>
-        {/* Statistik animasi di bawah gambar */}
-        <div className="home-hero-stats d-flex justify-content-center gap-4 mt-4">
-          <div className="stat-item text-center">
-            <div className="stat-number display-6 fw-bold text-gold">{counters.cars}+</div>
-            <div className="stat-label text-light">Armada</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="stat-number display-6 fw-bold text-gold">{counters.customers}+</div>
-            <div className="stat-label text-light">Pelanggan</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="stat-number display-6 fw-bold text-gold">{counters.years}+</div>
-            <div className="stat-label text-light">Tahun</div>
-          </div>
+      <div className="col-lg-6 text-center mt-5 mt-lg-0 position-relative" data-aos="zoom-in">
+        <img
+          src="/images/Home.png"
+          alt="Rental Mobil"
+          className="img-fluid rounded-4 shadow-lg landing-hero-img"
+          style={{ maxWidth: "90%", transition: "transform 0.4s" }}
+          width={600}
+          height={300}
+          loading="eager"
+        />
+        <div className="hero-badge">
+          PROMO HARI INI!
         </div>
       </div>
     </div>
-    {/* Scroll Down Indicator */}
     <div className="scroll-down" onClick={() => document.getElementById('cars').scrollIntoView({ behavior: 'smooth' })}>
       <div className="scroll-line bg-white"></div>
       <span className="text-white">Scroll Down</span>
