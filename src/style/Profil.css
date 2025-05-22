@@ -1,0 +1,18 @@
+/* Tambahan untuk tampilan profile-card modern */
+.profile-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(30,60,114,0.10);
+  border: none;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.profile-card:hover {
+  box-shadow: 0 16px 40px rgba(30,60,114,0.18);
+  transform: translateY(-4px) scale(1.01);
+}
+.text-gradient-primary {
+  background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

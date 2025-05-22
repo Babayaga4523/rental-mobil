@@ -302,7 +302,8 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
       <div className="container-fluid py-4">
-        <Row className="align-items-center mb-4">
+        {/* Header & Dark Mode Toggle */}
+        <Row className="align-items-center mb-4 g-2">
           <Col xs={12} md={6}>
             <h3 className="mb-0 fw-bold">Daftar Pesanan</h3>
           </Col>
@@ -317,10 +318,11 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
             </Button>
           </Col>
         </Row>
+        {/* Filter & Export */}
         <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
           <Card.Body>
-            <Row className="g-2 align-items-center">
-              <Col xs={12} md={3}>
+            <Row className="g-2 align-items-stretch">
+              <Col xs={12} sm={6} md={3}>
                 <InputGroup>
                   <Form.Control
                     type="text"
@@ -333,7 +335,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   />
                 </InputGroup>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Select
                   value={filterStatus}
                   onChange={(e) => {
@@ -349,7 +351,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   <option value="rejected">Rejected</option>
                 </Form.Select>
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Control
                   type="date"
                   value={dateFrom}
@@ -360,7 +362,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   placeholder="Dari tanggal"
                 />
               </Col>
-              <Col xs={6} md={2}>
+              <Col xs={6} sm={3} md={2}>
                 <Form.Control
                   type="date"
                   value={dateTo}
@@ -371,7 +373,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   placeholder="Sampai tanggal"
                 />
               </Col>
-              <Col xs={6} md={1}>
+              <Col xs={6} sm={3} md={1}>
                 <Form.Select
                   value={pageSize}
                   onChange={e => {
@@ -400,6 +402,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
             </Row>
           </Card.Body>
         </Card>
+        {/* Table */}
         {loading ? (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />

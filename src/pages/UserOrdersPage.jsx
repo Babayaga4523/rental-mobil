@@ -13,6 +13,7 @@ import {
   Modal,
   OverlayTrigger,
   Tooltip,
+  ProgressBar,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import {
@@ -28,9 +29,15 @@ import {
   FaCogs,
   FaUsers,
   FaTag,
+  FaCheckCircle,
+  FaClock,
+  FaExclamationTriangle,
+  FaCarSide,
 } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 import "../style/UserOrdersPage.css";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const BACKEND_URL = "http://localhost:3000";
 
@@ -38,10 +45,17 @@ const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // State untuk modal bukti pembayaran
   const [showProof, setShowProof] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
   const [proofType, setProofType] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    AOS.init({ duration: 800, once: true, easing: "ease-out-cubic" });
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -68,32 +82,32 @@ const UserOrdersPage = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
-        return "warning";
+        return { variant: "warning", icon: <FaClock className="me-1" />, text: "Menunggu" };
       case "confirmed":
-        return "primary";
+        return { variant: "primary", icon: <FaCheckCircle className="me-1" />, text: "Dikonfirmasi" };
       case "completed":
-        return "success";
+        return { variant: "success", icon: <FaCheckCircle className="me-1" />, text: "Selesai" };
       case "cancelled":
-        return "danger";
+        return { variant: "danger", icon: <FaExclamationTriangle className="me-1" />, text: "Dibatalkan" };
       default:
-        return "secondary";
+        return { variant: "secondary", icon: null, text: status };
     }
   };
 
   const getPaymentStatusBadge = (status) => {
     switch (status) {
       case "unpaid":
-        return "secondary";
+        return { variant: "secondary", icon: <FaClock className="me-1" />, text: "Belum Bayar" };
       case "paid":
-        return "success";
+        return { variant: "success", icon: <FaCheckCircle className="me-1" />, text: "Lunas" };
       case "pending_verification":
-        return "warning";
+        return { variant: "warning", icon: <FaClock className="me-1" />, text: "Verifikasi" };
       case "rejected":
-        return "danger";
+        return { variant: "danger", icon: <FaExclamationTriangle className="me-1" />, text: "Ditolak" };
       case "refunded":
-        return "info";
+        return { variant: "info", icon: <FaMoneyBillWave className="me-1" />, text: "Dikembalikan" };
       default:
-        return "secondary";
+        return { variant: "secondary", icon: null, text: status };
     }
   };
 
@@ -117,45 +131,40 @@ const UserOrdersPage = () => {
 
   const getHargaSetelahPromo = (car) => {
     if (car.promo && car.promo > 0) {
-      return Math.round(car.harga - (car.harga * car.promo / 100));
+      return Math.round(car.price_per_day - (car.price_per_day * car.promo / 100));
     }
-    return car.harga;
+    return car.price_per_day;
   };
 
-  // Modal Bukti Pembayaran
-  const handleShowProof = (payment_proof) => {
-    if (!payment_proof) return;
-    const ext = payment_proof.split(".").pop().toLowerCase();
-    setProofUrl(`${BACKEND_URL}${payment_proof}`);
-    setProofType(ext);
+  // Fungsi buka modal
+  const handleShowProof = (url) => {
+    setProofUrl(url);
+    // Cek tipe file
+    if (url.endsWith(".pdf")) setProofType("pdf");
+    else setProofType("img");
     setShowProof(true);
   };
 
+  // Fungsi tutup modal
   const handleCloseProof = () => {
     setShowProof(false);
     setProofUrl("");
     setProofType("");
   };
 
-  const renderPaymentProofButton = (payment_proof) => {
-    if (!payment_proof)
-      return <span className="text-muted">Belum diupload</span>;
-    return (
-      <OverlayTrigger
-        placement="top"
-        overlay={<Tooltip>Lihat Bukti Pembayaran</Tooltip>}
-      >
-        <Button
-          variant="outline-primary"
-          size="sm"
-          className="d-flex align-items-center"
-          onClick={() => handleShowProof(payment_proof)}
-        >
-          <FaEye className="me-2" />
-          Bukti
-        </Button>
-      </OverlayTrigger>
-    );
+  const filteredOrders = orders.filter(order => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "active") return ["pending", "confirmed"].includes(order.status);
+    return order.status === activeFilter;
+  });
+
+  const getOrderProgress = (order) => {
+    if (order.status === "completed") return 100;
+    if (order.status === "cancelled") return 0;
+    
+    const steps = ["pending", "confirmed"];
+    const currentStep = steps.indexOf(order.status);
+    return ((currentStep + 1) / steps.length) * 100;
   };
 
   if (loading) {
@@ -189,231 +198,359 @@ const UserOrdersPage = () => {
   if (!orders.length) {
     return (
       <Container className="py-5">
-        <Alert variant="info" className="text-center">
-          <FaInfoCircle className="me-2" />
-          Anda belum memiliki pesanan.
-          <div className="mt-3">
+        <div className="text-center">
+          <div className="empty-state">
+            <FaCarSide className="empty-icon" />
+            <h3 className="mt-3">Belum Ada Pesanan</h3>
+            <p className="text-muted">Anda belum memiliki pesanan mobil. Mulai pesan sekarang!</p>
             <Button
               variant="primary"
               onClick={() => navigate("/layanan")}
+              className="mt-3"
             >
-              Pesan Sekarang
+              <FaCar className="me-2" />
+              Pesan Mobil Sekarang
             </Button>
           </div>
-        </Alert>
+        </div>
       </Container>
     );
   }
 
   return (
-    <Container className="py-4" style={{ paddingTop: 70 }}>
-      <h2 className="mb-4 text-center text-primary">
-        <FaCalendarAlt className="me-2" />
-        Daftar Pesanan Anda
-      </h2>
-
-      <Row xs={1} md={2} lg={3} className="g-4">
-        {orders.map((order) => (
-          <Col key={order.id}>
-            <Card className="h-100 shadow-sm order-card border-0">
-              <Card.Header
-                className={`bg-${getStatusBadge(
-                  order.status
-                )} bg-opacity-10 d-flex justify-content-between align-items-center`}
+    <div className="user-orders-root bg-light" style={{ minHeight: "100vh" }}>
+      {/* HERO SECTION */}
+      <section className="user-orders-hero position-relative d-flex align-items-center">
+        <div className="container position-relative" style={{ zIndex: 2 }}>
+          <div className="row align-items-center">
+            <div className="col-lg-7 text-center text-lg-start" data-aos="fade-right">
+              <h1 className="display-4 fw-bold mb-3">
+                <FaCalendarAlt className="me-2" />
+                Pesanan Anda
+              </h1>
+              <p className="lead mb-4" style={{ maxWidth: 520 }}>
+                Lihat riwayat dan status pesanan rental mobil Anda. Kelola bukti pembayaran, cek promo, dan nikmati layanan terbaik dari kami.
+              </p>
+              <div className="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+                <Button
+                  variant="light"
+                  className="fw-bold px-4 py-2 rounded-pill"
+                  onClick={() => window.scrollTo({ top: 400, behavior: "smooth" })}
+                >
+                  <FaCar className="me-2" />
+                  Lihat Pesanan
+                </Button>
+                <Button
+                  variant="outline-light"
+                  className="fw-bold px-4 py-2 rounded-pill"
+                  onClick={() => navigate("/layanan")}
+                >
+                  <FaCarSide className="me-2" />
+                  Pesan Mobil Baru
+                </Button>
+              </div>
+            </div>
+            <div className="col-lg-5 text-center mt-5 mt-lg-0 position-relative" data-aos="fade-left">
+              <img
+                src="/images/hero-car.webp"
+                alt="Pesanan Rental Mobil"
+                className="img-fluid rounded-4 shadow-lg"
+                style={{ maxWidth: "90%", minWidth: 260 }}
+                width={420}
+                height={220}
+                loading="eager"
+              />
+              <div
+                className="promo-badge-inline"
+                style={{
+                  position: "absolute",
+                  top: 30,
+                  right: 30,
+                  fontSize: "1rem",
+                  zIndex: 2,
+                }}
               >
-                <div>
-                  <Badge bg={getStatusBadge(order.status)} className="me-2">
-                    {order.status === "pending" && "Menunggu"}
-                    {order.status === "confirmed" && "Dikonfirmasi"}
-                    {order.status === "completed" && "Selesai"}
-                    {order.status === "cancelled" && "Dibatalkan"}
-                  </Badge>
-                  <Badge bg={getPaymentStatusBadge(order.payment_status)}>
-                    {order.payment_status === "unpaid" && "Belum Bayar"}
-                    {order.payment_status === "paid" && "Lunas"}
-                    {order.payment_status === "pending_verification" &&
-                      "Verifikasi"}
-                    {order.payment_status === "rejected" && "Ditolak"}
-                    {order.payment_status === "refunded" && "Dikembalikan"}
-                  </Badge>
-                </div>
-                <small className="text-muted">ID: #{order.id}</small>
-              </Card.Header>
+                <FaTag className="me-2" />
+                Cek Promo Aktif!
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="user-orders-hero-overlay" style={{ zIndex: 1 }} />
+      </section>
 
-              <Card.Body>
-                <div className="d-flex align-items-center mb-3">
-                  <div className="flex-shrink-0 me-3">
-                    <img
-                      src={
-                        order.layanan?.gambar
-                          ? order.layanan.gambar.startsWith("/")
-                            ? `${BACKEND_URL}${order.layanan.gambar}`
-                            : order.layanan.gambar
-                          : "https://via.placeholder.com/80x60?text=No+Image"
-                      }
-                      alt={order.layanan?.nama}
-                      className="car-thumbnail"
-                    />
-                  </div>
-                  <div>
-                    <h5 className="mb-1 fw-bold">
-                      {order.layanan?.nama || "Mobil Tidak Tersedia"}
-                    </h5>
-                    <div className="d-flex align-items-center gap-2">
-                      <Badge bg="light" text="dark" className="border border-secondary">
-                        <FaTag className="me-1" />
-                        {order.layanan?.kategori || "-"}
-                      </Badge>
-                      <Badge bg="info" className="ms-1">
-                        {order.layanan?.transmisi}
-                      </Badge>
-                      <Badge bg="secondary" className="ms-1">
-                        <FaUsers className="me-1" />
-                        {order.layanan?.kapasitas} Orang
-                      </Badge>
-                      {order.layanan?.promo > 0 && (
-                        <Badge bg="danger" className="ms-1">
-                          Promo {order.layanan.promo}%
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
+      <Container className="py-4 user-orders-container">
+        <div className="page-header mb-4" data-aos="fade-down">
+          <h2 className="page-title">
+            <FaCalendarAlt className="me-2" />
+            Daftar Pesanan Anda
+          </h2>
+          <p className="page-subtitle text-muted">
+            Lihat dan kelola semua pesanan rental mobil Anda
+          </p>
+        </div>
 
-                <div className="mb-2">
-                  <span className="text-muted">
-                    <FaStar className="text-warning me-1" />
-                    {order.layanan?.rating
-                      ? `${order.layanan.rating.toFixed(1)} (${order.layanan.jumlah_review || 0} review)`
-                      : "Belum ada rating"}
-                  </span>
-                </div>
-
-                <div className="mb-2">
-                  <span className="text-muted">
-                    <FaCogs className="me-1" />
-                    Fitur:{" "}
-                    {Array.isArray(order.layanan?.fitur) && order.layanan.fitur.length > 0
-                      ? order.layanan.fitur.slice(0, 3).join(", ")
-                      : "-"}
-                  </span>
-                </div>
-
-                <hr />
-
-                <div className="mb-3">
-                  <h6 className="d-flex align-items-center">
-                    <FaCalendarAlt className="me-2 text-primary" />
-                    Periode Sewa
-                  </h6>
-                  <div className="ps-4">
-                    <div>
-                      <strong>Ambil:</strong> {formatDate(order.pickup_date)}
-                    </div>
-                    <div>
-                      <strong>Kembali:</strong> {formatDate(order.return_date)}
-                    </div>
-                    <div className="mt-1">
-                      <Badge bg="light" text="dark">
-                        {order.duration} hari
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <h6 className="d-flex align-items-center">
-                    <FaMoneyBillWave className="me-2 text-success" />
-                    Pembayaran
-                  </h6>
-                  <div className="ps-4">
-                    <div>
-                      <strong>Total:</strong> {formatCurrency(order.total_price)}
-                    </div>
-                    <div>
-                      <span>
-                        Harga per hari:{" "}
-                        {order.layanan?.promo > 0 ? (
-                          <>
-                            <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
-                              Rp {order.layanan.harga?.toLocaleString("id-ID")}
-                            </span>
-                            <span className="fw-bold text-warning">
-                              Rp {getHargaSetelahPromo(order.layanan).toLocaleString("id-ID")}
-                            </span>
-                          </>
-                        ) : (
-                          <>Rp {order.layanan?.harga?.toLocaleString("id-ID")}</>
-                        )}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <strong>Bukti:</strong> {renderPaymentProofButton(order.payment_proof)}
-                    </div>
-                  </div>
-                </div>
-
-                {order.additional_notes && (
-                  <div className="mb-3">
-                    <h6 className="d-flex align-items-center">
-                      <FaInfoCircle className="me-2 text-info" />
-                      Catatan
-                    </h6>
-                    <div className="ps-4">
-                      <p className="text-muted mb-0">
-                        {order.additional_notes}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* Modal Bukti Pembayaran */}
-      <Modal show={showProof} onHide={handleCloseProof} centered size="md">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <FaFileAlt className="me-2" />
-            Bukti Pembayaran
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          {["jpg", "jpeg", "png", "webp"].includes(proofType) ? (
-            <img
-              src={proofUrl}
-              alt="Bukti Pembayaran"
-              style={{ maxWidth: "100%", maxHeight: 400, borderRadius: 8 }}
-            />
-          ) : proofType === "pdf" ? (
-            <iframe
-              src={proofUrl}
-              title="Bukti Pembayaran PDF"
-              style={{ width: "100%", height: 400, border: "none" }}
-            />
-          ) : proofUrl ? (
-            <a
-              href={proofUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline-primary"
-            >
-              Download File
-            </a>
-          ) : (
-            <span className="text-muted">Bukti pembayaran tidak tersedia.</span>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseProof}>
-            <FaTimes className="me-1" />
-            Tutup
+        <div className="filters mb-4" data-aos="fade-up">
+          <Button
+            variant={activeFilter === "all" ? "primary" : "outline-secondary"}
+            onClick={() => setActiveFilter("all")}
+            className="me-2"
+          >
+            Semua
           </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
+          <Button
+            variant={activeFilter === "active" ? "primary" : "outline-secondary"}
+            onClick={() => setActiveFilter("active")}
+            className="me-2"
+          >
+            Aktif
+          </Button>
+          <Button
+            variant={activeFilter === "pending" ? "primary" : "outline-secondary"}
+            onClick={() => setActiveFilter("pending")}
+            className="me-2"
+          >
+            Menunggu
+          </Button>
+          <Button
+            variant={activeFilter === "confirmed" ? "primary" : "outline-secondary"}
+            onClick={() => setActiveFilter("confirmed")}
+            className="me-2"
+          >
+            Dikonfirmasi
+          </Button>
+          <Button
+            variant={activeFilter === "completed" ? "primary" : "outline-secondary"}
+            onClick={() => setActiveFilter("completed")}
+          >
+            Selesai
+          </Button>
+        </div>
+
+        {filteredOrders.length === 0 ? (
+          <div className="no-results text-center py-5" data-aos="fade-up">
+            <FaInfoCircle className="text-muted mb-3" size={48} />
+            <h5>Tidak ada pesanan yang sesuai dengan filter</h5>
+            <Button
+              variant="outline-primary"
+              onClick={() => setActiveFilter("all")}
+              className="mt-3"
+            >
+              Tampilkan Semua Pesanan
+            </Button>
+          </div>
+        ) : (
+          <Row xs={1} md={2} lg={3} className="g-4">
+            {filteredOrders.map((order, idx) => {
+              const statusBadge = getStatusBadge(order.status);
+              const paymentBadge = getPaymentStatusBadge(order.payment_status);
+
+              return (
+                <Col key={order.id} data-aos="zoom-in" data-aos-delay={idx * 80}>
+                  <Card className="h-100 order-card">
+                    <Card.Header className="order-header">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="order-id">ORDER #{order.id}</div>
+                        <div className="order-date">
+                          {formatDate(order.created_at)}
+                        </div>
+                      </div>
+                      <div className="status-badges mt-2">
+                        <Badge bg={statusBadge.variant} className="me-2">
+                          {statusBadge.icon}
+                          {statusBadge.text}
+                        </Badge>
+                        <Badge bg={paymentBadge.variant}>
+                          {paymentBadge.icon}
+                          {paymentBadge.text}
+                        </Badge>
+                      </div>
+                      <ProgressBar
+                        now={getOrderProgress(order)}
+                        variant={statusBadge.variant}
+                        className="mt-2"
+                        animated={order.status === "pending"}
+                      />
+                    </Card.Header>
+
+                    <Card.Body>
+                      <div className="car-info">
+                        <div className="car-image-container">
+                          <img
+                            src={
+                              order.car?.image_url
+                                ? order.car.image_url.startsWith("/")
+                                  ? `${BACKEND_URL}${order.car.image_url}`
+                                  : order.car.image_url
+                                : "https://via.placeholder.com/300x200?text=No+Image"
+                            }
+                            alt={order.car?.name}
+                            className="car-image"
+                          />
+                          {order.car?.promo && order.car.promo > 0 && (
+                            <div className="promo-badge">
+                              <span>-{order.car.promo}%</span>
+                            </div>
+                          )}
+                        </div>
+                        <h5 className="car-name mt-3">
+                          {order.car?.name || "Mobil Tidak Tersedia"}
+                        </h5>
+                        <div className="car-specs">
+                          <div className="spec-item">
+                            <FaCogs className="me-2" />
+                            {order.car?.transmission || "-"}
+                          </div>
+                          <div className="spec-item">
+                            <FaUsers className="me-2" />
+                            {order.car?.capacity || "-"} Orang
+                          </div>
+                          <div className="spec-item">
+                            <FaCogs className="me-2" />
+                            Fitur:{" "}
+                            {Array.isArray(order.car?.fitur) && order.car.fitur.length > 0
+                              ? order.car.fitur.slice(0, 3).join(", ")
+                              : "-"}
+                          </div>
+                          <div className="spec-item">
+                            <FaStar className="text-warning me-2" />
+                            {(typeof order.car?.rating === "number" && !isNaN(order.car.rating))
+                              ? `${order.car.rating.toFixed(1)} (${order.car.jumlah_review || 0})`
+                              : "Belum ada rating"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="order-details mt-3">
+                        <div className="detail-section">
+                          <h6>
+                            <FaCalendarAlt className="me-2" />
+                            Periode Sewa
+                          </h6>
+                          <div className="detail-content">
+                            <div className="date-range">
+                              <div className="date-item">
+                                <span className="date-label">Ambil:</span>
+                                <span className="date-value">{formatDate(order.pickup_date)}</span>
+                              </div>
+                              <div className="date-item">
+                                <span className="date-label">Kembali:</span>
+                                <span className="date-value">{formatDate(order.return_date)}</span>
+                              </div>
+                            </div>
+                            <Badge bg="light" text="dark" className="duration-badge">
+                              {order.duration} hari
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="detail-section">
+                          <h6>
+                            <FaMoneyBillWave className="me-2" />
+                            Pembayaran
+                          </h6>
+                          <div className="detail-content">
+                            <div className="price-info">
+                              <div className="price-row">
+                                <span>Harga per hari:</span>
+                                <span>
+                                  {order.car?.promo && order.car.promo > 0 ? (
+                                    <>
+                                      <span className="original-price">
+                                        {formatCurrency(order.car.price_per_day)}
+                                      </span>
+                                      <span className="discounted-price">
+                                        {formatCurrency(getHargaSetelahPromo(order.car))}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    formatCurrency(order.car?.price_per_day)
+                                  )}
+                                </span>
+                              </div>
+                              <div className="price-row total">
+                                <span>Total:</span>
+                                <span className="total-price">
+                                  {formatCurrency(order.total_price)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="payment-proof">
+                              <span>Bukti Pembayaran:</span>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="d-flex align-items-center ms-2"
+                                onClick={() => {
+                                  if (order.payment_proof) {
+                                    const ext = order.payment_proof.split(".").pop().toLowerCase();
+                                    setProofUrl(`${BACKEND_URL}${order.payment_proof}`);
+                                    setProofType(ext);
+                                    setShowProof(true);
+                                  }
+                                }}
+                                disabled={!order.payment_proof}
+                              >
+                                <FaEye className="me-2" />
+                                Lihat Bukti
+                              </Button>
+                              {!order.payment_proof && (
+                                <span className="text-muted ms-2">Belum diupload</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {order.additional_notes && (
+                          <div className="detail-section">
+                            <h6>
+                              <FaInfoCircle className="me-2" />
+                              Catatan Tambahan
+                            </h6>
+                            <div className="detail-content">
+                              <div className="notes">
+                                {order.additional_notes}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card.Body>
+
+                    
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+        )}
+
+        {/* Modal Bukti Pembayaran */}
+        <Modal show={showProof} onHide={handleCloseProof} centered size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Bukti Pembayaran</Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="text-center">
+            {proofType === "img" ? (
+              <img
+                src={proofUrl}
+                alt="Bukti Pembayaran"
+                className="img-fluid rounded"
+                style={{ maxHeight: 400 }}
+              />
+            ) : proofType === "pdf" ? (
+              <iframe
+                src={proofUrl}
+                title="Bukti Pembayaran PDF"
+                style={{ width: "100%", height: "60vh", border: "none" }}
+              />
+            ) : (
+              <div className="text-muted">Bukti pembayaran tidak tersedia.</div>
+            )}
+          </Modal.Body>
+        </Modal>
+      </Container>
+    </div>
   );
 };
 

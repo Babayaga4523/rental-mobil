@@ -1,24 +1,59 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaCar, FaUsers, FaFileInvoice, FaTachometerAlt, FaChartBar, FaBars } from "react-icons/fa";
+import AdminNavbar from "./AdminNavbar"; // Tambahkan ini di paling atas
 
-const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
+const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
+  const sidebarRef = useRef();
+
+  // Close sidebar on outside click (mobile)
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const handleClick = (e) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target)) {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [sidebarOpen, setSidebarOpen]);
+
+  // Responsive sidebar style
+  const isMobile = window.innerWidth <= 768;
+  const showSidebar = isMobile ? sidebarOpen : true;
 
   return (
-    <aside
-      className="main-sidebar sidebar-dark-primary elevation-4"
-      style={{
-        width: sidebarCollapsed ? 60 : 220,
-        transition: "width 0.2s",
-        position: "fixed",
-        height: "100vh",
-        zIndex: 1000,
-        background: "#23272b",
-        color: "#fff",
-        boxShadow: "2px 0 8px rgba(0,0,0,0.08)"
-      }}
-    >
+    <>
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, width: "100vw", height: "100vh",
+            background: "rgba(0,0,0,0.3)",
+            zIndex: 999
+          }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <aside
+        ref={sidebarRef}
+        className="main-sidebar sidebar-dark-primary elevation-4"
+        style={{
+          width: sidebarCollapsed ? 60 : 220,
+          transition: "width 0.2s",
+          position: "fixed",
+          height: "100vh",
+          zIndex: 1000,
+          background: "#23272b",
+          color: "#fff",
+          boxShadow: "2px 0 8px rgba(0,0,0,0.08)",
+          left: showSidebar ? 0 : isMobile ? -240 : 0,
+          top: 0,
+          display: showSidebar ? "block" : "none"
+        }}
+      >
       
       {/* Brand Admin, klik ke home */}
       <div
@@ -52,6 +87,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                   color: isActive ? "#fff" : "#adb5bd",
                   fontWeight: isActive ? "bold" : "normal"
                 })}
+                onClick={() => isMobile && setSidebarOpen(false)}
               >
                 <FaTachometerAlt className="nav-icon" />
                 <span style={{
@@ -69,6 +105,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                   color: isActive ? "#fff" : "#adb5bd",
                   fontWeight: isActive ? "bold" : "normal"
                 })}
+                onClick={() => isMobile && setSidebarOpen(false)}
               >
                 <FaFileInvoice className="nav-icon" />
                 <span style={{
@@ -86,6 +123,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                   color: isActive ? "#fff" : "#adb5bd",
                   fontWeight: isActive ? "bold" : "normal"
                 })}
+                onClick={() => isMobile && setSidebarOpen(false)}
               >
                 <FaCar className="nav-icon" />
                 <span style={{
@@ -103,6 +141,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                   color: isActive ? "#fff" : "#adb5bd",
                   fontWeight: isActive ? "bold" : "normal"
                 })}
+                onClick={() => isMobile && setSidebarOpen(false)}
               >
                 <FaUsers className="nav-icon" />
                 <span style={{
@@ -120,6 +159,7 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
                   color: isActive ? "#fff" : "#adb5bd",
                   fontWeight: isActive ? "bold" : "normal"
                 })}
+                onClick={() => isMobile && setSidebarOpen(false)}
               >
                 <FaChartBar className="nav-icon" />
                 <span style={{
@@ -132,7 +172,49 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed }) => {
         </nav>
       </div>
     </aside>
+    </>
   );
 };
 
-export default AdminSidebar;
+const AdminLayout = ({ children }) => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Toggle sidebar: collapse di desktop, open/close di mobile
+  const handleSidebarToggle = () => {
+    if (window.innerWidth <= 768) {
+      setSidebarOpen((open) => !open);
+    } else {
+      setSidebarCollapsed((collapsed) => !collapsed);
+    }
+  };
+
+  return (
+    <>
+      <AdminSidebar
+        sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+      <AdminNavbar
+        toggleSidebar={handleSidebarToggle}
+        // ...props lain...
+      />
+      <div style={{
+        marginLeft: window.innerWidth > 768
+          ? (sidebarCollapsed ? 60 : 220)
+          : 0,
+        paddingTop: 70,
+        transition: "margin-left 0.2s"
+      }}>
+        {children}
+      </div>
+      <button className="sidebar-toggle" onClick={handleSidebarToggle}>
+        <FaBars />
+      </button>
+    </>
+  );
+};
+
+export default AdminLayout;

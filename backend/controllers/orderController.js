@@ -7,6 +7,7 @@ const db = require('../models');
 const Notification = db.Notification;
 const { Order, Layanan, User } = db;
 const { sendMail } = require("../utils/email");
+const Testimoni = require('../models/testimoni'); // pastikan sudah di-import
 
 // Helper
 const calculateRentalDuration = (startDate, endDate) => {
@@ -56,7 +57,7 @@ exports.upload = multer({
 });
 
 // Format response order
-const formatResponOrder = (order, car, durasi) => {
+function formatResponOrder(order, car, durasi) {
   return {
     id: order.id,
     order_date: order.order_date,
@@ -72,13 +73,17 @@ const formatResponOrder = (order, car, durasi) => {
     car: {
       id: car.id,
       name: car.nama || "-",
-      license_plate: car.nomor_plat || "-", // jika tidak ada, tetap "-"
+      license_plate: car.nomor_plat || "-",
       image_url: car.gambar || "/images/default-car.jpg",
       type: car.type || "Standard",
-      transmission: car.transmission || "Automatic",
-      fuel_type: car.fuel || "Gasoline",
-      capacity: car.kapasitas || 4,
-      price_per_day: car.harga_per_hari || car.harga || 0
+      transmission: car.transmisi || car.transmission || "Automatic",
+      fuel_type: car.fuel_type || car.fuel || "Gasoline",
+      capacity: car.kapasitas || car.capacity || 4,
+      price_per_day: car.harga_per_hari || car.harga || 0,
+      promo: car.promo || 0,
+      rating: car.rating !== undefined ? car.rating : null,
+      jumlah_review: car.jumlah_review || 0,
+      fitur: car.fitur || []
     }
   };
 };
@@ -99,6 +104,33 @@ const cekKetersediaanMobil = async (carId, pickupDate, returnDate, transaction) 
   });
   return orderConflicts.length === 0;
 };
+
+async function getCarWithRating(car) {
+  // Ambil semua testimoni untuk layanan ini
+  const testimoni = await Testimoni.findAll({ where: { layanan_id: car.id } });
+  let rating = 0;
+  let jumlah_review = 0;
+  if (testimoni.length > 0) {
+    jumlah_review = testimoni.length;
+    rating = testimoni.reduce((sum, t) => sum + t.rating, 0) / jumlah_review;
+    rating = Math.round(rating * 10) / 10; // 1 desimal
+  }
+  return {
+    id: car.id,
+    name: car.nama || "-",
+    license_plate: car.nomor_plat || "-",
+    image_url: car.gambar || "/images/default-car.jpg",
+    type: car.type || "Standard",
+    transmission: car.transmisi || car.transmission || "Automatic",
+    fuel_type: car.fuel_type || car.fuel || "Gasoline",
+    capacity: car.kapasitas || car.capacity || 4,
+    price_per_day: car.harga_per_hari || car.harga || 0,
+    promo: car.promo || 0,
+    rating,
+    jumlah_review,
+    fitur: car.fitur || []
+  };
+}
 
 // ========== CONTROLLER FUNCTIONS ==========
 
@@ -448,7 +480,8 @@ exports.getAllOrders = async (req, res) => {
           model: Layanan,
           as: 'layanan',
           attributes: [
-            'id', 'nama', 'harga', 'gambar', 'deskripsi', 'kategori', 'status'
+            'id', 'nama', 'harga', 'gambar', 'deskripsi', 'kategori', 'status',
+            'promo', 'rating', 'jumlah_review', 'transmisi', 'kapasitas', 'fitur'
           ]
         }
       ],
