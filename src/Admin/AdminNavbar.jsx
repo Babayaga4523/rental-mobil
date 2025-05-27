@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
-  FaSignOutAlt, FaUserCog, FaBars,
-  FaMoon, FaSun, FaUserEdit,
-  FaKey, FaEnvelope, FaPhone,
-  FaUserShield, FaCog, FaBell,
-  FaTrash, FaChevronDown, FaChevronRight,
-  FaCheck, FaTimes
+  FaSignOutAlt, FaBars, FaMoon, FaSun, FaBell,
+  FaChevronDown, FaChevronRight, FaCheck, FaTimes, FaTrash,
+  FaEnvelope, FaPhone, FaUserShield, FaCog // <-- Tambahkan ini!
 } from "react-icons/fa";
-import { FiSettings, FiUser, FiLock } from "react-icons/fi";
+import { FiUser, FiLock } from "react-icons/fi";
 import {
   Dropdown, Modal, Button,
   Form, Badge, Alert,
@@ -33,7 +30,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     id: "",
     name: "Admin",
     email: "admin@email.com",
-    no_tlpn: "-",
+    no_telp: "-",
     role: "admin",
     lastLogin: new Date().toISOString(),
     avatarColor: "#667eea"
@@ -90,20 +87,26 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       }
     };
     fetchAdmin();
+    // eslint-disable-next-line
   }, []);
 
   // Fetch notifications
   useEffect(() => {
+    let isMounted = true;
     const getNotif = async () => {
       const data = await fetchNotifications(token);
-      setNotifications(data);
-      setUnreadCount(data.filter(n => !n.read).length);
+      if (isMounted) {
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.read).length);
+      }
     };
     getNotif();
-    
-    // Set up interval for polling new notifications (every 30 seconds)
+    // Polling setiap 30 detik
     const interval = setInterval(getNotif, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [token]);
 
   // Logout
@@ -165,15 +168,12 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   // Hapus satu notifikasi
   const handleDeleteNotification = async (id) => {
     try {
-      // Cari notifikasi yang akan dihapus
       const notif = notifications.find(n => n.id === id);
       await deleteNotification(id, token);
       setNotifications(prev => prev.filter(n => n.id !== id));
-      // Jika notifikasi belum dibaca, kurangi unreadCount
       if (notif && !notif.read) {
         setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
       }
-      // Jika notifikasi yang sedang diexpand dihapus, tutup expand
       if (expandedNotification === id) setExpandedNotification(null);
     } catch (err) {
       setAlert({
@@ -188,14 +188,14 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const handleMarkAsRead = async (id) => {
     try {
       const notif = notifications.find(n => n.id === id);
-      if (!notif || notif.read) return; // Sudah dibaca, tidak perlu update
+      if (!notif || notif.read) return;
       await markAsRead(id, token);
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, read: true } : n)
       );
       setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
     } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+      // error handling
     }
   };
 
@@ -240,15 +240,14 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
       return `${diffInMinutes} min ago`;
     } else if (diffInHours < 24) {
       return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
     } else {
-      return date.toLocaleString('en-US', { 
-        month: 'short', 
+      return date.toLocaleString('en-US', {
+        month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -287,131 +286,137 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
 
           {/* Notifications Bell Button */}
           <Dropdown className="notifications-dropdown d-flex align-items-center" align="end">
-  <OverlayTrigger
-    placement="bottom"
-    overlay={<Tooltip id="notif-tooltip">Notifications</Tooltip>}
-  >
-    <Dropdown.Toggle 
-      as="button" 
-      className="notification-toggle btn btn-link p-0 d-flex align-items-center"
-    >
-      <div className="d-flex align-items-center">
-        <div className="notification-icon-wrapper me-1">
-          <FaBell />
-          {unreadCount > 0 && (
-            <span className="notification-badge">{unreadCount}</span>
-          )}
-        </div>
-      </div>
-    </Dropdown.Toggle>
-  </OverlayTrigger>
-
-  <Dropdown.Menu className="notification-menu">
-    <div className="notification-header">
-      <h5>Notifications ({notifications.length})</h5>
-      <div className="notification-actions">
-        {unreadCount > 0 && (
-          <button 
-            className="mark-all-read"
-            onClick={handleMarkAllAsRead}
-          >
-            Mark all as read
-          </button>
-        )}
-        <button 
-          className="clear-all"
-          onClick={handleDeleteAllNotifications}
-        >
-          Clear all
-        </button>
-      </div>
-    </div>
-    <div className="notification-list">
-      {notifications.length === 0 ? (
-        <div className="empty-notifications">
-          <div className="empty-icon">
-            <FaBell />
-          </div>
-          <p>No notifications yet</p>
-          <small>You'll see important updates here</small>
-        </div>
-      ) : (
-        notifications.map(notification => (
-          <div 
-            key={notification.id}
-            className={`notification-item ${!notification.read ? 'unread' : ''} ${
-              expandedNotification === notification.id ? 'expanded' : ''
-            }`}
-          >
-            <div 
-              className="notification-content"
-              onClick={() => toggleNotification(notification.id)}
+            <OverlayTrigger
+              placement="bottom"
+              overlay={<Tooltip id="notif-tooltip">Notifications</Tooltip>}
             >
-              <div className="notification-icon">
-                <div className={`icon-bg ${notification.type || 'default'}`}>
-                  {notification.type === 'warning' ? (
-                    <FaTimes />
-                  ) : notification.type === 'success' ? (
-                    <FaCheck />
-                  ) : (
+              <Dropdown.Toggle
+                as="button"
+                className="notification-toggle btn btn-link p-0 d-flex align-items-center"
+                id="notifDropdown"
+                style={{ outline: "none" }}
+              >
+                <div className="d-flex align-items-center">
+                  <div className="notification-icon-wrapper me-1">
                     <FaBell />
-                  )}
+                    {unreadCount > 0 && (
+                      <span className="notification-badge">{unreadCount}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="notification-details">
-                <div className="notification-title">
-                  {notification.title || 'Notification'}
-                </div>
-                <div className="notification-message">
-                  {notification.message}
-                </div>
-                <div className="notification-time">
-                  {formatNotificationTime(notification.createdAt)}
-                </div>
-              </div>
-              <div className="notification-chevron">
-                {expandedNotification === notification.id ? (
-                  <FaChevronDown />
-                ) : (
-                  <FaChevronRight />
-                )}
-              </div>
-            </div>
-            
-            {expandedNotification === notification.id && (
-              <div className="notification-expanded">
-                <div className="notification-full-message">
-                  {notification.message}
-                </div>
+              </Dropdown.Toggle>
+            </OverlayTrigger>
+
+            <Dropdown.Menu
+              className="notification-menu"
+              align="end"
+              container="body" // Tambahkan ini!
+            >
+              <div className="notification-header">
+                <h5>Notifications ({notifications.length})</h5>
                 <div className="notification-actions">
-                  <button 
-                    className="delete-notification"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleDeleteNotification(notification.id);
-                    }}
+                  {unreadCount > 0 && (
+                    <button
+                      className="mark-all-read"
+                      onClick={handleMarkAllAsRead}
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                  <button
+                    className="clear-all"
+                    onClick={handleDeleteAllNotifications}
                   >
-                    <FaTrash /> Delete
+                    Clear all
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-        ))
-      )}
-    </div>
-    <div className="notification-footer">
-      <button className="view-all">
-        View all notifications
-      </button>
-    </div>
-  </Dropdown.Menu>
-</Dropdown>
+              <div className="notification-list">
+                {notifications.length === 0 ? (
+                  <div className="empty-notifications">
+                    <div className="empty-icon">
+                      <FaBell />
+                    </div>
+                    <p>No notifications yet</p>
+                    <small>You'll see important updates here</small>
+                  </div>
+                ) : (
+                  notifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      className={`notification-item ${!notification.read ? 'unread' : ''} ${
+                        expandedNotification === notification.id ? 'expanded' : ''
+                      }`}
+                    >
+                      <div
+                        className="notification-content"
+                        onClick={() => toggleNotification(notification.id)}
+                      >
+                        <div className="notification-icon">
+                          <div className={`icon-bg ${notification.type || 'default'}`}>
+                            {notification.type === 'warning' ? (
+                              <FaTimes />
+                            ) : notification.type === 'success' ? (
+                              <FaCheck />
+                            ) : (
+                              <FaBell />
+                            )}
+                          </div>
+                        </div>
+                        <div className="notification-details">
+                          <div className="notification-title">
+                            {notification.title || 'Notification'}
+                          </div>
+                          <div className="notification-message">
+                            {notification.message}
+                          </div>
+                          <div className="notification-time">
+                            {formatNotificationTime(notification.createdAt)}
+                          </div>
+                        </div>
+                        <div className="notification-chevron">
+                          {expandedNotification === notification.id ? (
+                            <FaChevronDown />
+                          ) : (
+                            <FaChevronRight />
+                          )}
+                        </div>
+                      </div>
+
+                      {expandedNotification === notification.id && (
+                        <div className="notification-expanded">
+                          <div className="notification-full-message">
+                            {notification.message}
+                          </div>
+                          <div className="notification-actions">
+                            <button
+                              className="delete-notification"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleDeleteNotification(notification.id);
+                              }}
+                            >
+                              <FaTrash /> Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="notification-footer">
+                <button className="view-all">
+                  View all notifications
+                </button>
+              </div>
+            </Dropdown.Menu>
+          </Dropdown>
 
           {/* User Profile Dropdown */}
           <Dropdown className="profile-dropdown" align="end">
             <Dropdown.Toggle className="profile-toggle">
-              <div 
+              <div
                 className="profile-avatar"
                 style={{ backgroundColor: admin.avatarColor }}
               >
@@ -426,7 +431,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
 
             <Dropdown.Menu className="profile-menu">
               <Dropdown.Header className="profile-menu-header">
-                <div 
+                <div
                   className="menu-avatar"
                   style={{ backgroundColor: admin.avatarColor }}
                 >
@@ -438,7 +443,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                 </div>
               </Dropdown.Header>
 
-              <Dropdown.Item 
+              <Dropdown.Item
                 className="profile-menu-item"
                 onClick={() => setShowProfile(true)}
               >
@@ -446,7 +451,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                 <span>My Profile</span>
               </Dropdown.Item>
 
-              <Dropdown.Item 
+              <Dropdown.Item
                 className="profile-menu-item"
                 onClick={() => setShowSettings(true)}
               >
@@ -454,14 +459,9 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                 <span>Change Password</span>
               </Dropdown.Item>
 
-              <Dropdown.Item className="profile-menu-item">
-                <FiSettings className="menu-icon" />
-                <span>Settings</span>
-              </Dropdown.Item>
-
               <Dropdown.Divider />
 
-              <Dropdown.Item 
+              <Dropdown.Item
                 className="profile-menu-item logout"
                 onClick={handleLogout}
               >
@@ -489,7 +489,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
         <Modal.Body>
           <div className="profile-modal-content">
             <div className="profile-avatar-large">
-              <div 
+              <div
                 className="avatar-circle"
                 style={{ backgroundColor: admin.avatarColor }}
               >

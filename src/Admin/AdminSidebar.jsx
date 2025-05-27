@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FaCar, FaUsers, FaFileInvoice, FaTachometerAlt, FaChartBar, FaBars } from "react-icons/fa";
+import { FaCar, FaUsers, FaFileInvoice, FaTachometerAlt, FaChartBar, FaBars, FaCommentDots } from "react-icons/fa";
 import AdminNavbar from "./AdminNavbar"; // Tambahkan ini di paling atas
 
 const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen }) => {
@@ -166,6 +166,24 @@ const AdminSidebar = ({ sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setS
                   display: sidebarCollapsed ? "none" : "inline",
                   marginLeft: 10
                 }}>Laporan</span>
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink
+                to="/admin/testimoni"
+                className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
+                style={({ isActive }) => ({
+                  background: isActive ? "#0d6efd" : "transparent",
+                  color: isActive ? "#fff" : "#adb5bd",
+                  fontWeight: isActive ? "bold" : "normal"
+                })}
+                onClick={() => isMobile && setSidebarOpen(false)}
+              >
+                <FaCommentDots className="nav-icon" />
+                <span style={{
+                  display: sidebarCollapsed ? "none" : "inline",
+                  marginLeft: 10
+                }}>Balas Testimoni</span>
               </NavLink>
             </li>
           </ul>

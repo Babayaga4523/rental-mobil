@@ -4,21 +4,50 @@ import {
   Card, Table, Spinner, Alert, Button, Badge, Row, Col, Form, Modal
 } from "react-bootstrap";
 import {
-  FaFileCsv, FaChartBar, FaCarSide, FaFilePdf, FaSearch, FaSun, FaMoon
-} from "react-icons/fa";
+  FiFileText, FiTruck, FiUsers, FiDollarSign,
+  FiBarChart2, FiSearch, FiSun, FiMoon
+} from "react-icons/fi";
+import { FaFilePdf, FaCar, FaFileCsv, FaDownload, FaUserShield } from "react-icons/fa";
 import moment from "moment";
-import { Line } from "react-chartjs-2";
-import {
-  Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement
-} from "chart.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
-
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, PointElement, LineElement);
+import ReactECharts from "echarts-for-react";
 
 const API_URL = "http://localhost:3000/api";
+
+const StatCard = ({ icon, title, value, color, loading }) => (
+  <Card className="stat-card">
+    <Card.Body>
+      <div className="stat-icon" style={{ backgroundColor: `${color}20`, color }}>
+        {icon}
+      </div>
+      <div className="stat-content">
+        <h6 className="stat-title">{title}</h6>
+        <h3 className="stat-value">
+          {loading ? <Spinner animation="border" size="sm" /> : value}
+        </h3>
+      </div>
+    </Card.Body>
+  </Card>
+);
+
+const getFiturList = (fitur) => {
+  if (!fitur) return [];
+  if (Array.isArray(fitur)) return fitur;
+  if (typeof fitur === "string") return fitur.split(",").map(f => f.trim()).filter(Boolean);
+  return [];
+};
+
+const FiturBadges = ({ fitur }) => {
+  const fiturList = getFiturList(fitur);
+  return fiturList.length > 0
+    ? fiturList.map((f, i) => (
+        <Badge key={i} bg="info" className="me-1 mb-1">{f}</Badge>
+      ))
+    : <span className="text-muted">-</span>;
+};
 
 const AdminReport = ({ darkMode, toggleDarkMode }) => {
   const [orders, setOrders] = useState([]);
@@ -32,6 +61,8 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [modalOrders, setModalOrders] = useState([]);
   const [modalTitle, setModalTitle] = useState("");
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminStats, setAdminStats] = useState([]);
 
   const token = localStorage.getItem("token");
 
@@ -90,6 +121,62 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     return matchYear && matchStatus && matchCar;
   });
 
+  // Ambil order completed tahun 2025
+  const completedOrders2025 = orders.filter(order => {
+    const created = order.createdAt || order.created_at || order.order_date;
+    const orderYear = created && moment(created).year();
+    return order.status === "completed" && orderYear === 2025;
+  });
+
+  // Hitung jumlah order & omzet per mobil
+  const carSales = {};
+  completedOrders2025.forEach(order => {
+    const carId = order.layanan?.id || order.layanan_id;
+    if (!carId) return;
+    if (!carSales[carId]) {
+      carSales[carId] = {
+        car: order.layanan?.nama || "-",
+        count: 0,
+        omzet: 0,
+        orders: []
+      };
+    }
+    carSales[carId].count += 1;
+    carSales[carId].omzet += Number(order.total_price) || 0;
+    carSales[carId].orders.push(order);
+  });
+  const carSalesArr = Object.values(carSales).sort((a, b) => b.count - a.count);
+
+  // Untuk grafik
+  const chartOption = {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 40, right: 20, bottom: 60, top: 40 },
+    xAxis: {
+      type: 'category',
+      data: carSalesArr.map(c => c.car),
+      axisLabel: {
+        rotate: 30,
+        color: darkMode ? "#fff" : "#222",
+        fontSize: 13,
+        margin: 14
+      }
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Jumlah Disewa',
+      axisLabel: { color: darkMode ? "#fff" : "#222" }
+    },
+    series: [
+      {
+        name: 'Jumlah Disewa',
+        type: 'bar',
+        data: carSalesArr.map(c => c.count),
+        itemStyle: { color: "#6366f1", borderRadius: [8,8,0,0] },
+        barWidth: 32
+      }
+    ]
+  };
+
   // Rekap total
   const totalOmzet = filteredOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
   const totalOrders = filteredOrders.length;
@@ -97,10 +184,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
   const totalUsers = users.length;
 
   // Rekap per bulan
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
-  ];
+  const months = moment.monthsShort();
   const monthlyReport = Array(12).fill(0).map((_, i) => ({
     month: months[i],
     orderCount: 0,
@@ -119,7 +203,6 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
   });
 
   // Mobil terlaris
-  const carSales = {};
   filteredOrders.forEach(order => {
     const carId = order.layanan?.id || order.layanan_id;
     if (!carId) return;
@@ -135,7 +218,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     carSales[carId].omzet += Number(order.total_price) || 0;
     carSales[carId].orders.push(order);
   });
-  const carSalesArr = Object.values(carSales).sort((a, b) => b.count - a.count);
+ 
 
   // Mobil tidak pernah disewa
   const neverRentedCars = cars.filter(
@@ -151,81 +234,19 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     }
   });
 
-  // CSV Export
-  const csvHeaders = [
-    { label: "Bulan", key: "month" },
-    { label: "Jumlah Pesanan", key: "orderCount" },
-    { label: "Total Omzet", key: "omzet" }
-  ];
-  const csvData = monthlyReport.map(row => ({
-    ...row,
-    omzet: row.omzet.toLocaleString("id-ID")
-  }));
-
-  // Grafik penjualan per bulan (Line Curve)
-  const chartData = {
-    labels: months,
-    datasets: [
-      {
-        type: "line",
-        label: `Jumlah Pesanan`,
-        data: monthlyReport.map(r => r.orderCount),
-        borderColor: "#0d6efd",
-        backgroundColor: "rgba(13,110,253,0.1)",
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: "#0d6efd",
-        yAxisID: "y",
-      },
-      {
-        type: "line",
-        label: `Omzet (Rp)`,
-        data: monthlyReport.map(r => r.omzet),
-        borderColor: "#198754",
-        backgroundColor: "rgba(25,135,84,0.15)",
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: "#198754",
-        yAxisID: "y1",
-      },
-      {
-        type: "line",
-        label: `User Baru`,
-        data: userMonthly,
-        borderColor: "#ffc107",
-        backgroundColor: "rgba(255,193,7,0.15)",
-        borderWidth: 2,
-        fill: false,
-        tension: 0.4,
-        pointRadius: 3,
-        pointBackgroundColor: "#ffc107",
-        yAxisID: "y2",
-      }
-    ],
-  };
-
-  // Grafik mobil terlaris (Line Curve)
-  const carChartData = {
-    labels: carSalesArr.map(c => c.car),
-    datasets: [
-      {
-        type: "line",
-        label: "Jumlah Disewa",
-        data: carSalesArr.map(c => c.count),
-        borderColor: "#6366f1",
-        backgroundColor: "rgba(99,102,241,0.15)",
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4, // membuat garis curve/lengkung
-        pointRadius: 4,
-        pointBackgroundColor: "#6366f1",
-      }
-    ],
-  };
+  // Rekap performa admin (jika multi-admin)
+  const adminStatsArr = [];
+  const adminUsers = users.filter(u => u.role === "admin");
+  adminUsers.forEach(admin => {
+    const adminOrders = filteredOrders.filter(o => o.admin_id === admin.id);
+    const adminOmzet = adminOrders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+    adminStatsArr.push({
+      admin,
+      orderCount: adminOrders.length,
+      omzet: adminOmzet,
+      orders: adminOrders
+    });
+  });
 
   // Export PDF
   const handleExportPDF = async () => {
@@ -265,28 +286,6 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
       y += 45;
     }
 
-    // Statistik User Baru
-    doc.text("Statistik User Baru per Bulan", 14, y);
-    y += 6;
-    autoTable(doc, {
-      head: [["Bulan", "User Baru"]],
-      body: months.map((m, i) => [m, userMonthly[i]]),
-      startY: y,
-      styles: { fontSize: 10 },
-      margin: { left: 14, right: 14 }
-    });
-    y = doc.lastAutoTable.finalY + 8;
-
-    // Grafik User Baru
-    const chart2 = document.querySelector("#chart-user canvas");
-    if (chart2) {
-      const imgData = await html2canvas(chart2).then(c => c.toDataURL("image/png"));
-      doc.text("Grafik User Baru", 14, y);
-      y += 4;
-      doc.addImage(imgData, "PNG", 14, y, 180, 40);
-      y += 45;
-    }
-
     // Mobil Terlaris
     doc.text("Mobil Terlaris", 14, y);
     y += 6;
@@ -304,9 +303,9 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     y = doc.lastAutoTable.finalY + 8;
 
     // Grafik Mobil Terlaris
-    const chart3 = document.querySelector("#chart-mobil canvas");
-    if (chart3) {
-      const imgData = await html2canvas(chart3, { backgroundColor: "#fff" }).then(c => c.toDataURL("image/png"));
+    const chart2 = document.querySelector("#chart-mobil canvas");
+    if (chart2) {
+      const imgData = await html2canvas(chart2, { backgroundColor: "#fff" }).then(c => c.toDataURL("image/png"));
       doc.text("Grafik Mobil Terlaris", 14, y);
       y += 4;
       doc.addImage(imgData, "PNG", 14, y, 180, 60);
@@ -328,6 +327,24 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
       margin: { left: 14, right: 14 }
     });
 
+    // Performa Admin
+    if (adminStatsArr.length > 0) {
+      y = doc.lastAutoTable.finalY + 8;
+      doc.text("Rekap Performa Admin", 14, y);
+      y += 6;
+      autoTable(doc, {
+        head: [["Nama Admin", "Jumlah Pesanan", "Omzet"]],
+        body: adminStatsArr.map(a => [
+          a.admin.name,
+          a.orderCount,
+          "Rp" + a.omzet.toLocaleString("id-ID")
+        ]),
+        startY: y,
+        styles: { fontSize: 10 },
+        margin: { left: 14, right: 14 }
+      });
+    }
+
     doc.save(`laporan-penjualan-${year}.pdf`);
   };
 
@@ -343,14 +360,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     })));
     XLSX.utils.book_append_sheet(wb, ws1, "Rekap Bulanan");
 
-    // Sheet 2: Statistik User Baru
-    const ws2 = XLSX.utils.json_to_sheet(months.map((m, i) => ({
-      Bulan: m,
-      "User Baru": userMonthly[i]
-    })));
-    XLSX.utils.book_append_sheet(wb, ws2, "User Baru");
-
-    // Sheet 3: Mobil Terlaris
+    // Sheet 2: Mobil Terlaris
     const ws3 = XLSX.utils.json_to_sheet(carSalesArr.map(car => ({
       "Nama Mobil": car.car,
       "Jumlah Disewa": car.count,
@@ -358,7 +368,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     })));
     XLSX.utils.book_append_sheet(wb, ws3, "Mobil Terlaris");
 
-    // Sheet 4: Mobil Tidak Pernah Disewa
+    // Sheet 3: Mobil Tidak Pernah Disewa
     const ws4 = XLSX.utils.json_to_sheet(neverRentedCars.map(car => ({
       "Nama Mobil": car.nama,
       "Kategori": car.kategori,
@@ -366,39 +376,176 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     })));
     XLSX.utils.book_append_sheet(wb, ws4, "Mobil Tidak Pernah Disewa");
 
+    // Sheet 4: Performa Admin
+    if (adminStatsArr.length > 0) {
+      const ws5 = XLSX.utils.json_to_sheet(adminStatsArr.map(a => ({
+        "Nama Admin": a.admin.name,
+        "Jumlah Pesanan": a.orderCount,
+        "Omzet": a.omzet
+      })));
+      XLSX.utils.book_append_sheet(wb, ws5, "Performa Admin");
+    }
+
     XLSX.writeFile(wb, `laporan-penjualan-${year}.xlsx`);
   };
 
-  // Tampilkan detail order saat klik bar chart
-  const handleBarClick = (elems, type = "month") => {
-    if (!elems.length) return;
+  // Tampilkan detail order saat klik chart
+  const handleBarClick = (params, type = "month") => {
+    if (!params || typeof params.dataIndex !== "number") return;
     if (type === "month") {
-      const idx = elems[0].index;
+      const idx = params.dataIndex;
       setModalTitle(`Detail Pesanan Bulan ${months[idx]} ${year}`);
       setModalOrders(monthlyReport[idx].orders);
       setShowOrderModal(true);
     } else if (type === "car") {
-      const idx = elems[0].index;
+      const idx = params.dataIndex;
       setModalTitle(`Detail Pesanan Mobil ${carSalesArr[idx].car} (${year})`);
       setModalOrders(carSalesArr[idx].orders);
       setShowOrderModal(true);
     }
   };
 
+  // Download bukti pembayaran
+  const handleDownloadBukti = (order) => {
+    if (!order.payment_proof) return;
+    const url = order.payment_proof.startsWith("http")
+      ? order.payment_proof
+      : `http://localhost:3000${order.payment_proof}`;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bukti-pembayaran-${order.id}${url.endsWith('.pdf') ? '.pdf' : '.jpg'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Mobil tersedia & tidak tersedia
   const availableCars = cars.filter(car => car.status === "available");
-  const unavailableCars = cars.filter(car => car.status !== "available");
+  const today = moment();
+  const unavailableCars = cars.filter(car => {
+    // Status mobil bukan available
+    if (car.status !== 'available') return true;
+    // Atau sedang disewa hari ini (ada order aktif hari ini)
+    return orders.some(order =>
+      (order.layanan?.id === car.id || order.layanan_id === car.id) &&
+      ["pending", "confirmed"].includes(order.status) &&
+      today.isSameOrAfter(moment(order.pickup_date), "day") &&
+      today.isSameOrBefore(moment(order.return_date), "day")
+    );
+  });
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    const num = Number(amount);
+    if (isNaN(num)) return "Rp0";
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(num);
+  };
+
+  // Mobil yang sedang disewa (status aktif & tanggal hari ini di range sewa)
+  const activeRentalOrders = orders.filter(order => {
+    const pickup = moment(order.pickup_date || order.pickupDate);
+    const ret = moment(order.return_date || order.returnDate);
+    return (
+      ["pending", "confirmed"].includes(order.status) &&
+      today.isSameOrAfter(pickup, "day") &&
+      today.isSameOrBefore(ret, "day")
+    );
+  });
+
+  // Gabungkan dengan data mobil
+  const carsOnRent = orders.filter(order => {
+    const pickup = moment(order.pickup_date || order.pickupDate);
+    const ret = moment(order.return_date || order.returnDate);
+    return (
+      ["pending", "confirmed"].includes(order.status) &&
+      today.isSameOrAfter(pickup, "day") &&
+      today.isSameOrBefore(ret, "day")
+    );
+  }).map(order => {
+    const car = cars.find(c => c.id === (order.layanan?.id || order.layanan_id));
+    return {
+      orderId: order.id,
+      carName: car?.nama || "-",
+      userName: order.user?.name || order.User?.name || "-",
+      pickupDate: order.pickup_date,
+      returnDate: order.return_date,
+      status: order.status
+    };
+  });
+
+  // Mobil yang akan disewa (sudah dipesan, pickup_date >= hari ini, status pending/confirmed)
+  const carsWillBeRented = orders.filter(order => {
+    const pickup = moment(order.pickup_date || order.pickupDate);
+    return (
+      ["pending", "confirmed"].includes(order.status) &&
+      pickup.isSameOrAfter(today, "day")
+    );
+  }).map(order => {
+    const car = cars.find(c => c.id === (order.layanan?.id || order.layanan_id));
+    return {
+      orderId: order.id,
+      carName: car?.nama || "-",
+      userName: order.user?.name || order.User?.name || "-",
+      pickupDate: order.pickup_date,
+      returnDate: order.return_date,
+      status: order.status
+    };
+  });
 
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
       <div className="container-fluid py-4">
-        {/* Header & Filter */}
+        {/* Stats Cards */}
+        <div className="row g-4 mb-4">
+          <div className="col-md-6 col-lg-3">
+            <StatCard
+              icon={<FiFileText size={24} />}
+              title="Total Pesanan"
+              value={totalOrders}
+              color="#6366f1"
+              loading={loading}
+            />
+          </div>
+          <div className="col-md-6 col-lg-3">
+            <StatCard
+              icon={<FiTruck size={24} />}
+              title="Jumlah Mobil"
+              value={totalCars}
+              color="#10b981"
+              loading={loading}
+            />
+          </div>
+          <div className="col-md-6 col-lg-3">
+            <StatCard
+              icon={<FiUsers size={24} />}
+              title="Pengguna Terdaftar"
+              value={totalUsers}
+              color="#3b82f6"
+              loading={loading}
+            />
+          </div>
+          <div className="col-md-6 col-lg-3">
+            <StatCard
+              icon={<FiDollarSign size={24} />}
+              title="Total Omzet"
+              value={formatCurrency(totalOmzet)}
+              color="#f59e0b"
+              loading={loading}
+            />
+          </div>
+        </div>
+
+        {/* Filter */}
         <Row className="align-items-center mb-4 g-2">
           <Col xs={12} md={4} className="mb-2 mb-md-0">
-            <h3 className="mb-0 d-flex align-items-center" style={{ whiteSpace: "nowrap" }}>
-              <FaChartBar className="me-2" />
+            <h4 className="mb-0 d-flex align-items-center" style={{ whiteSpace: "nowrap" }}>
+              <FiBarChart2 className="me-2" />
               Laporan Penjualan & Statistik
-            </h3>
+            </h4>
           </Col>
           <Col xs={12} md={8}>
             <div className="d-flex flex-column flex-md-row flex-wrap align-items-stretch align-items-md-center gap-2">
@@ -455,485 +602,619 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
                 <FaFilePdf className="me-2" /> PDF
               </Button>
               <Button
+                variant="secondary"
+                className="fw-bold d-flex align-items-center"
+                onClick={() => setShowAdminModal(true)}
+                title="Rekap Performa Admin"
+                style={{ minWidth: 90, justifyContent: "center" }}
+              >
+                <FaUserShield className="me-2" /> Admin
+              </Button>
+              <Button
                 variant={darkMode ? "light" : "dark"}
                 onClick={toggleDarkMode}
                 title={darkMode ? "Light Mode" : "Dark Mode"}
                 className="d-flex align-items-center"
                 style={{ minWidth: 40, justifyContent: "center" }}
               >
-                {darkMode ? <FaSun /> : <FaMoon />}
+                {darkMode ? <FiSun /> : <FiMoon />}
               </Button>
             </div>
           </Col>
         </Row>
-        {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <div className="mt-2">Memuat laporan...</div>
-          </div>
-        ) : (
-          <>
-            {/* Ringkasan */}
-            <Row className="mb-4 g-3">
-              <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm h-100">
-                  <Card.Body>
-                    <div className="fw-bold" style={{ fontSize: 18 }}>Total Omzet</div>
-                    <div className="fs-4 text-success">Rp{totalOmzet.toLocaleString("id-ID")}</div>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm h-100">
-                  <Card.Body>
-                    <div className="fw-bold" style={{ fontSize: 18 }}>Total Pesanan</div>
-                    <div className="fs-4">{totalOrders}</div>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm h-100">
-                  <Card.Body>
-                    <div className="fw-bold" style={{ fontSize: 18 }}>Total Mobil</div>
-                    <div className="fs-4">{totalCars}</div>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col xs={12} md={3}>
-                <Card className="text-center shadow-sm h-100">
-                  <Card.Body>
-                    <div className="fw-bold" style={{ fontSize: 18 }}>Total Pengguna</div>
-                    <div className="fs-4">{totalUsers}</div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
 
-            {/* Grafik Penjualan & Omzet */}
-            <Card className="mb-4 shadow-sm">
-              <Card.Header className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span>Grafik Jumlah Pesanan, Omzet & User Baru {year}</span>
-              </Card.Header>
-              <Card.Body>
-                <div id="chart-penjualan" style={{ minHeight: 350, width: "100%", overflowX: "auto" }}>
-                  <Line
-                    data={chartData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { display: true, position: "top" },
-                        title: {
-                          display: true,
-                          text: "Jumlah Pesanan, Omzet & User Baru per Bulan",
-                          font: { size: 18 }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: ctx => {
-                              if (ctx.dataset.label === "Omzet (Rp)") {
-                                return `Omzet: Rp${ctx.parsed.y.toLocaleString("id-ID")}`;
-                              }
-                              if (ctx.dataset.label === "Jumlah Pesanan") {
-                                return `Pesanan: ${ctx.parsed.y}`;
-                              }
-                              if (ctx.dataset.label === "User Baru") {
-                                return `User Baru: ${ctx.parsed.y}`;
-                              }
-                              return ctx.parsed.y;
-                            }
-                          }
+        {/* Grafik Penjualan & Omzet */}
+        <Card className="mb-4 shadow-sm">
+          <Card.Header className="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span>Grafik Omzet & User Baru {year}</span>
+          </Card.Header>
+          <Card.Body>
+            <div id="chart-penjualan" style={{ minHeight: 350, width: "100%", overflowX: "auto" }}>
+              <ReactECharts
+                style={{ height: 350 }}
+                option={{
+                  tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#fff',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    textStyle: { color: '#222' }
+                  },
+                  legend: {
+                    data: ['Omzet (Rp)', 'User Baru'],
+                    top: 30 // beri ruang lebih
+                  },
+                  grid: { left: 100, right: 40, bottom: 60, top: 60 }, // left diperbesar agar teks pojok kiri tidak terpotong
+                  xAxis: {
+                    type: 'category',
+                    data: months,
+                    boundaryGap: false,
+                    axisLabel: {
+                      color: darkMode ? "#fff" : "#222",
+                      interval: 0,
+                      rotate: 30, // miringkan label agar tidak kepotong
+                      fontSize: 14,
+                      margin: 16
+                    }
+                  },
+                  yAxis: [
+                    {
+                      type: 'value',
+                      name: 'Omzet (Rp)',
+                      position: 'left',
+                      axisLabel: {
+                        formatter: value => `Rp${value.toLocaleString("id-ID")}`,
+                        color: darkMode ? "#fff" : "#222"
+                      },
+                      splitLine: { lineStyle: { color: "#eee" } }
+                    },
+                    {
+                      type: 'value',
+                      name: 'User Baru',
+                      position: 'right',
+                      axisLabel: { color: darkMode ? "#fff" : "#222" },
+                      splitLine: { show: false }
+                    }
+                  ],
+                  series: [
+                    {
+                      name: 'Omzet (Rp)',
+                      type: 'line',
+                      data: monthlyReport.map(r => r.omzet),
+                      yAxisIndex: 0,
+                      smooth: true,
+                      symbol: 'circle',
+                      symbolSize: 10,
+                      lineStyle: { width: 4, color: "#10b981" },
+                      itemStyle: { color: "#10b981" },
+                      areaStyle: { color: "rgba(16,185,129,0.10)" }
+                    },
+                    {
+                      name: 'User Baru',
+                      type: 'line',
+                      data: userMonthly,
+                      yAxisIndex: 1,
+                      smooth: true,
+                      symbol: 'circle',
+                      symbolSize: 10,
+                      lineStyle: { width: 4, color: "#f59e0b" },
+                      itemStyle: { color: "#f59e0b" },
+                      areaStyle: { color: "rgba(245,158,11,0.08)" }
+                    }
+                  ]
+                }}
+                theme={darkMode ? "dark" : undefined}
+                onEvents={{
+                  'click': params => handleBarClick(params, "month")
+                }}
+              />
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Mobil Terlaris */}
+        <Card className="mb-4 shadow-sm">
+          <Card.Header className="d-flex align-items-center">
+            <FaCar className="me-2" /> Grafik Mobil Terlaris {year}
+          </Card.Header>
+          <Card.Body>
+            <Row>
+              <Col xs={12} md={7}>
+                <div className="table-responsive">
+                  <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                    <thead>
+                      <tr>
+                        <th>Nama Mobil</th>
+                        <th>Promo</th>
+                        <th>Fitur</th>
+                        <th>Jumlah Disewa</th>
+                        <th>Omzet</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {carSalesArr.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="text-center">Belum ada data penjualan.</td>
+                        </tr>
+                      ) : (
+                        <>
+                          {carSalesArr.map((car, idx) => {
+                            const carDetail = cars.find(c => c.nama === car.car);
+                            return (
+                              <tr key={idx}>
+                                <td>
+                                  <Button
+                                    variant="link"
+                                    className="p-0"
+                                    onClick={() => handleBarClick({ dataIndex: idx }, "car")}
+                                  >
+                                    {car.car}
+                                  </Button>
+                                </td>
+                                <td>
+                                  {carDetail?.promo
+                                    ? <Badge bg="warning" className="text-dark">{carDetail.promo}%</Badge>
+                                    : <span className="text-muted">-</span>}
+                                </td>
+                                <td><FiturBadges fitur={carDetail?.fitur} /></td>
+                                <td>
+                                  <Badge bg="info">{car.count}</Badge>
+                                </td>
+                                <td>
+                                  <span className="fw-bold text-success">
+                                    {formatCurrency(car.omzet)}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </>
+                      )}
+                    </tbody>
+                  </Table>
+                </div>
+              </Col>
+              <Col xs={12} md={5} className="d-flex align-items-center mt-3 mt-md-0">
+                <div id="chart-mobil" style={{ width: "100%", minHeight: 320 }}>
+                  <ReactECharts
+                    style={{ height: 320 }}
+                    option={{
+                      tooltip: { trigger: 'axis' },
+                      grid: { left: 40, right: 20, bottom: 60, top: 40 }, // tambah bottom
+                      xAxis: {
+                        type: 'category',
+                        data: carSalesArr.map(c => c.car),
+                        axisLabel: {
+                          rotate: 30,
+                          interval: 0,
+                          color: darkMode ? "#fff" : "#222",
+                          fontSize: 13,
+                          margin: 14
                         }
                       },
-                      scales: {
-                        x: { title: { display: true, text: "Bulan" } },
-                        y: {
-                          beginAtZero: true,
-                          title: { display: true, text: "Pesanan" },
-                          position: "left",
-                          grid: { color: "#eee" }
-                        },
-                        y1: {
-                          beginAtZero: true,
-                          title: { display: true, text: "Omzet (Rp)" },
-                          position: "right",
-                          grid: { drawOnChartArea: false }
-                        },
-                        y2: {
-                          beginAtZero: true,
-                          display: false
-                        }
+                      yAxis: {
+                        type: 'value',
+                        name: 'Jumlah Disewa',
+                        axisLabel: { color: darkMode ? "#fff" : "#222" }
                       },
-                      onClick: (evt, elems) => handleBarClick(elems, "month")
+                      series: [
+                        {
+                          name: 'Jumlah Disewa',
+                          type: 'bar',
+                          data: carSalesArr.map(c => c.count),
+                          itemStyle: { color: "#6366f1", borderRadius: [8,8,0,0] },
+                          barWidth: 32
+                        }
+                      ]
                     }}
-                    height={350}
+                    theme={darkMode ? "dark" : undefined}
+                    onEvents={{
+                      'click': params => handleBarClick(params, "car")
+                    }}
                   />
                 </div>
-              </Card.Body>
-            </Card>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
 
-            {/* Mobil Terlaris */}
-            <Card className="mb-4 shadow-sm">
-              <Card.Header className="d-flex align-items-center">
-                <FaCarSide className="me-2" /> Grafik Mobil Terlaris {year}
-              </Card.Header>
-              <Card.Body>
-                <Row>
-                  <Col xs={12} md={7}>
-                    <div className="table-responsive">
-                      <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                        <thead>
-                          <tr>
-                            <th>Nama Mobil</th>
-                            <th>Promo</th>
-                            <th>Fitur</th>
-                            <th>Jumlah Disewa</th>
-                            <th>Omzet</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {carSalesArr.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="text-center">Belum ada data penjualan.</td>
-                            </tr>
+        {/* Mobil Tidak Pernah Disewa */}
+        <Card className="mb-4">
+          <Card.Header>
+            <FiSearch className="me-2" /> Mobil Tidak Pernah Disewa {year}
+          </Card.Header>
+          <Card.Body>
+            <div className="table-responsive">
+              {neverRentedCars.length === 0 ? (
+                <Alert variant="success">Semua mobil pernah disewa tahun ini.</Alert>
+              ) : (
+                <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                  <thead>
+                    <tr>
+                      <th>Nama Mobil</th>
+                      <th>Kategori</th>
+                      <th>Status</th>
+                      <th>Promo</th>
+                      <th>Fitur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {neverRentedCars.map(car => (
+                      <tr key={car.id}>
+                        <td>{car.nama}</td>
+                        <td>{car.kategori}</td>
+                        <td>
+                          <Badge bg={car.status === "available" ? "success" : "danger"}>
+                            {car.status === "available" ? "Tersedia" : "Tidak Tersedia"}
+                          </Badge>
+                        </td>
+                        <td>
+                          {car.promo
+                            ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                            : <span className="text-muted">-</span>}
+                        </td>
+                        <td>
+                          {Array.isArray(car.fitur) && car.fitur.length > 0
+                            ? car.fitur.map((f, i) => (
+                                <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                              ))
+                            : <span className="text-muted">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Mobil Tersedia */}
+        <Card className="mb-4">
+          <Card.Header>
+            <FaCar className="me-2" /> Daftar Mobil Tersedia
+          </Card.Header>
+          <Card.Body>
+            <div className="table-responsive">
+              {availableCars.length === 0 ? (
+                <Alert variant="danger">Tidak ada mobil yang tersedia.</Alert>
+              ) : (
+                <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                  <thead>
+                    <tr>
+                      <th>Nama Mobil</th>
+                      <th>Kategori</th>
+                      <th>Promo</th>
+                      <th>Fitur</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {availableCars.map(car => (
+                      <tr key={car.id}>
+                        <td>{car.nama}</td>
+                        <td>{car.kategori}</td>
+                        <td>
+                          {car.promo
+                            ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                            : <span className="text-muted">-</span>}
+                        </td>
+                        <td>
+                          {Array.isArray(car.fitur) && car.fitur.length > 0
+                            ? car.fitur.map((f, i) => (
+                                <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                              ))
+                            : <span className="text-muted">-</span>}
+                        </td>
+                        <td>
+                          <Badge bg="success">Tersedia</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Mobil Tidak Tersedia */}
+        <Card className="mb-4">
+          <Card.Header>
+            <FaCar className="me-2" /> Daftar Mobil Tidak Tersedia
+          </Card.Header>
+          <Card.Body>
+            <div className="table-responsive">
+              {unavailableCars.length === 0 ? (
+                <Alert variant="success">Semua mobil tersedia.</Alert>
+              ) : (
+                <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                  <thead>
+                    <tr>
+                      <th>Nama Mobil</th>
+                      <th>Kategori</th>
+                      <th>Promo</th>
+                      <th>Fitur</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unavailableCars.map(car => (
+                      <tr key={car.id}>
+                        <td>{car.nama}</td>
+                        <td>{car.kategori}</td>
+                        <td>
+                          {car.promo
+                            ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
+                            : <span className="text-muted">-</span>}
+                        </td>
+                        <td>
+                          {Array.isArray(car.fitur) && car.fitur.length > 0
+                            ? car.fitur.map((f, i) => (
+                                <Badge key={i} bg="info" className="me-1">{f}</Badge>
+                              ))
+                            : <span className="text-muted">-</span>}
+                        </td>
+                        <td>
+                          <Badge bg="danger">Tidak Tersedia</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Mobil Sedang Disewa */}
+        <Card className="mb-4">
+          <Card.Header>
+            <FaCar className="me-2" /> Mobil Sedang Disewa Hari Ini
+          </Card.Header>
+          <Card.Body>
+            <div className="table-responsive">
+              {carsOnRent.length === 0 ? (
+                <Alert variant="info">Tidak ada mobil yang sedang disewa hari ini.</Alert>
+              ) : (
+                <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                  <thead>
+                    <tr>
+                      <th>Nama Mobil</th>
+                      <th>Penyewa</th>
+                      <th>Tanggal Sewa</th>
+                      <th>Tanggal Kembali</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {carsOnRent.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.carName}</td>
+                        <td>{item.userName}</td>
+                        <td>{moment(item.pickupDate).format("D MMM YYYY")}</td>
+                        <td>{moment(item.returnDate).format("D MMM YYYY")}</td>
+                        <td>
+                          <Badge bg={
+                            item.status === "confirmed"
+                              ? "info"
+                              : item.status === "pending"
+                              ? "warning"
+                              : "secondary"
+                          }>
+                            {item.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Mobil yang Akan Disewa */}
+        <Card className="mb-4">
+          <Card.Header>
+            <FaCar className="me-2" /> Daftar Mobil yang Akan Disewa
+          </Card.Header>
+          <Card.Body>
+            <div className="table-responsive">
+              {carsWillBeRented.length === 0 ? (
+                <Alert variant="info">Tidak ada mobil yang akan disewa.</Alert>
+              ) : (
+                <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
+                  <thead>
+                    <tr>
+                      <th>Nama Mobil</th>
+                      <th>Penyewa</th>
+                      <th>Tanggal Sewa</th>
+                      <th>Tanggal Kembali</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {carsWillBeRented.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.carName}</td>
+                        <td>{item.userName}</td>
+                        <td>{moment(item.pickupDate).format("D MMM YYYY")}</td>
+                        <td>{moment(item.returnDate).format("D MMM YYYY")}</td>
+                        <td>
+                          <Badge bg={
+                            item.status === "confirmed"
+                              ? "info"
+                              : item.status === "pending"
+                              ? "warning"
+                              : "secondary"
+                          }>
+                            {item.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Modal Detail Order */}
+        <Modal show={showOrderModal} onHide={() => setShowOrderModal(false)} size="lg" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>{modalTitle}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="table-responsive">
+              {modalOrders.length === 0 ? (
+                <Alert variant="info">Tidak ada pesanan.</Alert>
+              ) : (
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Pelanggan</th>
+                      <th>Mobil</th>
+                      <th>Tanggal</th>
+                      <th>Status</th>
+                      <th>Pembayaran</th>
+                      <th>Total</th>
+                      <th>Bukti Bayar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modalOrders.map(order => (
+                      <tr key={order.id}>
+                        <td>#{order.id}</td>
+                        <td>{order.user?.name || order.User?.name || "-"}</td>
+                        <td>{order.layanan?.nama || order.Layanan?.nama || "-"}</td>
+                        <td>
+                          {moment(order.createdAt || order.created_at || order.order_date).format("D MMM YYYY")}
+                        </td>
+                        <td>
+                          <Badge bg={
+                            order.status === "completed"
+                              ? "success"
+                              : order.status === "cancelled"
+                              ? "danger"
+                              : order.status === "confirmed"
+                              ? "info"
+                              : order.status === "pending"
+                              ? "warning"
+                              : "secondary"
+                          }>
+                            {order.status === "completed"
+                              ? "Selesai"
+                              : order.status === "cancelled"
+                              ? "Dibatalkan"
+                              : order.status === "confirmed"
+                              ? "Dikonfirmasi"
+                              : order.status === "pending"
+                              ? "Pending"
+                              : order.status}
+                          </Badge>
+                        </td>
+                        <td>
+                          <Badge bg={
+                            order.payment_status === "paid"
+                              ? "success"
+                              : order.payment_status === "pending_verification"
+                              ? "warning"
+                              : order.payment_status === "rejected"
+                              ? "danger"
+                              : "secondary"
+                          }>
+                            {order.payment_status === "paid"
+                              ? "Lunas"
+                              : order.payment_status === "pending_verification"
+                              ? "Menunggu Verifikasi"
+                              : order.payment_status === "rejected"
+                              ? "Ditolak"
+                              : order.payment_status}
+                          </Badge>
+                        </td>
+                        <td>
+                          {formatCurrency(order.total_price)}
+                        </td>
+                        <td>
+                          {order.payment_proof ? (
+                            <Button
+                              size="sm"
+                              variant="outline-primary"
+                              onClick={() => handleDownloadBukti(order)}
+                              title="Download Bukti"
+                            >
+                              <FaDownload />
+                            </Button>
                           ) : (
-                            <>
-                              {carSalesArr.map((car, idx) => {
-                                const carDetail = cars.find(c => c.nama === car.car);
-                                return (
-                                  <tr key={idx}>
-                                    <td>
-                                      <Button
-                                        variant="link"
-                                        className="p-0"
-                                        onClick={() => handleBarClick([{ index: idx }], "car")}
-                                      >
-                                        {car.car}
-                                      </Button>
-                                    </td>
-                                    <td>
-                                      {carDetail?.promo
-                                        ? <Badge bg="warning" className="text-dark">{carDetail.promo}%</Badge>
-                                        : <span className="text-muted">-</span>}
-                                    </td>
-                                    <td>
-                                      {Array.isArray(carDetail?.fitur) && carDetail.fitur.length > 0
-                                        ? carDetail.fitur.map((f, i) => (
-                                            <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                          ))
-                                        : <span className="text-muted">-</span>}
-                                    </td>
-                                    <td>
-                                      <Badge bg="info">{car.count}</Badge>
-                                    </td>
-                                    <td>
-                                      <span className="fw-bold text-success">
-                                        Rp{car.omzet.toLocaleString("id-ID")}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </>
+                            <span className="text-muted">-</span>
                           )}
-                        </tbody>
-                      </Table>
-                    </div>
-                  </Col>
-                  <Col xs={12} md={5} className="d-flex align-items-center mt-3 mt-md-0">
-                    <div style={{ width: "100%", minHeight: 320 }}>
-                      <Line
-                        data={{
-                          labels: carSalesArr.map(c => c.car),
-                          datasets: [
-                            {
-                              label: "Jumlah Disewa",
-                              data: carSalesArr.map(c => c.count),
-                              borderColor: "#6366f1",
-                              backgroundColor: "rgba(99,102,241,0.15)",
-                              borderWidth: 3,
-                              fill: true,
-                              tension: 0.4, // membuat garis curve
-                              pointRadius: 5,
-                              pointBackgroundColor: "#6366f1",
-                              pointBorderColor: "#fff",
-                              pointHoverRadius: 7,
-                            }
-                          ],
-                        }}
-                        height={320}
-                        options={{
-                          responsive: true,
-                          maintainAspectRatio: false,
-                          plugins: {
-                            legend: { display: true, position: "top" },
-                            title: {
-                              display: true,
-                              text: "Jumlah Disewa Mobil Terlaris",
-                              font: { size: 16 }
-                            },
-                            tooltip: {
-                              callbacks: {
-                                label: ctx => `Disewa: ${ctx.parsed.y}x`
-                              }
-                            }
-                          },
-                          scales: {
-                            x: {
-                              title: { display: true, text: "Mobil" },
-                              ticks: { autoSkip: false, maxRotation: 45, minRotation: 0 },
-                              grid: { display: false }
-                            },
-                            y: {
-                              beginAtZero: true,
-                              title: { display: true, text: "Jumlah Disewa" },
-                              precision: 0,
-                              grid: { color: "#eee" }
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Modal.Body>
+        </Modal>
 
-            {/* Mobil Tidak Pernah Disewa */}
-            <Card className="mb-4">
-              <Card.Header>
-                <FaSearch className="me-2" /> Mobil Tidak Pernah Disewa {year}
-              </Card.Header>
-              <Card.Body>
-                <div className="table-responsive">
-                  {neverRentedCars.length === 0 ? (
-                    <Alert variant="success">Semua mobil pernah disewa tahun ini.</Alert>
-                  ) : (
-                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                      <thead>
-                        <tr>
-                          <th>Nama Mobil</th>
-                          <th>Kategori</th>
-                          <th>Status</th>
-                          <th>Promo</th>
-                          <th>Fitur</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {neverRentedCars.map(car => (
-                          <tr key={car.id}>
-                            <td>{car.nama}</td>
-                            <td>{car.kategori}</td>
-                            <td>
-                              <Badge bg={car.status === "available" ? "success" : "danger"}>
-                                {car.status === "available" ? "Tersedia" : "Tidak Tersedia"}
-                              </Badge>
-                            </td>
-                            <td>
-                              {car.promo
-                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                                : <span className="text-muted">-</span>}
-                            </td>
-                            <td>
-                              {Array.isArray(car.fitur) && car.fitur.length > 0
-                                ? car.fitur.map((f, i) => (
-                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                  ))
-                                : <span className="text-muted">-</span>}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Mobil Tersedia */}
-            <Card className="mb-4">
-              <Card.Header>
-                <FaCarSide className="me-2" /> Daftar Mobil Tersedia
-              </Card.Header>
-              <Card.Body>
-                <div className="table-responsive">
-                  {availableCars.length === 0 ? (
-                    <Alert variant="danger">Tidak ada mobil yang tersedia.</Alert>
-                  ) : (
-                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                      <thead>
-                        <tr>
-                          <th>Nama Mobil</th>
-                          <th>Kategori</th>
-                          <th>Promo</th>
-                          <th>Fitur</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {availableCars.map(car => (
-                          <tr key={car.id}>
-                            <td>{car.nama}</td>
-                            <td>{car.kategori}</td>
-                            <td>
-                              {car.promo
-                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                                : <span className="text-muted">-</span>}
-                            </td>
-                            <td>
-                              {Array.isArray(car.fitur) && car.fitur.length > 0
-                                ? car.fitur.map((f, i) => (
-                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                  ))
-                                : <span className="text-muted">-</span>}
-                            </td>
-                            <td>
-                              <Badge bg="success">Tersedia</Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Mobil Tidak Tersedia */}
-            <Card className="mb-4">
-              <Card.Header>
-                <FaCarSide className="me-2" /> Daftar Mobil Tidak Tersedia
-              </Card.Header>
-              <Card.Body>
-                <div className="table-responsive">
-                  {unavailableCars.length === 0 ? (
-                    <Alert variant="success">Semua mobil tersedia.</Alert>
-                  ) : (
-                    <Table striped bordered hover className={darkMode ? "table-dark" : ""}>
-                      <thead>
-                        <tr>
-                          <th>Nama Mobil</th>
-                          <th>Kategori</th>
-                          <th>Promo</th>
-                          <th>Fitur</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {unavailableCars.map(car => (
-                          <tr key={car.id}>
-                            <td>{car.nama}</td>
-                            <td>{car.kategori}</td>
-                            <td>
-                              {car.promo
-                                ? <Badge bg="warning" className="text-dark">{car.promo}%</Badge>
-                                : <span className="text-muted">-</span>}
-                            </td>
-                            <td>
-                              {Array.isArray(car.fitur) && car.fitur.length > 0
-                                ? car.fitur.map((f, i) => (
-                                    <Badge key={i} bg="info" className="me-1">{f}</Badge>
-                                  ))
-                                : <span className="text-muted">-</span>}
-                            </td>
-                            <td>
-                              <Badge bg="danger">Tidak Tersedia</Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  )}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Modal Detail Order */}
-            <Modal show={showOrderModal} onHide={() => setShowOrderModal(false)} size="lg" centered>
-              <Modal.Header closeButton>
-                <Modal.Title>{modalTitle}</Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                <div className="table-responsive">
-                  {modalOrders.length === 0 ? (
-                    <Alert variant="info">Tidak ada pesanan.</Alert>
-                  ) : (
-                    <Table striped bordered hover>
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Pelanggan</th>
-                          <th>Mobil</th>
-                          <th>Tanggal</th>
-                          <th>Status</th>
-                          <th>Pembayaran</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {modalOrders.map(order => (
-                          <tr key={order.id}>
-                            <td>#{order.id}</td>
-                            <td>{order.user?.name || order.User?.name || "-"}</td>
-                            <td>{order.layanan?.nama || order.Layanan?.nama || "-"}</td>
-                            <td>
-                              {moment(order.createdAt || order.created_at || order.order_date).format("D MMM YYYY")}
-                            </td>
-                            <td>
-                              <Badge bg={
-                                order.status === "completed"
-                                  ? "success"
-                                  : order.status === "cancelled"
-                                  ? "danger"
-                                  : order.status === "confirmed"
-                                  ? "info"
-                                  : order.status === "pending"
-                                  ? "warning"
-                                  : "secondary"
-                              }>
-                                {order.status === "completed"
-                                  ? "Selesai"
-                                  : order.status === "cancelled"
-                                  ? "Dibatalkan"
-                                  : order.status === "confirmed"
-                                  ? "Dikonfirmasi"
-                                  : order.status === "pending"
-                                  ? "Pending"
-                                  : order.status}
-                              </Badge>
-                            </td>
-                            <td>
-                              <Badge bg={
-                                order.payment_status === "paid"
-                                  ? "success"
-                                  : order.payment_status === "pending_verification"
-                                  ? "warning"
-                                  : order.payment_status === "rejected"
-                                  ? "danger"
-                                  : "secondary"
-                              }>
-                                {order.payment_status === "paid"
-                                  ? "Lunas"
-                                  : order.payment_status === "pending_verification"
-                                  ? "Menunggu Verifikasi"
-                                  : order.payment_status === "rejected"
-                                  ? "Ditolak"
-                                  : order.payment_status}
-                              </Badge>
-                            </td>
-                            <td>
-                              Rp{Number(order.total_price).toLocaleString("id-ID")}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  )}
-                </div>
-              </Modal.Body>
-            </Modal>
-          </>
-        )}
+        {/* Modal Performa Admin */}
+        <Modal show={showAdminModal} onHide={() => setShowAdminModal(false)} size="lg" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Rekap Performa Admin ({year})</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="table-responsive">
+              {adminStatsArr.length === 0 ? (
+                <Alert variant="info">Belum ada data admin atau pesanan belum ada yang diproses admin.</Alert>
+              ) : (
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Nama Admin</th>
+                      <th>Email</th>
+                      <th>Jumlah Pesanan</th>
+                      <th>Omzet</th>
+                      <th>Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminStatsArr.map((a, idx) => (
+                      <tr key={a.admin.id}>
+                        <td>{a.admin.name}</td>
+                        <td>{a.admin.email}</td>
+                        <td>
+                          <Badge bg="info">{a.orderCount}</Badge>
+                        </td>
+                        <td>
+                          <span className="fw-bold text-success">
+                            {formatCurrency(a.omzet)}
+                          </span>
+                        </td>
+                        <td>
+                          <Button
+                            size="sm"
+                            variant="outline-primary"
+                            onClick={() => {
+                              setModalTitle(`Detail Pesanan oleh ${a.admin.name} (${year})`);
+                              setModalOrders(a.orders);
+                              setShowOrderModal(true);
+                            }}
+                          >
+                            Detail
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </div>
+          </Modal.Body>
+        </Modal>
       </div>
     </div>
   );

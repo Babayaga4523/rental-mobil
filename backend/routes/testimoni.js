@@ -8,5 +8,6 @@ console.log('Controller functions:', Object.keys(testimoniController));
 router.get('/', testimoniController.getAllTestimoni);
 router.post('/', testimoniController.addTestimoni);
 router.delete('/:id', testimoniController.deleteTestimoni);
+router.put('/:id/reply', testimoniController.reply);
 
 module.exports = router;

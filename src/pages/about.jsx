@@ -10,6 +10,13 @@ import "../style/About.css";
 const About = () => {
   const navigate = useNavigate();
 
+  const [form, setForm] = React.useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+
   useEffect(() => {
     AOS.init({
       duration: 800,
@@ -18,6 +25,17 @@ const About = () => {
       easing: 'ease-in-out-quad'
     });
   }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const phone = "6281294743876";
+    const text = `Halo Admin Rental Mobil HS!%0A%0A` +
+      `Nama: ${form.name}%0A` +
+      `Email: ${form.email}%0A` +
+      `Subjek: ${form.subject}%0A` +
+      `Pesan: ${form.message}`;
+    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+  };
 
   return (
     <motion.div
@@ -33,55 +51,36 @@ const About = () => {
         <div className="container h-100 position-relative z-2">
           <div className="row h-100 align-items-center">
             <div className="col-lg-8 mx-auto text-center">
-              <motion.div
-                initial={{ y: -50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="about-hero-tagline mb-3" data-aos="fade-down">
-                  <span className="badge bg-white text-primary fs-6 px-4 py-2 shadow-lg border border-2 border-primary">
-                    <i className="fas fa-star me-2"></i>
-                    <span className="fw-bold">Premium Car Rental</span>
-                  </span>
-                </div>
-                <h1 className="about-hero-title display-2 fw-bold mb-3 text-gradient-primary" data-aos="fade-up" style={{ letterSpacing: 1 }}>
-                  Tentang <span className="text-gradient-primary">Kami</span>
-                </h1>
-                <p className="about-hero-subtitle lead text-light opacity-85 mb-4" data-aos="fade-up" data-aos-delay="100">
-                  Menyediakan solusi transportasi <b>premium</b> sejak 2000<br className="d-none d-lg-block" />
-                  dengan komitmen pada kualitas & kepuasan pelanggan
-                </p>
-                <div className="about-hero-cta d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-                  <motion.button 
-                    whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(13, 110, 253, 0.3)" }}
-                    whileTap={{ scale: 0.95 }}
-                    className="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow"
-                    onClick={() => navigate("/layanan")}
-                  >
-                    <i className="fas fa-car me-2"></i>Lihat Armada
-                  </motion.button>
-                  <motion.button 
-                    whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(255, 255, 255, 0.3)" }}
-                    whileTap={{ scale: 0.95 }}
-                    className="btn btn-outline-light btn-lg rounded-pill px-4 py-3"
-                    onClick={() => document.getElementById('contact-section').scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    <i className="fas fa-phone me-2"></i>Hubungi Kami
-                  </motion.button>
-                </div>
-              </motion.div>
+              <div className="about-hero-tagline mb-3" data-aos="fade-down">
+                <span className="badge bg-white text-primary fs-6 px-4 py-2 shadow-lg border border-2 border-primary">
+                  <i className="fas fa-star me-2"></i>
+                  <span className="fw-bold">Premium Car Rental</span>
+                </span>
+              </div>
+              <h1 className="about-hero-title display-2 fw-bold mb-3 text-gradient-primary" data-aos="fade-up" style={{ letterSpacing: 1 }}>
+                Tentang <span className="text-gradient-primary">Kami</span>
+              </h1>
+              <p className="about-hero-subtitle lead text-light opacity-85 mb-4" data-aos="fade-up" data-aos-delay="100">
+                Menyediakan solusi transportasi <b>premium</b> sejak 2000<br className="d-none d-lg-block" />
+                dengan komitmen pada kualitas & kepuasan pelanggan
+              </p>
+              <div className="about-hero-cta d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
+                <button 
+                  className="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow"
+                  onClick={() => navigate("/layanan")}
+                >
+                  <i className="fas fa-car me-2"></i>Lihat Armada
+                </button>
+                <button 
+                  className="btn btn-outline-light btn-lg rounded-pill px-4 py-3"
+                  onClick={() => document.getElementById('contact-section').scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <i className="fas fa-phone me-2"></i>Hubungi Kami
+                </button>
+              </div>
             </div>
           </div> {/* penutup .row */}
         </div> {/* penutup .container */}
-        {/* Floating Stats di bawah hero, tidak menutupi judul */}
-        <div className="about-hero-stats-container" data-aos="fade-up" data-aos-delay="300">
-          <motion.div 
-            whileHover={{ scale: 1.03 }}
-            className="about-hero-stats bg-glass rounded-4 shadow-lg p-4 d-inline-flex"
-          >
-            {/* Stats content here */}
-          </motion.div>
-        </div>
       </section>
 
       {/* Mission Section with Icon Cards */}
@@ -167,7 +166,7 @@ const About = () => {
                 className="about-image position-relative rounded-4 overflow-hidden shadow-lg border border-4 border-white"
               >
                 <img
-                  src="/assets/images/about-showroom.jpg"
+                  src="/images/tentang kami 1.jpg"
                   alt="Showroom Kami"
                   className="img-fluid w-100 hover-zoom"
                   style={{ minHeight: "500px", objectFit: "cover" }}
@@ -190,6 +189,13 @@ const About = () => {
                   <span className="text-gradient-primary">Mengapa</span> Memilih Kami?
                   <span className="title-underline"></span>
                 </h3>
+                <div className="alert alert-info d-flex align-items-center mb-4" role="alert" style={{ fontSize: "1.05rem" }}>
+                  <i className="fas fa-user-tie me-2 fs-5 text-primary"></i>
+                  <span>
+                    <b>Semua layanan rental sudah termasuk supir profesional.</b> <br className="d-none d-md-block" />
+                    <span className="text-danger fw-semibold">Tidak melayani lepas kunci (self-drive).</span>
+                  </span>
+                </div>
                 
                 <div className="row g-4">
                   {[
@@ -264,7 +270,7 @@ const About = () => {
                 className="about-image position-relative rounded-4 overflow-hidden shadow-lg border border-4 border-white"
               >
                 <img
-                  src="/assets/images/about-customer.jpg"
+                  src="/images/tentang kami.jpg"
                   alt="Pelayanan Kami"
                   className="img-fluid w-100"
                   style={{ minHeight: "500px", objectFit: "cover" }}
@@ -345,6 +351,71 @@ const About = () => {
         </div>
       </section>
 
+      {/* Timeline Section */}
+      <section className="about-timeline-section py-5 bg-white">
+        <div className="container">
+          <div className="text-center mb-5">
+            <h2 className="fw-bold text-gradient-primary mb-2">Perjalanan Kami</h2>
+            <p className="lead text-muted">Sejarah singkat perkembangan Rental Mobil HS</p>
+          </div>
+          <div className="position-relative" style={{ maxWidth: 900, margin: "0 auto" }}>
+            {/* Garis tengah */}
+            <div
+              className="position-absolute top-0 bottom-0 start-50 translate-middle-x bg-primary"
+              style={{ width: 6, borderRadius: 3, opacity: 0.13, zIndex: 0 }}
+            ></div>
+            {[
+              { year: 2000, title: "Didirikan", desc: "Rental Mobil HS berdiri dengan 3 armada pertama." },
+              { year: 2005, title: "Ekspansi Armada", desc: "Armada bertambah menjadi 20 unit, mulai melayani perusahaan." },
+              { year: 2012, title: "Digitalisasi", desc: "Mulai menerima pemesanan online dan memperluas layanan ke 5 kota." },
+              { year: 2018, title: "Penghargaan Nasional", desc: "Mendapat penghargaan Best Car Rental Jawa Tengah." },
+              { year: 2023, title: "500+ Armada", desc: "Menjadi salah satu rental terbesar di Jawa Tengah." }
+            ].map((item, idx) => (
+              <div
+                className="row g-0 align-items-center mb-5 position-relative"
+                key={idx}
+              >
+                {/* Kiri (event) */}
+                <div
+                  className={`col-12 col-md-5 d-flex ${idx % 2 === 0 ? "justify-content-end" : "order-md-2 justify-content-start"}`}
+                >
+                  <div
+                    className={`timeline-content bg-light rounded-4 shadow-sm p-4 mb-3 mb-md-0`}
+                    style={{
+                      minWidth: 220,
+                      maxWidth: 320,
+                      borderLeft: idx % 2 === 0 ? "6px solid #0d6efd" : undefined,
+                      borderRight: idx % 2 !== 0 ? "6px solid #0d6efd" : undefined,
+                      animation: "fadeIn 0.7s",
+                    }}
+                  >
+                    <h5 className="mb-1 fw-semibold">{item.title}</h5>
+                    <p className="mb-0 text-muted">{item.desc}</p>
+                  </div>
+                </div>
+                {/* Titik tahun di tengah garis */}
+                <div className="col-12 col-md-2 d-flex justify-content-center align-items-center position-relative" style={{ zIndex: 2 }}>
+                  <div
+                    className="timeline-dot bg-primary text-white fw-bold rounded-circle shadow d-flex align-items-center justify-content-center border border-4 border-white"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      fontSize: 22,
+                      boxShadow: "0 4px 24px rgba(13,110,253,0.10)",
+                      transition: "transform 0.2s",
+                    }}
+                  >
+                    {item.year}
+                  </div>
+                </div>
+                {/* Kanan (kosong untuk alternating) */}
+                <div className={`col-12 col-md-5 ${idx % 2 === 0 ? "" : "order-md-1"}`}></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section id="contact-section" className="contact-section py-7 bg-white">
         <div className="container">
@@ -371,19 +442,19 @@ const About = () => {
                     icon: "map-marker-alt",
                     color: "primary",
                     title: "Lokasi Kantor",
-                    content: "Jl. Sudirman No. 123<br />Jakarta Selatan 12190"
+                    content: "l. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo<br />Jawa Tengah 57164"
                   },
                   {
                     icon: "phone-alt",
                     color: "success",
                     title: "Telepon",
-                    content: "+62 812-3456-7890<br />(021) 123-4567"
+                    content: "08170455544"
                   },
                   {
                     icon: "envelope",
                     color: "warning",
                     title: "Email",
-                    content: "info@rentalpremium.com<br />support@rentalpremium.com"
+                    content: "rentalhs591@gmail.com"
                   }
                 ].map((item, index) => (
                   <div className="contact-item d-flex mb-4" key={index}>
@@ -424,7 +495,7 @@ const About = () => {
                 data-aos="fade-left"
               >
                 <h3 className="h4 fw-bold mb-4">Kirim Pesan</h3>
-                <form>
+                <form onSubmit={handleSubmit}>
                   <div className="row g-3 mb-4">
                     <div className="col-md-6" data-aos="fade-up" data-aos-delay="0">
                       <div className="form-floating">
@@ -432,7 +503,10 @@ const About = () => {
                           type="text" 
                           className="form-control" 
                           id="name" 
-                          placeholder="Nama Anda" 
+                          placeholder="Nama Anda"
+                          value={form.name}
+                          onChange={e => setForm({ ...form, name: e.target.value })}
+                          required
                         />
                         <label htmlFor="name">Nama Lengkap</label>
                       </div>
@@ -443,7 +517,10 @@ const About = () => {
                           type="email" 
                           className="form-control" 
                           id="email" 
-                          placeholder="Email Anda" 
+                          placeholder="Email Anda"
+                          value={form.email}
+                          onChange={e => setForm({ ...form, email: e.target.value })}
+                          required
                         />
                         <label htmlFor="email">Alamat Email</label>
                       </div>
@@ -455,7 +532,10 @@ const About = () => {
                         type="text" 
                         className="form-control" 
                         id="subject" 
-                        placeholder="Subjek" 
+                        placeholder="Subjek"
+                        value={form.subject}
+                        onChange={e => setForm({ ...form, subject: e.target.value })}
+                        required
                       />
                       <label htmlFor="subject">Subjek Pesan</label>
                     </div>
@@ -465,8 +545,11 @@ const About = () => {
                       <textarea 
                         className="form-control" 
                         id="message" 
-                        placeholder="Pesan Anda" 
+                        placeholder="Pesan Anda"
                         style={{ height: "150px" }}
+                        value={form.message}
+                        onChange={e => setForm({ ...form, message: e.target.value })}
+                        required
                       ></textarea>
                       <label htmlFor="message">Pesan Anda</label>
                     </div>

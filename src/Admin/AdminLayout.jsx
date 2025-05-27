@@ -1,48 +1,30 @@
-import React, { useState, useEffect } from "react";
-import AdminSidebar from "./AdminSidebar";
+import React, { useState } from "react";
 import AdminNavbar from "./AdminNavbar";
+import AdminSidebar from "./AdminSidebar";
 
-const AdminLayout = ({ children, darkMode, toggleDarkMode }) => {
+const AdminLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [darkMode, setDarkMode] = useState(false);
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const handleSidebarToggle = () => {
-    if (isMobile) {
-      setSidebarOpen((open) => !open);
-    } else {
-      setSidebarCollapsed((collapsed) => !collapsed);
-    }
-  };
+  const toggleSidebar = () => setSidebarCollapsed((v) => !v);
+  const toggleDarkMode = () => setDarkMode((v) => !v);
 
   return (
-    <>
-      <AdminSidebar
-        sidebarCollapsed={sidebarCollapsed}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
+    <div className={`admin-root${darkMode ? " dark" : ""}`}>
       <AdminNavbar
-        toggleSidebar={handleSidebarToggle}
+        toggleSidebar={toggleSidebar}
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
       />
-      <div
-        style={{
-          marginLeft: isMobile ? 0 : sidebarCollapsed ? 60 : 220,
-          paddingTop: 70,
-          transition: "margin-left 0.2s",
-        }}
-      >
+      <AdminSidebar
+        collapsed={sidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        darkMode={darkMode}
+      />
+      <main className={`admin-content${sidebarCollapsed ? " collapsed" : ""}`}>
         {children}
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 

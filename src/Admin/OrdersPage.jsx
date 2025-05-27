@@ -6,9 +6,12 @@ import {
 } from "react-bootstrap";
 import moment from "moment";
 import {
-  FaEllipsisV, FaEye, FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown, FaFileCsv, FaMoon, FaSun
+  FaEllipsisV, FaEye, FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown, FaFileCsv, FaFilePdf, FaCheckSquare, FaRegSquare, FaPrint, FaBell
 } from "react-icons/fa";
 import { CSVLink } from "react-csv";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API_URL = "http://localhost:3000/api";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -30,6 +33,7 @@ const formatPaymentStatus = (status) => {
     case 'pending_verification': return 'Menunggu Verifikasi';
     case 'paid': return 'Lunas';
     case 'rejected': return 'Ditolak';
+    case 'unpaid': return 'Belum Bayar';
     default: return status || '';
   }
 };
@@ -45,8 +49,9 @@ const getStatusBadge = (status) => {
   }
 };
 
-const OrdersPage = ({ darkMode, toggleDarkMode }) => {
+const OrdersPage = ({ darkMode }) => {
   const [orders, setOrders] = useState([]);
+  const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -54,9 +59,11 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [statusToEdit, setStatusToEdit] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
+  const [deleteIds, setDeleteIds] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCar, setFilterCar] = useState("all");
+  const [filterPayment, setFilterPayment] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
@@ -65,13 +72,22 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [showPaymentStatusModal, setShowPaymentStatusModal] = useState(false);
   const [paymentStatusToEdit, setPaymentStatusToEdit] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkAction, setBulkAction] = useState("");
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetchOrders();
+    fetchCars();
     // eslint-disable-next-line
   }, [token]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [toast]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -79,19 +95,33 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
       const res = await axios.get(`${API_URL}/orders/admin/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setOrders(
-        Array.isArray(res.data.data)
-          ? res.data.data
-          : Array.isArray(res.data)
-          ? res.data
-          : []
-      );
+      setOrders(Array.isArray(res.data.data) ? res.data.data : []);
     } catch (err) {
       setOrders([]);
       showToast("Gagal memuat data pesanan!", "danger");
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCars = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/layanan`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCars(Array.isArray(res.data.data) ? res.data.data : []);
+    } catch (err) {
+      setCars([]);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
+    } catch {}
   };
 
   const showToast = (message, variant = "success") => {
@@ -104,11 +134,15 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
     .filter((order) => {
       const searchLower = search.toLowerCase();
       const matchSearch =
-        order.user?.name?.toLowerCase().includes(searchLower) ||
-        order.layanan?.nama?.toLowerCase().includes(searchLower) ||
+        (order.user?.name?.toLowerCase() || "").includes(searchLower) ||
+        (order.layanan?.nama?.toLowerCase() || "").includes(searchLower) ||
         order.id.toString().includes(searchLower);
       const matchStatus =
         filterStatus === "all" || (order.status || "").toLowerCase() === filterStatus;
+      const matchCar =
+        filterCar === "all" || (order.layanan?.id?.toString() === filterCar);
+      const matchPayment =
+        filterPayment === "all" || (order.payment_method || "") === filterPayment;
       let matchDate = true;
       if (dateFrom) {
         matchDate =
@@ -120,7 +154,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
           matchDate &&
           moment(order.createdAt || order.created_at).isSameOrBefore(moment(dateTo), "day");
       }
-      return matchSearch && matchStatus && matchDate;
+      return matchSearch && matchStatus && matchCar && matchPayment && matchDate;
     });
 
   // Sorting
@@ -207,6 +241,82 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
     }));
   };
 
+  // Excel Export
+  const handleExportExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(formatCSVData(sortedOrders));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pesanan");
+    XLSX.writeFile(wb, `daftar-pesanan-${moment().format("DDMMYYYY")}.xlsx`);
+  };
+
+  // PDF Export
+  const handleExportPDF = () => {
+    const doc = new jsPDF("l", "mm", "a4");
+    doc.setFontSize(14);
+    doc.text("Daftar Pesanan", 14, 14);
+    autoTable(doc, {
+      head: [csvHeaders.map(h => h.label)],
+      body: formatCSVData(sortedOrders).map(row => csvHeaders.map(h => row[h.key])),
+      startY: 20,
+      styles: { fontSize: 10 },
+      margin: { left: 14, right: 14 }
+    });
+    doc.save(`daftar-pesanan-${moment().format("DDMMYYYY")}.pdf`);
+  };
+
+  // Bulk Action
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedIds(pagedOrders.map(o => o.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+  const handleSelectOne = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedIds.length === 0) return;
+    if (bulkAction === "delete") {
+      setDeleteIds(selectedIds);
+      setShowBulkModal(true);
+    } else if (bulkAction === "completed" || bulkAction === "cancelled") {
+      try {
+        await Promise.all(selectedIds.map(id =>
+          axios.put(`${API_URL}/orders/${id}`, { status: bulkAction }, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ));
+        showToast("Status pesanan berhasil diubah!");
+        setSelectedIds([]);
+        fetchOrders();
+      } catch {
+        showToast("Gagal update status pesanan!", "danger");
+      }
+    }
+  };
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(deleteIds.map(id =>
+        axios.put(`${API_URL}/orders/${id}`, { status: "cancelled" }, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ));
+      setOrders((orders) =>
+        orders.map((o) =>
+          deleteIds.includes(o.id) ? { ...o, status: "cancelled" } : o
+        )
+      );
+      setShowBulkModal(false);
+      setSelectedIds([]);
+      showToast("Pesanan berhasil dibatalkan!");
+    } catch {
+      showToast("Gagal membatalkan pesanan!", "danger");
+    }
+  };
+
   // Modal helpers
   const handleShowDetail = async (order) => {
     setDetailLoading(true);
@@ -229,8 +339,9 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
     setStatusToEdit("");
     setShowStatusModal(true);
   };
+
   const handleShowDeleteModal = (id) => {
-    setDeleteId(id);
+    setDeleteIds([id]);
     setShowDeleteModal(true);
   };
 
@@ -242,6 +353,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
 
   // Status update
   const handleStatusUpdate = async () => {
+    if (!statusToEdit) return;
     try {
       await axios.put(
         `${API_URL}/orders/${selectedOrder.id}`,
@@ -250,7 +362,12 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
       );
       showToast("Status pesanan berhasil diupdate!");
       setShowStatusModal(false);
-      fetchOrders();
+      // Update orders state langsung tanpa fetch ulang
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selectedOrder.id ? { ...o, status: statusToEdit } : o
+        )
+      );
     } catch (err) {
       showToast("Gagal update status!", "danger");
     }
@@ -258,6 +375,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
 
   // Payment Status update
   const handlePaymentStatusUpdate = async () => {
+    if (!paymentStatusToEdit) return;
     try {
       await axios.put(
         `${API_URL}/orders/${selectedOrder.id}/verify`,
@@ -266,7 +384,12 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
       );
       showToast("Status pembayaran berhasil diupdate!");
       setShowPaymentStatusModal(false);
-      fetchOrders();
+      // Update orders state langsung tanpa fetch ulang
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === selectedOrder.id ? { ...o, payment_status: paymentStatusToEdit } : o
+        )
+      );
     } catch (err) {
       showToast("Gagal update status pembayaran!", "danger");
     }
@@ -275,11 +398,12 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
   // Delete
   const handleDelete = async () => {
     try {
-      await axios.delete(`${API_URL}/orders/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.delete(`${API_URL}/orders/${deleteIds[0]}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setOrders((orders) => orders.filter((o) => o.id !== deleteId));
+      setOrders((orders) => orders.filter((o) => o.id !== deleteIds[0]));
       setShowDeleteModal(false);
+      setSelectedIds(selectedIds.filter(id => id !== deleteIds[0]));
       showToast("Pesanan berhasil dihapus!");
     } catch (err) {
       showToast("Gagal menghapus pesanan!", "danger");
@@ -299,27 +423,58 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
     ));
   };
 
+  // Print Invoice
+  const handlePrintInvoice = (order) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`INVOICE PESANAN #${order.id}`, 14, 18);
+    doc.setFontSize(12);
+    doc.text(`Nama Pelanggan: ${order.user?.name || "-"}`, 14, 30);
+    doc.text(`Mobil: ${order.layanan?.nama || "-"}`, 14, 38);
+    doc.text(`Tanggal Sewa: ${formatDate(order.pickup_date)} - ${formatDate(order.return_date)}`, 14, 46);
+    doc.text(`Durasi: ${order.pickup_date && order.return_date ? moment(order.return_date).diff(moment(order.pickup_date), "days") + " hari" : "-"}`, 14, 54);
+    doc.text(`Total: Rp${Number(order.total_price || 0).toLocaleString('id-ID')}`, 14, 62);
+    doc.text(`Status: ${formatStatus(order.status)}`, 14, 70);
+    doc.text(`Status Pembayaran: ${formatPaymentStatus(order.payment_status)}`, 14, 78);
+    doc.save(`invoice-pesanan-${order.id}.pdf`);
+  };
+
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
       <div className="container-fluid py-4">
-        {/* Header & Dark Mode Toggle */}
+        {/* Header & Export */}
         <Row className="align-items-center mb-4 g-2">
           <Col xs={12} md={6}>
-            <h3 className="mb-0 fw-bold">Daftar Pesanan</h3>
+            <h3 className="mb-0 fw-bold">
+              <span className="me-2 text-primary">
+                <FaFileCsv />
+              </span>
+              Daftar Pesanan
+            </h3>
           </Col>
-          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
-            <Button
-              variant={darkMode ? "light" : "dark"}
-              onClick={toggleDarkMode}
-              title={darkMode ? "Light Mode" : "Dark Mode"}
-              className="rounded-circle"
+          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0 d-flex gap-2 justify-content-md-end">
+            {/* Export Buttons */}
+            <CSVLink
+              data={formatCSVData(sortedOrders)}
+              headers={csvHeaders}
+              filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
+              className="btn btn-outline-success"
+              separator=";"
+              enclosingCharacter={'"'}
             >
-              {darkMode ? <FaSun /> : <FaMoon />}
+              <FaFileCsv className="me-2" />
+              Export CSV
+            </CSVLink>
+            
+            <Button variant="outline-danger" onClick={handleExportPDF}>
+              <FaFilePdf className="me-2" />
+              Export PDF
             </Button>
           </Col>
         </Row>
-        {/* Filter & Export */}
-        <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
+
+        {/* Filter */}
+        <Card className={`mb-4 shadow-sm border-0 ${darkMode ? "bg-secondary" : "bg-white"}`}>
           <Card.Body>
             <Row className="g-2 align-items-stretch">
               <Col xs={12} sm={6} md={3}>
@@ -352,6 +507,34 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                 </Form.Select>
               </Col>
               <Col xs={6} sm={3} md={2}>
+                <Form.Select
+                  value={filterCar}
+                  onChange={(e) => {
+                    setFilterCar(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Mobil</option>
+                  {cars.map(car => (
+                    <option key={car.id} value={car.id}>{car.nama}</option>
+                  ))}
+                </Form.Select>
+              </Col>
+              <Col xs={6} sm={3} md={2}>
+                <Form.Select
+                  value={filterPayment}
+                  onChange={(e) => {
+                    setFilterPayment(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">Semua Pembayaran</option>
+                  <option value="credit_card">Credit Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="e_wallet">E-Wallet</option>
+                </Form.Select>
+              </Col>
+              <Col xs={6} sm={3} md={1}>
                 <Form.Control
                   type="date"
                   value={dateFrom}
@@ -362,7 +545,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   placeholder="Dari tanggal"
                 />
               </Col>
-              <Col xs={6} sm={3} md={2}>
+              <Col xs={6} sm={3} md={1}>
                 <Form.Control
                   type="date"
                   value={dateTo}
@@ -387,32 +570,33 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                 </Form.Select>
               </Col>
               <Col xs={12} md={2} className="text-md-end mt-2 mt-md-0">
-                <CSVLink
-                  data={formatCSVData(sortedOrders)}
-                  headers={csvHeaders}
-                  filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
-                  className="btn btn-outline-success w-100"
-                  separator=";"
-                  enclosingCharacter={'"'}
+                <Form.Select
+                  value={bulkAction}
+                  onChange={e => setBulkAction(e.target.value)}
+                  disabled={selectedIds.length === 0}
                 >
-                  <FaFileCsv className="me-2" />
-                  Export CSV
-                </CSVLink>
+                  <option value="">Bulk Action</option>
+                  <option value="completed">Set Selesai</option>
+                  <option value="cancelled">Set Dibatalkan</option>
+                  <option value="delete">Hapus</option>
+                </Form.Select>
+                <Button
+                  variant="primary"
+                  className="ms-2"
+                  disabled={!bulkAction || selectedIds.length === 0}
+                  onClick={handleBulkAction}
+                >
+                  Terapkan
+                </Button>
               </Col>
             </Row>
           </Card.Body>
         </Card>
+
         {/* Table */}
-        {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <div className="mt-2">Memuat data pesanan...</div>
-          </div>
-        ) : pagedOrders.length === 0 ? (
-          <Alert variant="info">Tidak ada pesanan.</Alert>
-        ) : (
-          <>
-            <div className="table-responsive shadow-sm rounded" style={{ maxHeight: 600 }}>
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Body className="p-0">
+            <div className="table-responsive" style={{ maxHeight: 600 }}>
               <Table
                 striped
                 bordered
@@ -422,6 +606,16 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
               >
                 <thead className={darkMode ? "table-secondary" : "table-light"} style={{ position: "sticky", top: 0, zIndex: 1 }}>
                   <tr>
+                    <th>
+                      <Button
+                        variant="link"
+                        className="p-0"
+                        onClick={() => handleSelectAll(selectedIds.length !== pagedOrders.length)}
+                        title={selectedIds.length === pagedOrders.length ? "Unselect All" : "Select All"}
+                      >
+                        {selectedIds.length === pagedOrders.length ? <FaCheckSquare /> : <FaRegSquare />}
+                      </Button>
+                    </th>
                     <th style={{ cursor: "pointer" }} onClick={() => handleSort("id")}>
                       ID {getSortIcon("id")}
                     </th>
@@ -452,7 +646,14 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                   {pagedOrders.map((order) => (
                     <tr key={order.id}>
                       <td>
-                        <Badge bg="secondary" className="fw-bold">
+                        <Form.Check
+                          type="checkbox"
+                          checked={selectedIds.includes(order.id)}
+                          onChange={() => handleSelectOne(order.id)}
+                        />
+                      </td>
+                      <td>
+                        <Badge bg="secondary" className="fw-bold rounded-pill px-3 py-2 fs-6">
                           #{order.id}
                         </Badge>
                       </td>
@@ -478,10 +679,12 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                           : "-"}
                       </td>
                       <td>
-                        Rp{(order.total_price || 0).toLocaleString('id-ID')}
+                        <span className="fw-bold text-success">
+                          Rp{Number(order.total_price || 0).toLocaleString('id-ID')}
+                        </span>
                       </td>
                       <td>
-                        <Badge pill bg={getStatusBadge(order.status)}>
+                        <Badge pill bg={getStatusBadge(order.status)} className="px-3 py-2">
                           {formatStatus(order.status) || "-"}
                         </Badge>
                       </td>
@@ -497,6 +700,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                               ? "danger"
                               : "secondary"
                           }
+                          className="px-3 py-2"
                         >
                           {formatPaymentStatus(order.payment_status)}
                         </Badge>
@@ -550,6 +754,14 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                                 <FaTrash className="me-2" /> Batalkan
                               </Dropdown.Item>
                             </OverlayTrigger>
+                            <OverlayTrigger
+                              placement="left"
+                              overlay={<Tooltip>Cetak Invoice</Tooltip>}
+                            >
+                              <Dropdown.Item onClick={() => handlePrintInvoice(order)}>
+                                <FaPrint className="me-2" /> Cetak Invoice
+                              </Dropdown.Item>
+                            </OverlayTrigger>
                           </Dropdown.Menu>
                         </Dropdown>
                       </td>
@@ -558,35 +770,36 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                 </tbody>
               </Table>
             </div>
-            {/* Pagination */}
-            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
-              <div>
-                Menampilkan {pagedOrders.length} dari {sortedOrders.length} pesanan
-              </div>
-              <div>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="me-2"
-                >
-                  &lt;
-                </Button>
-                Halaman {page} / {totalPages}
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="ms-2"
-                >
-                  &gt;
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+          </Card.Body>
+        </Card>
+
+        {/* Pagination & Info */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
+          <div>
+            Menampilkan {pagedOrders.length} dari {sortedOrders.length} pesanan
+          </div>
+          <div>
+            <Button
+              variant="outline-primary"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="me-2"
+            >
+              &lt;
+            </Button>
+            Halaman {page} / {totalPages}
+            <Button
+              variant="outline-primary"
+              size="sm"
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="ms-2"
+            >
+              &gt;
+            </Button>
+          </div>
+        </div>
 
         {/* Toast Notification */}
         <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
@@ -602,7 +815,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
         </ToastContainer>
 
         {/* Detail Modal */}
-        <Modal show={showDetail} onHide={() => setShowDetail(false)} centered>
+        <Modal show={showDetail} onHide={() => setShowDetail(false)} centered size="lg">
           <Modal.Header closeButton>
             <Modal.Title>Detail Pesanan</Modal.Title>
           </Modal.Header>
@@ -644,7 +857,7 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
                     <p>
                       <strong>Total:</strong>{" "}
                       <span className="fw-bold text-success">
-                        Rp{Number(selectedOrder.total_price).toLocaleString('id-ID')}
+                        Rp{Number(selectedOrder.total_price || 0).toLocaleString('id-ID')}
                       </span>
                     </p>
                     <p>
@@ -792,6 +1005,24 @@ const OrdersPage = ({ darkMode, toggleDarkMode }) => {
               Batal
             </Button>
             <Button variant="danger" onClick={handleDelete}>
+              Hapus
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Bulk Delete Modal */}
+        <Modal show={showBulkModal} onHide={() => setShowBulkModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Konfirmasi Hapus</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Apakah Anda yakin ingin menghapus {deleteIds.length} pesanan terpilih?
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowBulkModal(false)}>
+              Batal
+            </Button>
+            <Button variant="danger" onClick={handleBulkDelete}>
               Hapus
             </Button>
           </Modal.Footer>

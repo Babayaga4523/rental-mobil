@@ -23,7 +23,7 @@ Object.keys(db).forEach(modelName => {
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', require('express').static(path.join(__dirname, 'uploads')));
 
 // Import routes
 const orderRoutes = require("./routes/orderRoutes");

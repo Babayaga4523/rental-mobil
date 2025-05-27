@@ -61,6 +61,8 @@ const OrderReceipt = () => {
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [proofUrl, setProofUrl] = useState("");
 
   useEffect(() => {
     const fetchReceipt = async () => {
@@ -213,14 +215,16 @@ const OrderReceipt = () => {
                   <div>
                     <span>Bukti</span>
                     <span>
-                      <a
-                        href={`http://localhost:3000${order.payment_proof}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
                         className="btn btn-sm btn-outline-primary"
+                        onClick={() => {
+                          setProofUrl(`http://localhost:3000${order.payment_proof}`);
+                          setShowProofModal(true);
+                        }}
                       >
                         <FaFileAlt className="me-1" /> Lihat
-                      </a>
+                      </button>
                     </span>
                   </div>
                 )}
@@ -261,6 +265,31 @@ const OrderReceipt = () => {
           </div>
           <div className="receipt-footer-note">
             Invoice ini sah dan diproses secara otomatis.
+          </div>
+        </div>
+      </div>
+      {/* Modal Bukti Pembayaran */}
+      <div
+        className={`modal fade ${showProofModal ? "show d-block" : ""}`}
+        tabIndex="-1"
+        style={{ background: showProofModal ? "rgba(0,0,0,0.5)" : "transparent" }}
+        onClick={() => setShowProofModal(false)}
+        aria-modal={showProofModal ? "true" : undefined}
+        role="dialog"
+      >
+        <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Bukti Pembayaran</h5>
+              <button type="button" className="btn-close" onClick={() => setShowProofModal(false)}></button>
+            </div>
+            <div className="modal-body text-center">
+              {proofUrl ? (
+                <img src={proofUrl} alt="Bukti Pembayaran" className="img-fluid rounded shadow" />
+              ) : (
+                <div className="text-muted">Tidak ada bukti pembayaran.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
