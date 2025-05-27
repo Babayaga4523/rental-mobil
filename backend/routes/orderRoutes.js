@@ -142,4 +142,12 @@ router.get(
   orderController.getOrderReceipt
 );
 
+// Hapus order
+router.delete(
+  '/:id',
+  authMiddleware,
+  checkAdmin,
+  orderController.deleteOrder
+);
+
 module.exports = router;

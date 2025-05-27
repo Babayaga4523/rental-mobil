@@ -51,6 +51,11 @@ const UserOrdersPage = () => {
   const [proofUrl, setProofUrl] = useState("");
   const [proofType, setProofType] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadOrderId, setUploadOrderId] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +83,13 @@ const UserOrdersPage = () => {
     };
     fetchOrders();
   }, [navigate]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // fetchOrders() sama seperti di useEffect utama
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -150,6 +162,72 @@ const UserOrdersPage = () => {
     setShowProof(false);
     setProofUrl("");
     setProofType("");
+  };
+
+  const handleShowUpload = (orderId) => {
+    setUploadOrderId(orderId);
+    setShowUpload(true);
+    setUploadFile(null);
+  };
+  const handleCloseUpload = () => {
+    setShowUpload(false);
+    setUploadOrderId(null);
+    setUploadFile(null);
+  };
+  const handleUpload = async () => {
+    if (!uploadFile) return;
+    setUploading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("payment_proof", uploadFile);
+      await axios.put(
+        `${BACKEND_URL}/api/orders/${uploadOrderId}/payment`,
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Bukti pembayaran berhasil diupload!");
+      setShowUpload(false);
+      setUploadOrderId(null);
+      setUploadFile(null);
+      // Refresh orders
+      setLoading(true);
+      const res = await axios.get(`${BACKEND_URL}/api/orders`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(res.data.data || []);
+    } catch (err) {
+      toast.error("Gagal upload bukti pembayaran.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm("Yakin ingin membatalkan pesanan ini?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${BACKEND_URL}/api/orders/${orderId}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Pesanan berhasil dibatalkan.");
+      // Update status pesanan di state orders tanpa reload
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId
+            ? { ...order, status: "cancelled", payment_status: "refunded" }
+            : order
+        )
+      );
+    } catch (err) {
+      toast.error("Gagal membatalkan pesanan.");
+    }
+  };
+
+  const handleDownloadInvoice = (orderId) => {
+    navigate(`/invoice/${orderId}`);
   };
 
   const filteredOrders = orders.filter(order => {
@@ -382,7 +460,7 @@ const UserOrdersPage = () => {
                                 ? order.car.image_url.startsWith("/")
                                   ? `${BACKEND_URL}${order.car.image_url}`
                                   : order.car.image_url
-                                : "https://via.placeholder.com/300x200?text=No+Image"
+                                : ""
                             }
                             alt={order.car?.name}
                             className="car-image"
@@ -484,8 +562,11 @@ const UserOrdersPage = () => {
                                 onClick={() => {
                                   if (order.payment_proof) {
                                     const ext = order.payment_proof.split(".").pop().toLowerCase();
-                                    setProofUrl(`${BACKEND_URL}${order.payment_proof}`);
-                                    setProofType(ext);
+                                    const url = order.payment_proof.startsWith("http")
+                                      ? order.payment_proof
+                                      : `${BACKEND_URL}${order.payment_proof}`;
+                                    setProofUrl(url);
+                                    setProofType(ext === "pdf" ? "pdf" : "img");
                                     setShowProof(true);
                                   }
                                 }}
@@ -494,8 +575,15 @@ const UserOrdersPage = () => {
                                 <FaEye className="me-2" />
                                 Lihat Bukti
                               </Button>
-                              {!order.payment_proof && (
-                                <span className="text-muted ms-2">Belum diupload</span>
+                              {order.payment_status === "unpaid" && (
+                                <Button
+                                  variant="outline-success"
+                                  size="sm"
+                                  className="ms-2"
+                                  onClick={() => handleShowUpload(order.id)}
+                                >
+                                  Upload Bukti
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -517,7 +605,26 @@ const UserOrdersPage = () => {
                       </div>
                     </Card.Body>
 
-                    
+                    <Card.Footer className="text-center">
+                      {order.status === "pending" && (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleCancelOrder(order.id)}
+                          disabled={cancellingId === order.id}
+                          className="px-4 py-2 fw-bold rounded-pill"
+                        >
+                          {cancellingId === order.id ? (
+                            <Spinner size="sm" animation="border" />
+                          ) : (
+                            <>
+                              <FaTimes className="me-2" />
+                              Batalkan Pesanan
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </Card.Footer>
                   </Card>
                 </Col>
               );
@@ -547,6 +654,29 @@ const UserOrdersPage = () => {
             ) : (
               <div className="text-muted">Bukti pembayaran tidak tersedia.</div>
             )}
+          </Modal.Body>
+        </Modal>
+
+        {/* Modal Upload Bukti Pembayaran */}
+        <Modal show={showUpload} onHide={handleCloseUpload} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Upload Bukti Pembayaran</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              className="form-control mb-3"
+              onChange={e => setUploadFile(e.target.files[0])}
+              disabled={uploading}
+            />
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              disabled={!uploadFile || uploading}
+            >
+              {uploading ? <Spinner size="sm" /> : "Upload"}
+            </Button>
           </Modal.Body>
         </Modal>
       </Container>

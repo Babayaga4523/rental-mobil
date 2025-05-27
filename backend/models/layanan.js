@@ -12,7 +12,7 @@ const Layanan = sequelize.define('Layanan', {
     allowNull: false,
   },
   deskripsi: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT, // ubah dari STRING ke TEXT
     allowNull: true,
   },
   harga: {

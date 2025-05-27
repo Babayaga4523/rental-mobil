@@ -1,13 +1,12 @@
 const Layanan = require('../models/layanan');
 const Testimoni = require('../models/testimoni');
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
+const { Order, sequelize } = require('../models');
 
 exports.getAll = async (req, res) => {
   try {
-    // Ambil semua layanan
     const layanan = await Layanan.findAll();
 
-    // Ambil rating & jumlah review dari testimoni untuk setiap layanan
     const layananWithRating = await Promise.all(layanan.map(async (item) => {
       const testimoni = await Testimoni.findAll({
         where: { layanan_id: item.id }
@@ -17,10 +16,17 @@ exports.getAll = async (req, res) => {
       if (testimoni.length > 0) {
         jumlah_review = testimoni.length;
         rating = testimoni.reduce((sum, t) => sum + t.rating, 0) / jumlah_review;
-        rating = Math.round(rating * 10) / 10; // 1 desimal
+        rating = Math.round(rating * 10) / 10;
       }
+      // --- Normalisasi fitur di sini ---
+      let fitur = item.fitur;
+      if (!fitur) fitur = [];
+      else if (typeof fitur === "string") fitur = fitur.split(",").map(f => f.trim()).filter(Boolean);
+      else if (!Array.isArray(fitur)) fitur = [];
+      // ---------------------------------
       return {
         ...item.toJSON(),
+        fitur,
         rating,
         jumlah_review
       };
@@ -37,7 +43,6 @@ exports.getById = async (req, res) => {
     const layanan = await Layanan.findByPk(req.params.id);
     if (!layanan) return res.status(404).json({ message: 'Layanan tidak ditemukan' });
 
-    // Aggregate rating & jumlah review
     const testimoni = await Testimoni.findAll({
       where: { layanan_id: layanan.id }
     });
@@ -48,8 +53,13 @@ exports.getById = async (req, res) => {
       rating = testimoni.reduce((sum, t) => sum + t.rating, 0) / jumlah_review;
       rating = Math.round(rating * 10) / 10;
     }
-
-    res.json({ success: true, data: { ...layanan.toJSON(), rating, jumlah_review } });
+    // --- Normalisasi fitur di sini ---
+    let fitur = layanan.fitur;
+    if (!fitur) fitur = [];
+    else if (typeof fitur === "string") fitur = fitur.split(",").map(f => f.trim()).filter(Boolean);
+    else if (!Array.isArray(fitur)) fitur = [];
+    // ---------------------------------
+    res.json({ success: true, data: { ...layanan.toJSON(), fitur, rating, jumlah_review } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -65,9 +75,15 @@ exports.create = async (req, res) => {
     if (!nama || !kategori || !harga) {
       return res.status(400).json({ message: "Nama, kategori, dan harga wajib diisi" });
     }
+    // Saat create/update layanan
+    const fiturArray = Array.isArray(fitur)
+      ? fitur
+      : typeof fitur === "string"
+        ? fitur.split(",").map(f => f.trim())
+        : [];
     const layanan = await Layanan.create({
       nama, kategori, harga, status: status || 'available', deskripsi: deskripsi || '',
-      gambar, promo, rating, jumlah_review, transmisi, kapasitas, fitur
+      gambar, promo, rating, jumlah_review, transmisi, kapasitas, fitur: fiturArray
     });
     res.status(201).json({ success: true, data: layanan });
   } catch (err) {
@@ -84,6 +100,7 @@ exports.update = async (req, res) => {
     if (req.file) {
       gambar = `/uploads/${req.file.filename}`;
     }
+    // Saat create/update layanan
     const fiturArray = Array.isArray(fitur)
       ? fitur
       : typeof fitur === "string"
@@ -101,7 +118,7 @@ exports.update = async (req, res) => {
       jumlah_review: jumlah_review ?? layanan.jumlah_review,
       transmisi: transmisi ?? layanan.transmisi,
       kapasitas: kapasitas ?? layanan.kapasitas,
-      fitur: fiturArray ?? layanan.fitur
+      fitur: fiturArray
     });
     res.json({ success: true, data: layanan });
   } catch (err) {
@@ -115,6 +132,33 @@ exports.delete = async (req, res) => {
     if (!layanan) return res.status(404).json({ message: 'Layanan tidak ditemukan' });
     await layanan.destroy();
     res.json({ success: true, message: "Layanan berhasil dihapus" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAvailable = async (req, res) => {
+  try {
+    const layanan = await Layanan.findAll({ where: { status: 'available' } });
+    // ...tambahkan rating & jumlah_review jika perlu...
+    res.json({ success: true, data: layanan });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getOmzetLayanan = async (req, res) => {
+  try {
+    const omzet = await Order.findAll({
+      where: { status: 'completed' },
+      attributes: [
+        'layanan_id',
+        [sequelize.fn('SUM', sequelize.col('total_price')), 'total_omzet'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'jumlah_order']
+      ],
+      group: ['layanan_id']
+    });
+    res.json({ success: true, data: omzet });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

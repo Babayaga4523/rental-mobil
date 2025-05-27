@@ -5,6 +5,10 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../style/DetailMobilPage.css";
+import { Spinner, Alert } from "react-bootstrap";
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import axios from "axios";
 
 const defaultCarImage = '/images/default-car.jpg';
 const defaultGalleryImages = [
@@ -24,6 +28,13 @@ const DetailMobil = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [galleryImages, setGalleryImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [bookedDates, setBookedDates] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dateError, setDateError] = useState("");
+  const [showAllBooked, setShowAllBooked] = useState(false);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true, easing: 'ease-in-out' });
@@ -52,6 +63,28 @@ const DetailMobil = () => {
         setError(error.message);
         setLoading(false);
       });
+  }, [id]);
+
+  // Fetch reviews/testimoni dari backend
+  useEffect(() => {
+    if (!car?.id) return;
+    setLoadingReviews(true);
+    fetch(`${BACKEND_URL}/api/testimoni?layanan_id=${car.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setReviews(Array.isArray(data.data) ? data.data : []);
+        setLoadingReviews(false);
+      })
+      .catch(() => setLoadingReviews(false));
+  }, [car?.id]);
+
+  // Fetch booked dates for the car
+  useEffect(() => {
+    if (!id) return;
+    axios
+      .get(`http://localhost:3000/api/layanan/${id}/availability`)
+      .then(res => setBookedDates(res.data.bookedDates || []))
+      .catch(() => setBookedDates([]));
   }, [id]);
 
   const handleImageError = (imgElement, fallbackImage) => {
@@ -89,6 +122,37 @@ const DetailMobil = () => {
         discount: diskon
       }
     });
+  };
+
+  const fiturList = React.useMemo(() => {
+    if (!car?.fitur) return [];
+    if (Array.isArray(car.fitur)) return car.fitur;
+    if (typeof car.fitur === "string") return car.fitur.split(",").map(f => f.trim()).filter(Boolean);
+    return [];
+  }, [car]);
+
+  const handleDateChange = (type, value) => {
+    setDateError("");
+    if (type === "start") setStartDate(value);
+    else setEndDate(value);
+
+    // Validasi: tanggal mulai <= tanggal selesai
+    const start = type === "start" ? value : startDate;
+    const end = type === "end" ? value : endDate;
+    if (start && end && start > end) {
+      setDateError("Tanggal mulai tidak boleh setelah tanggal selesai.");
+      return;
+    }
+    // Validasi: tidak boleh overlap dengan bookedDates
+    if (start && end) {
+      const startObj = new Date(start);
+      const endObj = new Date(end);
+      const overlap = bookedDates.some(
+        (range) =>
+          (startObj <= new Date(range.end) && endObj >= new Date(range.start))
+      );
+      if (overlap) setDateError("Tanggal yang dipilih bentrok dengan booking lain.");
+    }
   };
 
   if (loading) {
@@ -214,25 +278,10 @@ const DetailMobil = () => {
                       <i className="fas fa-info-circle me-2"></i> Deskripsi
                     </button>
                   </li>
-                  <li className="nav-item">
-                    <button
-                      className={`nav-link car-detail-tab-link${activeTab === 'specs' ? ' active' : ''}`}
-                      onClick={() => setActiveTab('specs')}
-                    >
-                      <i className="fas fa-cogs me-2"></i> Spesifikasi
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button
-                      className={`nav-link car-detail-tab-link${activeTab === 'reviews' ? ' active' : ''}`}
-                      onClick={() => setActiveTab('reviews')}
-                    >
-                      <i className="fas fa-star me-2"></i> Ulasan
-                    </button>
-                  </li>
                 </ul>
               </div>
               <div className="car-detail-tabs-body">
+                {/* Deskripsi */}
                 {activeTab === 'description' && (
                   <div>
                     <h5 className="fw-bold car-detail-description-title" data-aos="fade-up">Tentang Mobil Ini</h5>
@@ -242,7 +291,9 @@ const DetailMobil = () => {
                     <div className="mt-4">
                       <h6 className="fw-bold car-detail-features-title" data-aos="fade-up" data-aos-delay="150">Fitur Utama:</h6>
                       <div className="row mt-3">
-                        {(car.fitur && car.fitur.length > 0 ? car.fitur : ['AC Dual Zone', 'Audio Premium', 'Kamera Mundur', 'GPS Navigation', 'Bluetooth', 'USB Port', 'Kursi Kulit', 'Sunroof']).map((feature, i) => (
+                        {(fiturList.length > 0 ? fiturList : [
+                          'AC Dual Zone', 'Audio Premium', 'Kamera Mundur', 'GPS Navigation', 'Bluetooth', 'USB Port', 'Kursi Kulit', 'Sunroof'
+                        ]).map((feature, i) => (
                           <div
                             key={i}
                             className="col-md-6 mb-3 car-detail-feature-item"
@@ -259,82 +310,55 @@ const DetailMobil = () => {
                     </div>
                   </div>
                 )}
-
-                {activeTab === 'specs' && (
-                  <div>
-                    <h5 className="fw-bold mb-4">Spesifikasi Teknis</h5>
-                    <div className="row">
-                      <div className="col-md-6">
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Tipe Mesin</h6>
-                          <p className="fw-bold">{car.tipe_mesin || "2.0L Turbocharged"}</p>
-                        </div>
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Transmisi</h6>
-                          <p className="fw-bold">{car.transmisi || "Automatic 8-Speed"}</p>
-                        </div>
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Tenaga</h6>
-                          <p className="fw-bold">{car.tenaga || "250 HP @ 5,500 RPM"}</p>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Kapasitas Penumpang</h6>
-                          <p className="fw-bold">{car.kapasitas || "5 Orang"}</p>
-                        </div>
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Bahan Bakar</h6>
-                          <p className="fw-bold">{car.bahan_bakar || "Bensin"}</p>
-                        </div>
-                        <div className="mb-3">
-                          <h6 className="text-muted mb-2">Konsumsi BBM</h6>
-                          <p className="fw-bold">{car.konsumsi_bbm || "12 km/L"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'reviews' && (
-                  <div>
-                    <h5 className="fw-bold mb-4">Ulasan Pelanggan</h5>
-                    <div className="mb-4">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                          <span className="fw-bold me-2">Budi Santoso</span>
-                          <div className="d-inline-block">
-                            {[...Array(5)].map((_, i) => (
-                              <i key={i} className={`fas fa-star ${i < 4 ? 'text-warning' : 'text-secondary'}`}></i>
-                            ))}
-                          </div>
-                        </div>
-                        <small className="text-muted">2 minggu yang lalu</small>
-                      </div>
-                      <p className="mb-0">Mobil sangat nyaman dan bersih. Pelayanan penyewaan juga sangat profesional. Akan sewa lagi di masa depan.</p>
-                    </div>
-                    <div className="mb-4">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                          <span className="fw-bold me-2">Anita Rahayu</span>
-                          <div className="d-inline-block">
-                            {[...Array(5)].map((_, i) => (
-                              <i key={i} className={`fas fa-star ${i < 5 ? 'text-warning' : 'text-secondary'}`}></i>
-                            ))}
-                          </div>
-                        </div>
-                        <small className="text-muted">1 bulan yang lalu</small>
-                      </div>
-                      <p className="mb-0">Pengalaman menyewa yang menyenangkan. Mobil dalam kondisi sangat baik dan performa mesin sangat halus.</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
           {/* Booking Section */}
           <div className="col-lg-5">
+            {/* Informasi Tanggal Tidak Tersedia */}
+            <div className="mb-4">
+              <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                  <h5 className="fw-bold mb-3">
+                    <i className="fas fa-calendar-times text-warning me-2"></i>
+                    Informasi Ketersediaan Mobil
+                  </h5>
+                  {bookedDates.length === 0 ? (
+                    <div className="alert alert-success mb-0 d-flex align-items-center">
+                      <i className="fas fa-check-circle me-2"></i>
+                      Mobil tersedia untuk semua tanggal.
+                    </div>
+                  ) : (
+                    <div className="alert alert-warning mb-0">
+                      <div className="mb-2">
+                        <i className="fas fa-exclamation-triangle me-2"></i>
+                        <b>Mobil tidak tersedia pada tanggal berikut:</b>
+                      </div>
+                      <ul className="list-group list-group-flush">
+                        {(showAllBooked ? bookedDates : bookedDates.slice(0, 3)).map((range, i) => (
+                          <li key={i} className="list-group-item bg-transparent px-0 py-1 border-0">
+                            <span className="badge bg-danger bg-opacity-75 me-2">
+                              {new Date(range.start).toLocaleDateString("id-ID")} - {new Date(range.end).toLocaleDateString("id-ID")}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      {bookedDates.length > 3 && (
+                        <button
+                          className="btn btn-link p-0 mt-2"
+                          onClick={() => setShowAllBooked(!showAllBooked)}
+                        >
+                          {showAllBooked ? "Sembunyikan" : `Lihat Semua (${bookedDates.length})`}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Card Booking Section */}
             <div className="car-detail-booking-card" data-aos="fade-left">
               <div className="car-detail-booking-header">
                 <h4 className="mb-0 fw-bold car-detail-booking-title">
@@ -424,13 +448,7 @@ const DetailMobil = () => {
                 </button>
 
                 <div className="text-center car-detail-payment-info">
-                  <div className="d-flex justify-content-center mb-2">
-                    {['visa', 'mastercard', 'paypal'].map((method, i) => (
-                      <div key={i} className="mx-2">
-                        <i className={`fab fa-cc-${method} fa-2x text-muted`}></i>
-                      </div>
-                    ))}
-                  </div>
+
                   <small className="text-muted">
                     <i className="fas fa-lock me-1"></i> Pembayaran aman dan terjamin
                   </small>

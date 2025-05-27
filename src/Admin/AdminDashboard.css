@@ -333,6 +333,14 @@
   border-radius: 3px;
 }
 
+/* Tambahan spacing sidebar menu */
+.nav-sidebar .nav-item {
+  margin-bottom: 0.5rem;
+}
+.nav-sidebar .nav-link {
+  border-radius: 8px !important;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .quick-actions {

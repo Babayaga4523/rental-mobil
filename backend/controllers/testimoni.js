@@ -27,6 +27,21 @@ const testimoniController = {
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
+  },
+
+  reply: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reply } = req.body;
+      const testimoni = await Testimoni.findByPk(id);
+      if (!testimoni) return res.status(404).json({ error: "Not found" });
+      testimoni.reply = reply;
+      await testimoni.save();
+      res.json(testimoni);
+    } catch (error) {
+      console.error("Gagal membalas testimoni:", error); // Tambahkan log ini
+      res.status(500).json({ error: error.message });
+    }
   }
 };
 

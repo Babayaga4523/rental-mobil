@@ -1,0 +1,21 @@
+.admin-root {
+  min-height: 100vh;
+  background: #f4f6fa;
+  transition: background 0.2s;
+}
+.admin-root.dark {
+  background: #181a20;
+}
+.admin-content {
+  margin-left: 220px;
+  padding: 90px 2.5vw 2vw 2.5vw;
+  transition: margin-left 0.2s;
+}
+.admin-content.collapsed {
+  margin-left: 64px;
+}
+@media (max-width: 900px) {
+  .admin-content {
+    margin-left: 64px;
+  }
+}

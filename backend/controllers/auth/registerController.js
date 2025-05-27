@@ -37,6 +37,14 @@ const registerUser = async (req, res) => {
       });
     }
 
+    // Validasi panjang password
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password minimal 6 karakter' 
+      });
+    }
+
     // Cek email unik
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {

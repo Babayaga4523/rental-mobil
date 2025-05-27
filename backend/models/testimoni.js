@@ -42,6 +42,10 @@ const Testimoni = sequelize.define('Testimoni', {
   tanggal: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  reply: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'testimoni',

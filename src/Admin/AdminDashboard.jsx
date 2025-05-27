@@ -3,34 +3,15 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
 import axios from "axios";
-import { Card, Table, Spinner, Badge, Alert, ProgressBar, Container, Row, Col } from "react-bootstrap";
+import { Card, Table, Spinner, Badge, Alert, Button, Accordion } from "react-bootstrap";
 import {
   FiFileText, FiTruck, FiUsers, FiDollarSign,
-  FiAlertCircle, FiTrendingUp, FiSettings, FiUser
+  FiAlertCircle, FiPlusCircle
 } from "react-icons/fi";
-import { Bar, Line } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement
-} from "chart.js";
+import { FaChartBar } from "react-icons/fa";
+import ReactECharts from "echarts-for-react";
 import moment from "moment";
 import "./AdminDashboard.css";
-
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement
-);
 
 const API_URL = "http://localhost:3000/api";
 
@@ -56,15 +37,19 @@ const DashboardHome = () => {
     cars: 0,
     users: 0,
     revenue: 0,
-    pendingOrders: 0
+    availableCars: 0,
+    unavailableCars: 0,
+    pendingOrders: 0,
+    paidOrders: 0
   });
   const [latestUsers, setLatestUsers] = useState([]);
   const [latestOrders, setLatestOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [chartData, setChartData] = useState(null);
-  const [revenueData, setRevenueData] = useState(null);
-  const [activityData, setActivityData] = useState([]);
+  const [orderChart, setOrderChart] = useState(null);
+  const [revenueChart, setRevenueChart] = useState(null);
+  const [userChart, setUserChart] = useState(null);
   const [notif, setNotif] = useState("");
+  const [topCars, setTopCars] = useState([]);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -90,34 +75,42 @@ const DashboardHome = () => {
           ? usersRes.data.data
           : (Array.isArray(usersRes.data.users) ? usersRes.data.users : []);
 
-        // Calculate total revenue
+        // Statistik
         const totalRevenue = orders
           .filter(order => order.payment_status === "paid")
-          .reduce((sum, order) => sum + (order.total_price || 0), 0);
+          .reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
 
-        // Pending verification orders
-        const pendingVerif = orders.filter(o =>
-          o.payment_status === "pending_verification"
-        ).length;
+        const availableCars = cars.filter(car => car.status === "available").length;
+        const unavailableCars = cars.length - availableCars;
+        const pendingOrders = orders.filter(o => o.payment_status === "pending_verification").length;
+        const paidOrders = orders.filter(o => o.payment_status === "paid").length;
 
         setStats({
           orders: orders.length,
           cars: cars.length,
           users: users.length,
           revenue: totalRevenue,
-          pendingOrders: pendingVerif
+          availableCars,
+          unavailableCars,
+          pendingOrders,
+          paidOrders
         });
 
         setNotif(
-          pendingVerif > 0
-            ? `Ada ${pendingVerif} pesanan menunggu verifikasi pembayaran!`
+          pendingOrders > 0
+            ? `Ada ${pendingOrders} pesanan menunggu verifikasi pembayaran!`
             : ""
         );
 
-        // Prepare chart data
-        prepareCharts(orders);
+        // Grafik tren
+        prepareCharts(orders, users);
+
+        // Pesanan & user terbaru
         prepareLatestData(orders, users);
-        prepareActivityData(orders);
+
+        // Mobil terlaris bulan ini
+        prepareTopCars(orders, cars);
+
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -125,14 +118,15 @@ const DashboardHome = () => {
       }
     };
 
-    const prepareCharts = (orders) => {
+    const prepareCharts = (orders, users) => {
       const months = moment.monthsShort();
       const now = new Date();
       const year = now.getFullYear();
 
-      // Orders per month
+      // Orders, revenue, user per month
       const monthlyOrders = Array(12).fill(0);
       const monthlyRevenue = Array(12).fill(0);
+      const monthlyUsers = Array(12).fill(0);
 
       orders.forEach(order => {
         const created = order.createdAt || order.created_at || order.order_date;
@@ -142,38 +136,112 @@ const DashboardHome = () => {
             const month = date.getMonth();
             monthlyOrders[month] += 1;
             if (order.payment_status === "paid") {
-              monthlyRevenue[month] += order.total_price || 0;
+              monthlyRevenue[month] += Number(order.total_price) || 0;
             }
           }
         }
       });
 
-      setChartData({
-        labels: months,
-        datasets: [
-          {
-            label: `Pesanan ${year}`,
-            data: monthlyOrders,
-            backgroundColor: "#6366f1",
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-        ],
+      users.forEach(user => {
+        const created = user.createdAt || user.created_at;
+        if (created) {
+          const date = new Date(created);
+          if (date.getFullYear() === year) {
+            const month = date.getMonth();
+            monthlyUsers[month] += 1;
+          }
+        }
       });
 
-      setRevenueData({
-        labels: months,
-        datasets: [
+      setOrderChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
+        xAxis: {
+          type: 'category',
+          data: months,
+          axisLabel: { rotate: 30, fontSize: 13 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Pesanan',
+          axisLabel: { fontSize: 13 }
+        },
+        series: [
           {
-            label: `Pendapatan ${year}`,
+            name: 'Pesanan',
+            type: 'line',
+            data: monthlyOrders,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#6366f1" },
+            itemStyle: { color: "#6366f1" },
+            areaStyle: { color: "rgba(99,102,241,0.10)" }
+          }
+        ]
+      });
+
+      setRevenueChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 80, right: 30, bottom: 50, top: 40 },
+        xAxis: {
+          type: 'category',
+          data: months,
+          axisLabel: { rotate: 30, fontSize: 13 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Omzet (Rp)',
+          axisLabel: {
+            fontSize: 13,
+            formatter: value => {
+              if (value >= 1_000_000) return `Rp${(value/1_000_000).toFixed(1)}jt`;
+              if (value >= 1_000) return `Rp${(value/1_000).toFixed(0)}rb`;
+              return `Rp${value}`;
+            }
+          }
+        },
+        series: [
+          {
+            name: 'Omzet',
+            type: 'line',
             data: monthlyRevenue,
-            borderColor: "#10b981",
-            backgroundColor: "rgba(16, 185, 129, 0.1)",
-            tension: 0.3,
-            fill: true,
-            borderWidth: 2,
-          },
-        ],
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#10b981" },
+            itemStyle: { color: "#10b981" },
+            areaStyle: { color: "rgba(16,185,129,0.10)" }
+          }
+        ]
+      });
+
+      setUserChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
+        xAxis: {
+          type: 'category',
+          data: months,
+          axisLabel: { rotate: 30, fontSize: 13 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'User Baru',
+          axisLabel: { fontSize: 13 }
+        },
+        series: [
+          {
+            name: 'User Baru',
+            type: 'line',
+            data: monthlyUsers,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#f59e0b" },
+            itemStyle: { color: "#f59e0b" },
+            areaStyle: { color: "rgba(245,158,11,0.08)" }
+          }
+        ]
       });
     };
 
@@ -195,42 +263,43 @@ const DashboardHome = () => {
       setLatestUsers(sortedUsers.slice(0, 5));
     };
 
-    const prepareActivityData = (orders) => {
-      const recentActivities = [
-        {
-          id: 1,
-          type: "login",
-          title: "Admin login",
-          timestamp: new Date(),
-          icon: <FiUser className="text-primary" />
-        },
-        {
-          id: 2,
-          type: "order",
-          title: "Pesanan baru diterima",
-          timestamp: orders.length > 0
-            ? new Date(orders[0].createdAt || orders[0].created_at || orders[0].order_date)
-            : new Date(),
-          icon: <FiFileText className="text-success" />
-        },
-        {
-          id: 3,
-          type: "payment",
-          title: "Pembayaran terverifikasi",
-          timestamp: orders.length > 1
-            ? new Date(orders[1].updatedAt || orders[1].updated_at)
-            : new Date(),
-          icon: <FiDollarSign className="text-warning" />
-        },
-        {
-          id: 4,
-          type: "car",
-          title: "Mobil baru ditambahkan",
-          timestamp: new Date(),
-          icon: <FiTruck className="text-info" />
+    const prepareTopCars = (orders, cars) => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const carCount = {};
+
+      orders.forEach(order => {
+        const created = order.createdAt || order.created_at || order.order_date;
+        if (created) {
+          const date = new Date(created);
+          if (date.getFullYear() === year && date.getMonth() === month) {
+            const carId = order.layanan?.id || order.layanan_id;
+            if (!carId) return;
+            if (!carCount[carId]) {
+              carCount[carId] = { count: 0, omzet: 0 };
+            }
+            carCount[carId].count += 1;
+            carCount[carId].omzet += Number(order.total_price) || 0;
+          }
         }
-      ];
-      setActivityData(recentActivities);
+      });
+
+      const top = Object.entries(carCount)
+        .map(([id, data]) => {
+          const car = cars.find(c => c.id.toString() === id.toString());
+          return {
+            id,
+            nama: car?.nama || "-",
+            gambar: car?.gambar || "/images/car-placeholder.png",
+            count: data.count,
+            omzet: data.omzet
+          };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+
+      setTopCars(top);
     };
 
     fetchDashboardData();
@@ -265,11 +334,13 @@ const DashboardHome = () => {
   };
 
   const formatCurrency = (amount) => {
+    const num = Number(amount);
+    if (isNaN(num)) return "Rp0";
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0
-    }).format(amount);
+    }).format(num);
   };
 
   const formatDate = (date) => {
@@ -277,26 +348,28 @@ const DashboardHome = () => {
   };
 
   return (
-    <div className="dashboard-home">
+    <div className="dashboard-home py-4 px-2 px-md-4">
       {/* Notification Alert */}
       {notif && (
-        <Alert variant="warning" className="alert-notification">
+        <Alert variant="warning" className="alert-notification mb-4">
           <div className="d-flex align-items-center">
             <FiAlertCircle className="me-2" size={20} />
             <span>{notif}</span>
-            <button
-              className="btn btn-sm btn-warning ms-auto"
+            <Button
+              size="sm"
+              variant="warning"
+              className="ms-auto"
               onClick={() => navigate('/admin/orders')}
             >
               Lihat Pesanan
-            </button>
+            </Button>
           </div>
         </Alert>
       )}
 
       {/* Stats Cards */}
       <div className="row g-4 mb-4">
-        <div className="col-md-6 col-lg-3">
+        <div className="col-6 col-md-3">
           <StatCard
             icon={<FiFileText size={24} />}
             title="Total Pesanan"
@@ -305,7 +378,7 @@ const DashboardHome = () => {
             loading={loading}
           />
         </div>
-        <div className="col-md-6 col-lg-3">
+        <div className="col-6 col-md-3">
           <StatCard
             icon={<FiTruck size={24} />}
             title="Jumlah Mobil"
@@ -314,7 +387,7 @@ const DashboardHome = () => {
             loading={loading}
           />
         </div>
-        <div className="col-md-6 col-lg-3">
+        <div className="col-6 col-md-3">
           <StatCard
             icon={<FiUsers size={24} />}
             title="Pengguna Terdaftar"
@@ -323,7 +396,7 @@ const DashboardHome = () => {
             loading={loading}
           />
         </div>
-        <div className="col-md-6 col-lg-3">
+        <div className="col-6 col-md-3">
           <StatCard
             icon={<FiDollarSign size={24} />}
             title="Total Pendapatan"
@@ -336,9 +409,9 @@ const DashboardHome = () => {
 
       {/* Charts Row */}
       <div className="row g-4 mb-4">
-        <div className="col-lg-8">
-          <Card className="h-100">
-            <Card.Header className="card-header">
+        <div className="col-lg-4">
+          <Card className="h-100 mb-4">
+            <Card.Header>
               <h5 className="card-title">Grafik Pesanan Bulanan</h5>
             </Card.Header>
             <Card.Body>
@@ -347,39 +420,17 @@ const DashboardHome = () => {
                   <Spinner animation="border" variant="primary" />
                 </div>
               ) : (
-                <div className="chart-container">
-                  <Bar
-                    data={chartData}
-                    options={{
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          grid: {
-                            drawBorder: false,
-                          }
-                        },
-                        x: {
-                          grid: {
-                            display: false
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
+                <ReactECharts
+                  style={{ height: 220 }}
+                  option={orderChart}
+                />
               )}
             </Card.Body>
           </Card>
         </div>
         <div className="col-lg-4">
-          <Card className="h-100">
-            <Card.Header className="card-header">
+          <Card className="h-100 mb-4">
+            <Card.Header>
               <h5 className="card-title">Grafik Pendapatan</h5>
             </Card.Header>
             <Card.Body>
@@ -388,293 +439,191 @@ const DashboardHome = () => {
                   <Spinner animation="border" variant="success" />
                 </div>
               ) : (
-                <div style={{ width: "100%", minHeight: 350 }}>
-                  <Line
-                    data={{
-                      labels: chartData.labels,
-                      datasets: [
-                        {
-                          label: chartData.datasets[0].label,
-                          data: chartData.datasets[0].data,
-                          borderColor: "#6366f1",
-                          backgroundColor: "rgba(99,102,241,0.15)",
-                          borderWidth: 3,
-                          fill: true,
-                          tension: 0.4, // membuat garis curve
-                          pointRadius: 5,
-                          pointBackgroundColor: "#6366f1",
-                          pointBorderColor: "#fff",
-                          pointHoverRadius: 7,
-                        }
-                      ]
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { display: true, position: "top" },
-                        title: {
-                          display: true,
-                          text: "Jumlah Pesanan per Bulan",
-                          font: { size: 18 }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: ctx => `Pesanan: ${ctx.parsed.y}`
-                          }
-                        }
-                      },
-                      scales: {
-                        x: {
-                          title: { display: true, text: "Bulan" },
-                          grid: { display: false }
-                        },
-                        y: {
-                          beginAtZero: true,
-                          title: { display: true, text: "Pesanan" },
-                          grid: { color: "#eee" }
-                        }
-                      }
-                    }}
-                    height={350}
-                  />
-                </div>
+                <ReactECharts
+                  style={{ height: 220 }}
+                  option={revenueChart}
+                />
               )}
             </Card.Body>
-            <Card.Footer className="card-footer">
-              <div className="d-flex justify-content-between">
-                <small className="text-muted">Update terakhir: {moment().format('DD MMM YYYY')}</small>
-                <small className="text-success">
-                  <FiTrendingUp className="me-1" />
-                  {stats.orders > 0 ? Math.round((stats.revenue / stats.orders) / 1000) * 10 : 0}% dari bulan lalu
-                </small>
-              </div>
-            </Card.Footer>
+          </Card>
+        </div>
+        <div className="col-lg-4">
+          <Card className="h-100 mb-4">
+            <Card.Header>
+              <h5 className="card-title">Grafik User Baru</h5>
+            </Card.Header>
+            <Card.Body>
+              {loading ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="info" />
+                </div>
+              ) : (
+                <ReactECharts
+                  style={{ height: 220 }}
+                  option={userChart}
+                />
+              )}
+            </Card.Body>
           </Card>
         </div>
       </div>
 
-      {/* Recent Data Row */}
+      {/* Widget Mobil Terlaris & Recent Activity */}
       <div className="row g-4 mb-4">
-        <div className="col-lg-6">
+        <div className="col-12">
+          <Card className="mb-4">
+            <Card.Header>
+              <h5 className="mb-0">Mobil Terlaris Bulan Ini</h5>
+            </Card.Header>
+            <Card.Body>
+              <ul className="list-group list-group-flush">
+                {topCars.map(car => (
+                  <li className="list-group-item d-flex align-items-center">
+                    <img src={car.gambar} alt={car.nama} style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 6, marginRight: 16 }} />
+                    <div>
+                      <div className="fw-bold">{car.nama}</div>
+                      <div className="small text-muted">Disewa {car.count}x | Omzet: {formatCurrency(car.omzet)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card.Body>
+          </Card>
+        </div>
+        <div className="col-12">
+          <Card className="mb-4">
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">Pesanan Terbaru</h5>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => navigate('/admin/orders')}
+              >
+                Lihat Semua
+              </Button>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <div className="table-responsive">
+                <Table hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>ID Pesanan</th>
+                      <th>Pelanggan</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestOrders.map(order => (
+                      <tr key={order.id} onClick={() => navigate(`/admin/orders/${order.id}`)}>
+                        <td className="text-primary">#{order.id}</td>
+                        <td>{order.user?.name || '-'}</td>
+                        <td>{formatCurrency(order.total_price || 0)}</td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {getPaymentBadge(order.payment_status)}
+                            <div className="ms-2">
+                              {getStatusBadge(order.status)}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+        <div className="col-12">
+          <Card className="mb-4">
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">Pengguna Terbaru</h5>
+              <Button
+                size="sm"
+                variant="outline-primary"
+                onClick={() => navigate('/admin/users')}
+              >
+                Lihat Semua
+              </Button>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <div className="table-responsive">
+                <Table hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>Nama</th>
+                      <th>Email</th>
+                      <th>Bergabung</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {latestUsers.map(user => (
+                      <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)}>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            <div className="avatar avatar-sm me-2">
+                              {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            {user.name}
+                          </div>
+                        </td>
+                        <td>{user.email}</td>
+                        <td>{formatDate(user.createdAt || user.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="row g-4 mb-2">
+        <div className="col-lg-12">
           <Card>
-            <Card.Header className="card-header">
-              <h5 className="card-title">Pesanan Terbaru</h5>
-              <div className="card-actions">
-                <button
-                  className="btn btn-sm btn-outline-primary"
+            <Card.Header>Aksi Cepat</Card.Header>
+            <Card.Body>
+              <div className="quick-actions">
+                <Button
+                  variant="outline-success"
+                  className="btn-action"
+                  onClick={() => navigate('/admin/cars/add')}
+                >
+                  <FiPlusCircle size={28} />
+                  <span>Tambah Mobil</span>
+                </Button>
+                <Button
+                  variant="outline-info"
+                  className="btn-action"
                   onClick={() => navigate('/admin/orders')}
                 >
-                  Lihat Semua
-                </button>
-              </div>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {loading ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" variant="primary" />
-                </div>
-              ) : latestOrders.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted">Tidak ada pesanan</p>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <Table hover className="mb-0">
-                    <thead>
-                      <tr>
-                        <th>ID Pesanan</th>
-                        <th>Pelanggan</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {latestOrders.map(order => (
-                        <tr key={order.id} onClick={() => navigate(`/admin/orders/${order.id}`)}>
-                          <td className="text-primary">#{order.id}</td>
-                          <td>{order.user?.name || '-'}</td>
-                          <td>{formatCurrency(order.total_price || 0)}</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              {getPaymentBadge(order.payment_status)}
-                              <div className="ms-2">
-                                {getStatusBadge(order.status)}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </div>
-        <div className="col-lg-6">
-          <Card>
-            <Card.Header className="card-header">
-              <h5 className="card-title">Pengguna Terbaru</h5>
-              <div className="card-actions">
-                <button
-                  className="btn btn-sm btn-outline-primary"
+                  <FiFileText size={28} />
+                  <span>Kelola Pesanan</span>
+                </Button>
+                <Button
+                  variant="outline-primary"
+                  className="btn-action"
                   onClick={() => navigate('/admin/users')}
                 >
-                  Lihat Semua
-                </button>
-              </div>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {loading ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" variant="primary" />
-                </div>
-              ) : latestUsers.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted">Tidak ada pengguna</p>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <Table hover className="mb-0">
-                    <thead>
-                      <tr>
-                        <th>Nama</th>
-                        <th>Email</th>
-                        <th>Bergabung</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {latestUsers.map(user => (
-                        <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)}>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div className="avatar avatar-sm me-2">
-                                {user.name.charAt(0).toUpperCase()}
-                              </div>
-                              {user.name}
-                            </div>
-                          </td>
-                          <td>{user.email}</td>
-                          <td>{formatDate(user.createdAt || user.created_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </div>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="row g-4">
-        <div className="col-lg-6">
-          <Card>
-            <Card.Header className="card-header">
-              <h5 className="card-title">Aktivitas Terbaru</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="activity-feed">
-                {activityData.map(activity => (
-                  <div key={activity.id} className="activity-item">
-                    <div className="activity-icon">
-                      {activity.icon}
-                    </div>
-                    <div className="activity-content">
-                      <h6>{activity.title}</h6>
-                      <small className="text-muted">
-                        {moment(activity.timestamp).fromNow()}
-                      </small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        </div>
-        <div className="col-lg-6">
-          <Card>
-            <Card.Header className="card-header">
-              <h5 className="card-title">Status Sistem</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="system-status">
-                <div className="status-item">
-                  <div className="status-info">
-                    <h6>Pesanan Pending</h6>
-                    <small className="text-muted">
-                      {stats.pendingOrders} menunggu verifikasi
-                    </small>
-                  </div>
-                  <ProgressBar
-                    now={(stats.pendingOrders / stats.orders) * 100 || 0}
-                    variant="warning"
-                    className="status-progress"
-                  />
-                </div>
-                <div className="status-item">
-                  <div className="status-info">
-                    <h6>Beban Server</h6>
-                    <small className="text-muted">
-                      Optimal
-                    </small>
-                  </div>
-                  <ProgressBar
-                    now={15}
-                    variant="success"
-                    className="status-progress"
-                  />
-                </div>
-                <div className="status-item">
-                  <div className="status-info">
-                    <h6>Penyimpanan</h6>
-                    <small className="text-muted">
-                      45% dari 50GB terpakai
-                    </small>
-                  </div>
-                  <ProgressBar
-                    now={45}
-                    variant="info"
-                    className="status-progress"
-                  />
-                </div>
+                  <FiUsers size={28} />
+                  <span>Kelola User</span>
+                </Button>
+                <Button
+                  variant="outline-dark"
+                  className="btn-action"
+                  onClick={() => navigate('/admin/report')}
+                >
+                  <FaChartBar size={28} />
+                  <span>Laporan</span>
+                </Button>
               </div>
             </Card.Body>
           </Card>
         </div>
       </div>
-
-      {/* New Dashboard Section */}
-      <Container fluid className="py-4">
-        <Row>
-          <Col xs={12} md={4} className="mb-3">
-            <Card>
-              <Card.Body>
-                <Card.Title>Total Mobil</Card.Title>
-                <Card.Text>{stats.cars}</Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs={12} md={4} className="mb-3">
-            <Card>
-              <Card.Body>
-                <Card.Title>Total Transaksi</Card.Title>
-                <Card.Text>{stats.orders}</Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col xs={12} md={4} className="mb-3">
-            <Card>
-              <Card.Body>
-                <Card.Title>Total User</Card.Title>
-                <Card.Text>{stats.users}</Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
     </div>
   );
 };
@@ -704,7 +653,6 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
           marginLeft: sidebarCollapsed ? '70px' : '250px'
         }}
       >
-       
         <div className="content">
           <div className="container-fluid">
             {isDashboardHome ? <DashboardHome /> : <Outlet />}
@@ -714,5 +662,22 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
     </div>
   );
 };
+
+const HelpPage = () => (
+  <div className="container py-4">
+    <h4>Help & FAQ</h4>
+    <Accordion>
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>Bagaimana cara menambah mobil?</Accordion.Header>
+        <Accordion.Body>Buka menu Data Mobil, klik Tambah Mobil, isi form dan simpan.</Accordion.Body>
+      </Accordion.Item>
+      <Accordion.Item eventKey="1">
+        <Accordion.Header>Bagaimana mengelola pesanan?</Accordion.Header>
+        <Accordion.Body>Buka menu Pesanan, klik detail untuk melihat atau ubah status pesanan.</Accordion.Body>
+      </Accordion.Item>
+      {/* Tambah pertanyaan lain */}
+    </Accordion>
+  </div>
+);
 
 export default AdminDashboard;

@@ -17,6 +17,11 @@ const getHargaSetelahPromo = (car) => {
   return car.harga;
 };
 
+const getFiturList = (fiturArray) => {
+  if (!Array.isArray(fiturArray)) return [];
+  return fiturArray.length > 3 ? [...fiturArray.slice(0, 3), 'Dan lainnya...'] : fiturArray;
+};
+
 const Layanan = () => {
   const [layanan, setLayanan] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,18 +31,20 @@ const Layanan = () => {
   const [sortBy, setSortBy] = useState("terbaru");
   const [filterTransmisi, setFilterTransmisi] = useState("");
   const [filterKapasitas, setFilterKapasitas] = useState("");
+  const [filterPromo, setFilterPromo] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedCar, setSelectedCar] = useState(null);
+  const [compareList, setCompareList] = useState([]); // Tambahkan state baru
+  const [showCompareModal, setShowCompareModal] = useState(false); // State untuk kontrol modal banding
+  const [favoritIds, setFavoritIds] = useState([]);
   const navigate = useNavigate();
 
   const categories = [
     { key: "All", label: "Semua", icon: "fa-th-large" },
-    { key: "Sedan", label: "Sedan", icon: "fa-car-side" },
     { key: "SUV", label: "SUV", icon: "fa-car" },
     { key: "MPV", label: "MPV", icon: "fa-shuttle-van" },
     { key: "Van", label: "Van", icon: "fa-bus" },
-    { key: "Luxury", label: "Luxury", icon: "fa-gem" },
-    { key: "Sport", label: "Sport", icon: "fa-flag-checkered" },
+    { key: "Bus", label: "Bus", icon: "fa-bus" },
   ];
 
   useEffect(() => {
@@ -64,6 +71,15 @@ const Layanan = () => {
     fetchLayanan();
   }, []);
 
+  // Setelah fetchLayanan, hitung favorit
+  useEffect(() => {
+    if (layanan.length > 0) {
+      // Ambil 3 mobil dengan jumlah_review terbanyak (atau tambahkan field order_count jika ada)
+      const sorted = [...layanan].sort((a, b) => (b.jumlah_review || 0) - (a.jumlah_review || 0));
+      setFavoritIds(sorted.slice(0, 3).map(c => c.id));
+    }
+  }, [layanan]);
+
   // Filter & sort
   const filteredLayanan = layanan.filter(car => {
     const nama = car.nama ? car.nama.toLowerCase() : "";
@@ -74,7 +90,11 @@ const Layanan = () => {
     const matchesCategory = activeFilter === "All" || car.kategori === activeFilter;
     const matchesTransmisi = !filterTransmisi || (car.transmisi === filterTransmisi);
     const matchesKapasitas = !filterKapasitas || (car.kapasitas?.toString() === filterKapasitas);
-    return matchesSearch && matchesCategory && matchesTransmisi && matchesKapasitas;
+    const matchesPromo =
+      !filterPromo ||
+      (filterPromo === "promo" && car.promo && car.promo > 0) ||
+      (filterPromo === "no_promo" && (!car.promo || car.promo === 0));
+    return matchesSearch && matchesCategory && matchesTransmisi && matchesKapasitas && matchesPromo;
   });
 
   const sortedAndFilteredLayanan = filteredLayanan.sort((a, b) => {
@@ -93,6 +113,16 @@ const Layanan = () => {
   const handleQuickView = (car) => {
     setSelectedCar(car);
     setShowModal(true);
+  };
+
+  // Fungsi toggle compare
+  const toggleCompare = (car) => {
+    setCompareList(list => {
+      if (list.find(c => c.id === car.id)) {
+        return list.filter(c => c.id !== car.id);
+      }
+      return list.length < 3 ? [...list, car] : list; // Maks 3 mobil
+    });
   };
 
   return (
@@ -224,6 +254,13 @@ const Layanan = () => {
           >
             <h2 className="section-title fw-bold">Armada Kami</h2>
             <p className="section-subtitle text-muted">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
+            <div className="alert alert-info d-flex align-items-center mb-4" role="alert" style={{ fontSize: "1.05rem" }}>
+              <i className="fas fa-user-tie me-2 fs-5 text-primary"></i>
+              <span>
+                <b>Semua layanan rental sudah termasuk supir profesional.</b> <br className="d-none d-md-block" />
+                <span className="text-danger fw-semibold">Tidak melayani lepas kunci (self-drive).</span>
+              </span>
+            </div>
           </div>
 
           {/* Keterangan Dalam Kota & Luar Kota */}
@@ -310,6 +347,17 @@ const Layanan = () => {
                     <option value="4">4 Orang</option>
                     <option value="6">6 Orang</option>
                     <option value="8">8 Orang</option>
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <select
+                    className="form-select rounded-pill"
+                    value={filterPromo}
+                    onChange={e => setFilterPromo(e.target.value)}
+                  >
+                    <option value="">Semua Promo</option>
+                    <option value="promo">Ada Promo</option>
+                    <option value="no_promo">Tanpa Promo</option>
                   </select>
                 </div>
               </div>
@@ -403,7 +451,7 @@ const Layanan = () => {
                             <span className="badge bg-secondary">{car.kapasitas} Orang</span>
                           </div>
                           <div className="car-features mt-2 mb-3">
-                            {Array.isArray(car.fitur) && car.fitur.slice(0, 3).map((fitur, i) => (
+                            {getFiturList(car.fitur).slice(0, 3).map((fitur, i) => (
                               <span key={i} className="badge bg-light text-dark border border-1 border-primary me-2 mb-1">
                                 <i className="fas fa-check-circle text-success me-1"></i>{fitur}
                               </span>
@@ -424,6 +472,20 @@ const Layanan = () => {
                             </button>
                           </div>
                         </div>
+                        <div className="form-check position-absolute top-0 end-0 m-2">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={!!compareList.find(c => c.id === car.id)}
+                            onChange={() => toggleCompare(car)}
+                            title="Bandingkan mobil ini"
+                          />
+                        </div>
+                        {favoritIds.includes(car.id) && (
+                          <span className="badge rounded-pill bg-primary shadow-sm ms-2">
+                            <i className="fas fa-star me-1"></i> Favorit
+                          </span>
+                        )}
                       </motion.div>
                     </div>
                   ))}
@@ -444,6 +506,7 @@ const Layanan = () => {
                         setSortBy("terbaru");
                         setFilterTransmisi("");
                         setFilterKapasitas("");
+                        setFilterPromo("");
                       }}
                       data-aos="fade-up"
                       data-aos-delay="200"
@@ -456,31 +519,6 @@ const Layanan = () => {
               )}
             </>
           )}
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="layanan-page-cta-section py-5 bg-primary">
-        <div className="container">
-          <div className="layanan-page-cta-card p-5 rounded-4 bg-white shadow">
-            <div className="row align-items-center">
-              <div className="col-lg-8">
-                <h3 className="cta-title fw-bold mb-3">Butuh Bantuan Memilih Mobil?</h3>
-                <p className="cta-text text-muted">
-                  Tim kami siap membantu Anda menemukan mobil yang sesuai dengan kebutuhan dan budget Anda.
-                </p>
-              </div>
-              <div className="col-lg-4 text-lg-end mt-3 mt-lg-0">
-                <motion.button
-                  className="btn btn-primary rounded-pill px-4 py-3 cta-btn fw-medium"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <i className="fas fa-headset me-2"></i>Hubungi Kami
-                </motion.button>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -502,7 +540,7 @@ const Layanan = () => {
               <div className="col-md-6">
                 <h5 className="mb-3">Fitur:</h5>
                 <ul>
-                  {Array.isArray(selectedCar.fitur) && selectedCar.fitur.map((f, i) => <li key={i}>{f}</li>)}
+                  {getFiturList(selectedCar.fitur).map((f, i) => <li key={i}>{f}</li>)}
                 </ul>
                 <div className="mb-3">
                   <strong>Harga:</strong>{" "}
@@ -543,6 +581,91 @@ const Layanan = () => {
           </Modal.Body>
         </Modal>
       )}
+
+      {/* Compare Section - New Feature */}
+      {compareList.length >= 2 && (
+        <div className="alert alert-primary d-flex align-items-center gap-3 my-3">
+          <span>Bandingkan:</span>
+          {compareList.map(c => (
+            <span key={c.id} className="badge bg-secondary">{c.nama}</span>
+          ))}
+          <button
+            className="btn btn-sm btn-success ms-auto"
+            onClick={() => setShowCompareModal(true)}
+          >
+            Bandingkan Mobil
+          </button>
+          <button
+            className="btn btn-sm btn-outline-danger ms-2"
+            onClick={() => setCompareList([])}
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
+      {/* Compare Modal */}
+      <Modal show={showCompareModal} onHide={() => setShowCompareModal(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Perbandingan Mobil</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="table-responsive">
+            <table className="table table-bordered align-middle text-center">
+              <thead>
+                <tr>
+                  <th>Fitur</th>
+                  {compareList.map(car => (
+                    <th key={car.id}>{car.nama}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Harga</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>Rp {getHargaSetelahPromo(car).toLocaleString("id-ID")}/hari</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Promo</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>{car.promo ? `${car.promo}%` : "-"}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Transmisi</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>{car.transmisi}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Kapasitas</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>{car.kapasitas} Orang</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Rating</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>{car.rating ? car.rating.toFixed(1) : "-"}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Fitur</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>
+                      <ul className="list-unstyled mb-0">
+                        {getFiturList(car.fitur).map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

@@ -35,14 +35,9 @@ const getHargaSetelahPromo = (price, promo) => {
 
 const BANK_INFO = {
   bank: "BCA",
-  norek: "123 456 7890",
-  nama: "Rental Mobil Jaya",
+  norek: "3930338060",
+  nama: "Agus Windiarto",
 };
-const EWALLET_INFO = [
-  { label: "Gopay", nomor: "0812 3456 7890" },
-  { label: "OVO", nomor: "0812 3456 7890" },
-  { label: "Dana", nomor: "0812 3456 7890" },
-];
 
 const copyToClipboard = (text) => {
   navigator.clipboard.writeText(text);
@@ -84,6 +79,12 @@ const Booking = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Tambahkan state baru
+  const [isAvailable, setIsAvailable] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [bookedDates, setBookedDates] = useState([]);
+  const [showAllBooked, setShowAllBooked] = useState(false);
 
   // Check if token is valid on component mount
   useEffect(() => {
@@ -191,7 +192,7 @@ const Booking = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error("Please fill the form correctly");
+      toast.error("Silakan lengkapi formulir dengan benar.");
       return;
     }
 
@@ -201,11 +202,11 @@ const Booking = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("No authentication token found");
+        throw new Error("Token autentikasi tidak ditemukan");
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append('layanan_id', Number(formData.layanan_id)); // pastikan integer
+      formDataToSend.append('layanan_id', Number(formData.layanan_id));
       formDataToSend.append('pickup_date', formData.pickup_date);
       formDataToSend.append('return_date', formData.return_date);
       formDataToSend.append('payment_method', formData.payment_method);
@@ -231,15 +232,62 @@ const Booking = () => {
           },  
         }
       );
-      console.log(response.data); // Debugging: log response untuk memastikan data dikirim dengan benar
 
-      // Ambil orderId dari response backend
-      const orderId = response.data?.data?.id 
+      // Notifikasi berhasil
+      toast.success("Pesanan berhasil dibuat! Detail pesanan akan dikirim ke email Anda.");
+      // Redirect ke halaman struk
+      const orderId = response.data?.data?.id;
       if (!orderId) {
         toast.error("Gagal mendapatkan ID pesanan dari server");
         return;
       }
       navigate(`/orders/${orderId}/receipt`);
+    } catch (error) {
+      console.error("Order creation error:", error);
+      let errorMessage = "Gagal membuat pesanan";
+      if (error.response) {
+        errorMessage =
+          error.response.data.message ||
+          error.response.data.error ||
+          errorMessage;
+      } else if (error.request) {
+        errorMessage = "Tidak ada respon dari server";
+      } else {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleOrder = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const orderData = {
+        layanan_id: Number(formData.layanan_id),
+        pickup_date: formData.pickup_date,
+        return_date: formData.return_date,
+        payment_method: formData.payment_method,
+        additional_notes: formData.additional_notes,
+        total_price: formData.total_price,
+        // payment_proof: formData.payment_proof, // Uncomment if needed
+      };
+
+      const res = await axios.post("http://localhost:3000/api/orders", orderData, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data && res.data.success && res.data.data && res.data.data.id) {
+        // Redirect ke halaman struk
+        navigate(`/orders/${res.data.data.id}/receipt`);
+      } else {
+        // Tampilkan error
+        toast.error("Gagal membuat pesanan. Silakan coba lagi.");
+      }
     } catch (error) {
       console.error("Order creation error:", error);
       let errorMessage = "Failed to create order";
@@ -254,16 +302,55 @@ const Booking = () => {
         errorMessage = error.message;
       }
       toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-      setIsUploading(false);
-      setUploadProgress(0);
     }
   };
+
+  // Fungsi cek ketersediaan
+  const checkAvailability = async (carId, pickup, ret) => {
+    setCheckingAvailability(true);
+    setIsAvailable(null);
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/layanan/${carId}`);
+      // Cek status mobil
+      if (res.data?.data?.status !== "available") {
+        setIsAvailable(false);
+        return;
+      }
+      // Cek bentrok order (opsional: backend bisa tambahkan endpoint khusus)
+      const orderRes = await axios.get(`${BACKEND_URL}/api/orders`, {
+        params: { layanan_id: carId, status: "confirmed" }
+      });
+      const orders = orderRes.data.data || [];
+      const overlap = orders.some(order =>
+        (pickup <= order.return_date && ret >= order.pickup_date)
+      );
+      setIsAvailable(!overlap);
+    } catch {
+      setIsAvailable(null);
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
+  // Panggil saat tanggal berubah
+  useEffect(() => {
+    if (formData.layanan_id && formData.pickup_date && formData.return_date) {
+      checkAvailability(formData.layanan_id, formData.pickup_date, formData.return_date);
+    }
+  }, [formData.layanan_id, formData.pickup_date, formData.return_date]);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
   }, []);
+
+  // Fetch booked dates for the car
+  useEffect(() => {
+    if (!carId) return;
+    axios
+      .get(`${BACKEND_URL}/api/layanan/${carId}/availability`)
+      .then((res) => setBookedDates(res.data.bookedDates || []))
+      .catch(() => setBookedDates([]));
+  }, [carId]);
 
   if (isSessionExpired) {
     return null;
@@ -425,6 +512,48 @@ const Booking = () => {
 
                   {/* Form Section */}
                   <div className="col-lg-7">
+                    {/* Informasi Tanggal Tidak Tersedia */}
+                    <div className="mb-4">
+                      <div className="card border-0 shadow-sm">
+                        <div className="card-body">
+                          <h5 className="fw-bold mb-3">
+                            <i className="fas fa-calendar-times text-warning me-2"></i>
+                            Informasi Ketersediaan Mobil
+                          </h5>
+                          {bookedDates.length === 0 ? (
+                            <div className="alert alert-success mb-0 d-flex align-items-center">
+                              <i className="fas fa-check-circle me-2"></i>
+                              Mobil tersedia untuk semua tanggal.
+                            </div>
+                          ) : (
+                            <div className="alert alert-warning mb-0">
+                              <div className="mb-2">
+                                <i className="fas fa-exclamation-triangle me-2"></i>
+                                <b>Mobil tidak tersedia pada tanggal berikut:</b>
+                              </div>
+                              <ul className="list-group list-group-flush">
+                                {(showAllBooked ? bookedDates : bookedDates.slice(0, 3)).map((range, i) => (
+                                  <li key={i} className="list-group-item bg-transparent px-0 py-1 border-0">
+                                    <span className="badge bg-danger bg-opacity-75 me-2">
+                                      {new Date(range.start).toLocaleDateString("id-ID")} - {new Date(range.end).toLocaleDateString("id-ID")}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                              {bookedDates.length > 3 && (
+                                <button
+                                  className="btn btn-link p-0 mt-2"
+                                  onClick={() => setShowAllBooked(!showAllBooked)}
+                                >
+                                  {showAllBooked ? "Sembunyikan" : `Lihat Semua (${bookedDates.length})`}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="card h-100 border-0 shadow-sm">
                       <div className="card-body">
                         <div className="booking-step-indicator mb-4">
@@ -519,23 +648,14 @@ const Booking = () => {
                                   Metode Pembayaran
                                 </label>
                                 <div className="d-flex gap-3 flex-wrap">
-                                  {[
-                                    { value: "bank_transfer", label: "Transfer Bank", icon: FaUniversity },
-                                    { value: "e_wallet", label: "E-Wallet", icon: FaMoneyCheckAlt },
-                                  ].map((method) => {
-                                    const Icon = method.icon;
-                                    return (
-                                      <button
-                                        key={method.value}
-                                        type="button"
-                                        className={`btn payment-method-btn flex-grow-1 ${formData.payment_method === method.value ? "btn-primary active" : "btn-outline-primary"}`}
-                                        onClick={() => handleChange({ target: { name: "payment_method", value: method.value } })}
-                                      >
-                                        <Icon className="me-2 fs-4" />
-                                        {method.label}
-                                      </button>
-                                    );
-                                  })}
+                                  <button
+                                    type="button"
+                                    className={`btn payment-method-btn flex-grow-1 ${formData.payment_method === "bank_transfer" ? "btn-primary active" : "btn-outline-primary"}`}
+                                    onClick={() => handleChange({ target: { name: "payment_method", value: "bank_transfer" } })}
+                                  >
+                                    <FaUniversity className="me-2 fs-4" />
+                                    Transfer Bank (BCA)
+                                  </button>
                                 </div>
                               </div>
 
@@ -566,54 +686,7 @@ const Booking = () => {
                                     </small>
                                   </div>
                                   <div className="qrcode-box text-center ms-auto">
-                                    <QRCodeSVG
-                                      value={BANK_INFO.norek}
-                                      size={90}
-                                      bgColor="#fff"
-                                      fgColor="#1e3c72"
-                                      level="H"
-                                      className="qrcode-img"
-                                    />
-                                    <div className="small text-muted mt-2">QR Nomor Rekening</div>
                                   </div>
-                                </div>
-                              )}
-
-                              {/* E-WALLET */}
-                              {formData.payment_method === "e_wallet" && (
-                                <div className="alert alert-info mt-3">
-                                  <div className="row">
-                                    {EWALLET_INFO.map((ew, idx) => (
-                                      <div className="col-12 col-md-4 mb-3" key={ew.label}>
-                                        <div className="ewallet-card p-3 h-100 d-flex flex-column align-items-center justify-content-center">
-                                          <div className="fw-bold mb-1">{ew.label}</div>
-                                          <div className="mb-1">
-                                            <span>{ew.nomor}</span>
-                                            <button
-                                              type="button"
-                                              className="btn btn-sm btn-outline-primary ms-2"
-                                              onClick={() => copyToClipboard(ew.nomor)}
-                                              title={`Salin nomor ${ew.label}`}
-                                            >
-                                              Salin
-                                            </button>
-                                          </div>
-                                          <QRCodeSVG
-                                            value={ew.nomor}
-                                            size={70}
-                                            bgColor="#fff"
-                                            fgColor="#1e3c72"
-                                            level="H"
-                                            className="qrcode-img"
-                                          />
-                                          <div className="small text-muted mt-2">QR {ew.label}</div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <small className="text-muted">
-                                    Cantumkan <b>ID pesanan</b> di keterangan transfer.
-                                  </small>
                                 </div>
                               )}
 
@@ -690,10 +763,15 @@ const Booking = () => {
                               </div>
 
                               {/* Notifikasi Otomatis */}
-                              <div className="alert alert-success d-flex align-items-center gap-2 mb-4">
-                                <FaCheckCircle className="me-2" />
-                                Setelah pembayaran dan upload bukti, Anda akan menerima notifikasi otomatis via WhatsApp/email.
-                              </div>
+                             
+
+                              {/* Notifikasi email */}
+                              {activeTab === "payment" && (
+                                <div className="alert alert-info d-flex align-items-center gap-2 mb-4">
+                                  <FaCheckCircle className="me-2" />
+                                  Setelah pesanan berhasil, detail pesanan dan status pembayaran akan dikirim ke email Anda.
+                                </div>
+                              )}
 
                               {/* Catatan Tambahan & Tombol */}
                               <div className="mb-4">
@@ -752,7 +830,6 @@ const Booking = () => {
     </div>
   );
 };
-
 Booking.propTypes = {
   location: PropTypes.shape({
     state: PropTypes.shape({

@@ -13,7 +13,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [counters, setCounters] = useState({ cars: 0, customers: 0, years: 0 });
 
-  const phoneNumber = "6281381339149";
+  const phoneNumber = "628170455544";
   const message = "Halo! Saya tertarik dengan layanan sewa mobil Anda. Bisa minta info lebih lanjut? 🚘";
 
   // Animated counters
@@ -72,43 +72,19 @@ const Home = () => {
   <div className="container position-relative z-index-2">
     <div className="row align-items-center">
       <div className="col-lg-6 text-center text-lg-start" data-aos="fade-right">
-        <motion.h1
-          className="display-3 fw-bold mb-4 home-page-hero-title"
-          initial={{ opacity: 0, y: -40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          data-aos="fade-down"
-        >
+        <h1 className="display-3 fw-bold mb-4 home-page-hero-title">
           Sewa Mobil <span className="text-gradient">Premium</span> & Nyaman
-        </motion.h1>
-        <motion.p
-          className="lead mb-4 text-light home-page-hero-subtitle"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-        >
+        </h1>
+        <p className="lead mb-4 text-light home-page-hero-subtitle">
           Solusi rental mobil terbaik untuk bisnis, liburan, dan perjalanan keluarga. Armada terawat, harga transparan, layanan 24 jam.
-        </motion.p>
+        </p>
         {/* Search Bar */}
-        <form className="home-search-bar mb-4" onSubmit={e => { e.preventDefault(); document.getElementById('cars').scrollIntoView({ behavior: 'smooth' }); }}>
-          <input type="text" className="form-control rounded-pill shadow-sm" placeholder="Cari mobil (Avanza, Innova, Alphard...)" style={{ maxWidth: 350, display: 'inline-block' }} />
-          <button type="submit" className="btn btn-gold rounded-pill ms-2 px-4">
-            <i className="bi bi-search"></i>
-          </button>
-        </form>
         <motion.div
           className="d-flex flex-wrap gap-3 mb-4 justify-content-center justify-content-lg-start home-page-hero-cta"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
         >
-          <Link to="#cars" className="btn btn-gold btn-lg px-4 rounded-pill shadow">
-            <i className="bi bi-car-front me-2"></i>Pilih Mobil
-          </Link>
-          <a href="https://wa.me/6281381339149" target="_blank" rel="noopener noreferrer"
-             className="btn btn-outline-light btn-lg px-4 rounded-pill shadow">
-            <i className="bi bi-whatsapp me-2"></i>Chat Admin
-          </a>
         </motion.div>
         <motion.ul
           className="list-unstyled mt-3 text-light hero-features"
@@ -130,10 +106,8 @@ const Home = () => {
           width={600}
           height={300}
           loading="eager"
+          fetchpriority="high"
         />
-        <div className="hero-badge">
-          PROMO HARI INI!
-        </div>
       </div>
     </div>
     <div className="scroll-down" onClick={() => document.getElementById('cars').scrollIntoView({ behavior: 'smooth' })}>
@@ -180,6 +154,13 @@ const Home = () => {
       <p className="subtitle" style={{ color: '#64748b', fontSize: '1.25rem', maxWidth: '700px', margin: '0 auto' }}>
         Keunggulan yang membuat kami berbeda dari yang lain
       </p>
+      <div className="alert alert-info d-flex align-items-center mb-4" role="alert" style={{ fontSize: "1.05rem" }}>
+    <i className="bi bi-person-badge-fill me-2 fs-5 text-primary"></i>
+    <span>
+      <b>Semua layanan rental sudah termasuk supir profesional.</b> <br className="d-none d-md-block" />
+      <span className="text-danger fw-semibold">Tidak melayani lepas kunci (self-drive).</span>
+    </span>
+  </div>
     </div>
     
     <div className="row g-4">
@@ -269,12 +250,19 @@ const Home = () => {
                     whileHover={{ y: -8, scale: 1.03 }}
                     transition={{ type: "spring", stiffness: 200 }}
                   >
-                    <div className="home-page-car-img-container position-relative">
+                    <div className="home-page-car-img-container position-relative rounded-4 overflow-hidden mb-3" style={{ aspectRatio: "16/9", background: "#f3f4f6" }}>
                       <img
                         src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
                         alt={car.nama}
-                        className="img-fluid w-100 home-page-car-image"
-                        style={{ height: 180, objectFit: "cover", transition: "transform 0.4s" }}
+                        className="img-fluid w-100 h-100 home-page-car-image"
+                        style={{
+                          objectFit: "cover",
+                          objectPosition: "center",
+                          width: "100%",
+                          height: "100%",
+                          transition: "transform 0.4s"
+                        }}
+                        loading="lazy"
                       />
                       {car.promo > 0 && (
                         <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
@@ -532,43 +520,47 @@ const Home = () => {
             </div>
             <div className="col-lg-7" data-aos="fade-left">
               <Accordion flush className="shadow-sm rounded-4 overflow-hidden">
-                <Accordion.Item eventKey="0" className="border-0 border-bottom">
-                  <Accordion.Header className="fw-bold">
-                    <i className="bi bi-question-circle text-gold me-2"></i>
-                    Apakah bisa sewa tanpa supir?
-                  </Accordion.Header>
-                  <Accordion.Body className="bg-light">
-                    Ya, kami menyediakan opsi sewa mobil lepas kunci (tanpa supir) untuk pelanggan yang memenuhi persyaratan usia minimal 21 tahun dan memiliki SIM A yang masih berlaku.
-                  </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item eventKey="1" className="border-0 border-bottom">
-                  <Accordion.Header className="fw-bold">
-                    <i className="bi bi-question-circle text-gold me-2"></i>
-                    Bagaimana cara pembayaran?
-                  </Accordion.Header>
-                  <Accordion.Body className="bg-light">
-                    Kami menerima berbagai metode pembayaran termasuk transfer bank (BCA, Mandiri, BRI), e-wallet (OVO, GoPay, DANA), kartu kredit, atau tunai saat pengambilan mobil dengan deposit.
-                  </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item eventKey="2" className="border-0 border-bottom">
-                  <Accordion.Header className="fw-bold">
-                    <i className="bi bi-question-circle text-gold me-2"></i>
-                    Apakah harga sudah termasuk asuransi?
-                  </Accordion.Header>
-                  <Accordion.Body className="bg-light">
-                    Semua paket sewa sudah termasuk asuransi dasar (TLO - Total Loss Only). Anda bisa menambah asuransi comprehensive dengan biaya tambahan untuk perlindungan lebih lengkap.
-                  </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item eventKey="3" className="border-0">
-                  <Accordion.Header className="fw-bold">
-                    <i className="bi bi-question-circle text-gold me-2"></i>
-                    Bagaimana jika mobil mengalami kerusakan?
-                  </Accordion.Header>
-                  <Accordion.Body className="bg-light">
-                    Segera hubungi tim support kami 24 jam. Untuk kerusakan kecil, biaya perbaikan akan ditanggung deposit. Untuk kerusakan besar, asuransi akan menanggung sesuai polis. Kami juga menyediakan mobil pengganti jika diperlukan.
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+  {/* FAQ Supir & Lepas Kunci */}
+  <Accordion.Item eventKey="0" className="border-0 border-bottom">
+    <Accordion.Header className="fw-bold">
+      <i className="bi bi-question-circle text-gold me-2"></i>
+      Apakah rental sudah termasuk supir? Apakah bisa lepas kunci?
+    </Accordion.Header>
+    <Accordion.Body className="bg-light">
+      <b>Semua layanan rental kami sudah termasuk supir profesional.</b> Kami <span className="text-danger fw-semibold">tidak melayani sewa lepas kunci (tanpa supir)</span> demi keamanan dan kenyamanan pelanggan.
+    </Accordion.Body>
+  </Accordion.Item>
+  {/* FAQ Pembayaran */}
+  <Accordion.Item eventKey="1" className="border-0 border-bottom">
+    <Accordion.Header className="fw-bold">
+      <i className="bi bi-question-circle text-gold me-2"></i>
+      Bagaimana cara pembayaran?
+    </Accordion.Header>
+    <Accordion.Body className="bg-light">
+      Kami menerima berbagai metode pembayaran termasuk transfer bank (BCA, Mandiri, BRI), e-wallet (OVO, GoPay, DANA), kartu kredit, atau tunai saat pengambilan mobil dengan deposit.
+    </Accordion.Body>
+  </Accordion.Item>
+  {/* FAQ Asuransi */}
+  <Accordion.Item eventKey="2" className="border-0 border-bottom">
+    <Accordion.Header className="fw-bold">
+      <i className="bi bi-question-circle text-gold me-2"></i>
+      Apakah harga sudah termasuk asuransi?
+    </Accordion.Header>
+    <Accordion.Body className="bg-light">
+      Semua paket sewa sudah termasuk asuransi dasar (TLO - Total Loss Only). Anda bisa menambah asuransi comprehensive dengan biaya tambahan untuk perlindungan lebih lengkap.
+    </Accordion.Body>
+  </Accordion.Item>
+  {/* FAQ Kerusakan */}
+  <Accordion.Item eventKey="3" className="border-0">
+    <Accordion.Header className="fw-bold">
+      <i className="bi bi-question-circle text-gold me-2"></i>
+      Bagaimana jika mobil mengalami kerusakan?
+    </Accordion.Header>
+    <Accordion.Body className="bg-light">
+      Segera hubungi tim support kami 24 jam. Untuk kerusakan kecil, biaya perbaikan akan ditanggung deposit. Untuk kerusakan besar, asuransi akan menanggung sesuai polis. Kami juga menyediakan mobil pengganti jika diperlukan.
+    </Accordion.Body>
+  </Accordion.Item>
+</Accordion>
               <div className="text-center mt-4">
                 <a href="/faq" className="btn btn-outline-gold rounded-pill">
                   Lihat FAQ Lainnya <i className="bi bi-arrow-right ms-2"></i>

@@ -8,5 +8,8 @@ router.use(authMiddleware);
 router.get('/', notificationController.getAll);
 router.put('/:id/read', notificationController.markAsRead);
 router.put('/read-all', notificationController.markAllAsRead);
+router.post('/blast', notificationController.blast);
+router.delete('/', notificationController.deleteAll); // Hapus semua notifikasi
+router.delete('/:id', notificationController.deleteOne); // Hapus satu notifikasi
 
 module.exports = router;

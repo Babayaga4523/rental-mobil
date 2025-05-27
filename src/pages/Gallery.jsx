@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Badge, Modal, Button, Tab, Nav, Carousel, Accordion } from "react-bootstrap";
+import { Container, Row, Col, Badge, Modal, Button, Tab, Nav, Carousel, Accordion, Form, Spinner } from "react-bootstrap";
 import {
-  FaCameraRetro, FaTag, FaTimes, FaMapMarkerAlt, FaSmile, FaBuilding, FaCar, FaUsers, FaHandshake, FaAward, FaRoute, FaStar, FaRegCalendarCheck, FaRegClock, FaPlay, FaCheckCircle, FaQuestionCircle, FaPhoneAlt
+  FaCameraRetro, FaTag, FaTimes, FaMapMarkerAlt, FaSmile, FaBuilding, FaCar, FaUsers, FaHandshake, FaAward, FaRoute, FaStar, FaRegCalendarCheck, FaRegClock, FaPlay, FaCheckCircle, FaQuestionCircle, FaPhoneAlt, FaHeart, FaShareAlt
 } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -11,101 +11,71 @@ import "../style/GalleryPage.css";
 const galleryData = [
   {
     title: "Kantor Rental Mobil HS",
-    image: "/images/gallery/kantor-hs.jpg",
+    image: "/images/kantor.jpg",
     category: "Kantor",
     desc: "Tampak depan kantor pusat Rental Mobil HS, pusat layanan dan administrasi yang selalu siap membantu kebutuhan transportasi Anda.",
     story: "Kantor kami menjadi pusat koordinasi seluruh layanan, memastikan setiap pelanggan mendapat pengalaman terbaik dari awal hingga akhir."
   },
   {
     title: "Tim Driver Profesional",
-    image: "/images/gallery/driver-hs.jpg",
+    image: "/images/tim.jpg",
     category: "Driver",
     desc: "Driver HS yang ramah, berpengalaman, dan selalu siap mengantar Anda dengan aman dan nyaman ke tujuan.",
     story: "Setiap driver kami telah melalui pelatihan intensif dan memiliki pengalaman bertahun-tahun di bidang transportasi."
   },
   {
     title: "Pelanggan Bahagia",
-    image: "/images/gallery/pelanggan-hs.jpg",
+    image: "/images/pelanggan.jpg",
     category: "Pelanggan",
     desc: "Kepuasan pelanggan adalah prioritas kami. Terima kasih atas kepercayaan dan loyalitas Anda selama ini.",
   },
   {
     title: "Armada Siap Berangkat",
-    image: "/images/gallery/armada-hs.jpg",
+    image: "/images/armada premiunm.jpg",
     category: "Armada",
     desc: "Armada HS selalu bersih, terawat, dan siap digunakan kapan saja untuk berbagai kebutuhan perjalanan.",
   },
   {
     title: "Event Perusahaan",
-    image: "/images/gallery/event-hs.jpg",
+    image: "/images/event perusahaan.jpg",
     category: "Event",
     desc: "Rental Mobil HS dipercaya untuk mendukung berbagai event, gathering, dan kegiatan perusahaan besar.",
   },
   {
-    title: "Serah Terima Mobil",
-    image: "/images/gallery/serah-terima-hs.jpg",
-    category: "Layanan",
-    desc: "Proses serah terima mobil yang mudah, cepat, dan transparan untuk kenyamanan pelanggan.",
-  },
-  {
-    title: "Testimoni Pelanggan",
-    image: "/images/gallery/testimoni-hs.jpg",
-    category: "Testimoni",
-    desc: "Banyak pelanggan puas yang telah membagikan pengalaman positif bersama Rental Mobil HS.",
-  },
-  {
     title: "Perjalanan Wisata",
-    image: "/images/gallery/wisata-hs.jpg",
+    image: "/images/perjalanan wisata 1.jpg",
     category: "Wisata",
     desc: "Rental Mobil HS menjadi partner perjalanan wisata keluarga, komunitas, dan perusahaan ke berbagai destinasi.",
   },
   {
     title: "Armada Premium",
-    image: "/images/gallery/premium-hs.jpg",
+    image: "/images/armada.jpg",
     category: "Armada",
     desc: "Pilihan armada premium untuk kebutuhan eksekutif, bisnis, dan acara spesial Anda.",
   },
   {
     title: "Pelatihan Driver",
-    image: "/images/gallery/pelatihan-driver-hs.jpg",
+    image: "/images/pelatihan driver.jpg",
     category: "Driver",
     desc: "Pelatihan rutin untuk driver kami agar selalu memberikan pelayanan terbaik dan profesional.",
   },
   {
-    title: "Layanan 24 Jam",
-    image: "/images/gallery/layanan-24jam-hs.jpg",
-    category: "Layanan",
-    desc: "Kami siap melayani kebutuhan rental mobil Anda 24 jam penuh, setiap hari.",
-  },
-  {
-    title: "Penghargaan & Apresiasi",
-    image: "/images/gallery/apresiasi-hs.jpg",
-    category: "Penghargaan",
-    desc: "Rental Mobil HS menerima berbagai penghargaan atas dedikasi dan kualitas layanan.",
-  },
-  {
-    title: "Kerjasama Instansi",
-    image: "/images/gallery/kerjasama-hs.jpg",
-    category: "Kerjasama",
-    desc: "Bekerjasama dengan berbagai instansi, perusahaan, dan komunitas untuk solusi transportasi terbaik.",
-  },
-  {
     title: "Rombongan Perjalanan",
-    image: "/images/gallery/rombongan-hs.jpg",
+    image: "/images/rombongan perjalanan.jpg",
     category: "Pelanggan",
     desc: "Layanan untuk rombongan, komunitas, dan group dengan armada besar dan fasilitas lengkap.",
   },
   {
     title: "Mobil Bersih & Disinfeksi",
-    image: "/images/gallery/disinfeksi-hs.jpg",
+    image: "/images/premium.jpg",
     category: "Armada",
     desc: "Setiap armada selalu dibersihkan dan didisinfeksi sebelum dan sesudah digunakan.",
   },
   {
-    title: "Booking Online Mudah",
-    image: "/images/gallery/booking-hs.jpg",
+    title: "Acara Pernikahan",
+    image: "/images/wedding.jpg",
     category: "Layanan",
-    desc: "Nikmati kemudahan booking mobil secara online, cepat, dan praktis dari mana saja.",
+    desc: "Kami menyediakan layanan rental mobil untuk berbagai acara pernikahan, dengan pilihan kendaraan mewah dan pengemudi profesional untuk mendukung momen istimewa Anda.",
   },
   // Tambahkan lebih banyak foto aktivitas, penghargaan, event, dsb sesuai dokumentasi HS
 ];
@@ -117,20 +87,20 @@ const categories = [
 
 const testimonials = [
   {
-    name: "Budi Santoso",
-    image: "/images/gallery/testi1.jpg",
+    name: "Akhmal Ramadhan",
+    image: "/images/male.jpg",
     comment: "Pelayanan sangat memuaskan, mobil bersih dan tepat waktu. Recommended!",
     rating: 5
   },
   {
-    name: "Siti Aminah",
-    image: "/images/gallery/testi2.jpg",
+    name: "Aji Candra Saputra",
+    image: "/images/aji.jpg",
     comment: "Sopir ramah, perjalanan nyaman. Harga juga bersaing.",
     rating: 4.8
   },
   {
-    name: "Andi Wijaya",
-    image: "/images/gallery/testi3.jpg",
+    name: "Muhammad Rizky Falih",
+    image: "/images/iki.jpg",
     comment: "Booking mudah, armada banyak pilihan, dan CS responsif.",
     rating: 5
   }
@@ -155,16 +125,10 @@ const faqs = [
   }
 ];
 
-const partners = [
-  { name: "PT. Astra", logo: "/images/partners/astra.png" },
-  { name: "Bank Mandiri", logo: "/images/partners/mandiri.png" },
-  { name: "Pertamina", logo: "/images/partners/pertamina.png" },
-  { name: "Telkom Indonesia", logo: "/images/partners/telkom.png" }
-];
+
 
 const certificates = [
-  { title: "ISO 9001:2015", image: "/images/certificates/iso9001.jpg" },
-  { title: "Top Rental Award", image: "/images/certificates/toprental.jpg" }
+  { title: "Top Rental Award", image: "/images/sertifikat.png" }
 ];
 
 // --- ICONS ---
@@ -187,6 +151,17 @@ const Gallery = () => {
   const [activeImage, setActiveImage] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Semua");
 
+  // Tambahkan state baru
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadCategory, setUploadCategory] = useState(categories[1] || "");
+  const [uploadStory, setUploadStory] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  // Tambahkan state like
+  const [likes, setLikes] = useState({}); // { [imageTitle]: jumlahLike }
+
   useEffect(() => {
     AOS.init({ duration: 900, once: true, easing: "ease-in-out" });
   }, []);
@@ -205,6 +180,40 @@ const Gallery = () => {
   const filteredGallery = activeCategory === "Semua"
     ? galleryData
     : galleryData.filter(item => item.category === activeCategory);
+
+  // Fungsi upload (dummy, sesuaikan dengan backend jika ada endpoint upload galeri)
+  const handleUploadPhoto = async () => {
+    if (!uploadFile || !uploadTitle) return;
+    setUploading(true);
+    // Simulasi upload, tambahkan ke galleryData lokal
+    galleryData.unshift({
+      title: uploadTitle,
+      image: URL.createObjectURL(uploadFile),
+      category: uploadCategory,
+      desc: "Foto dari pelanggan",
+      story: uploadStory
+    });
+    setShowUploadModal(false);
+    setUploadFile(null);
+    setUploadTitle("");
+    setUploadCategory(categories[1] || "");
+    setUploadStory("");
+    setUploading(false);
+  };
+
+  const handleLike = (title) => {
+    setLikes(l => ({ ...l, [title]: (l[title] || 0) + 1 }));
+  };
+
+  const handleShare = (img) => {
+    const url = window.location.href;
+    const text = `Lihat foto "${img.title}" di Gallery Rental Mobil HS!`;
+    if (navigator.share) {
+      navigator.share({ title: img.title, text, url });
+    } else {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank");
+    }
+  };
 
   return (
     <div className="gallery-page-root bg-light min-vh-100">
@@ -285,13 +294,18 @@ const Gallery = () => {
           <Row className="justify-content-center">
             <Col md={8} data-aos="zoom-in">
               <div className="ratio ratio-16x9 rounded-4 shadow-lg overflow-hidden">
-                <iframe
-                  src="https://www.youtube.com/embed/2u5A2eJt4DQ"
+                <video
+                  src="/images/gallery .mp4"
+                  autoPlay
+                  muted
+                  controls
+                  className="w-100 h-100"
+                  style={{ objectFit: "cover", background: "#222" }}
+                  poster=""
                   title="Profil Rental Mobil HS"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={{ border: 0 }}
-                ></iframe>
+                >
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </Col>
           </Row>
@@ -307,6 +321,15 @@ const Gallery = () => {
           </p>
         </div>
         <div className="d-flex flex-wrap justify-content-center mb-4 gap-2" data-aos="fade-up" data-aos-delay="100">
+          <Button
+            variant="success"
+            className="rounded-pill px-4 me-2"
+            onClick={() => setShowUploadModal(true)}
+            style={{ fontWeight: 600, letterSpacing: 0.5 }}
+          >
+            <FaCameraRetro className="me-2" />
+            Upload Foto Pengalaman
+          </Button>
           {categories.map((cat, idx) => (
             <Button
               key={cat}
@@ -405,8 +428,80 @@ const Gallery = () => {
                 <span className="text-secondary">{activeImage.story}</span>
               </div>
             )}
+            <div className="mt-3 d-flex align-items-center gap-3">
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => handleLike(activeImage.title)}
+              >
+                <FaHeart className="me-1" />
+                Suka ({likes[activeImage.title] || 0})
+              </Button>
+              <Button
+                variant="outline-primary"
+                size="sm"
+                onClick={() => handleShare(activeImage)}
+              >
+                <FaShareAlt className="me-1" />
+                Bagikan
+              </Button>
+            </div>
           </Modal.Footer>
         )}
+      </Modal>
+
+      {/* MODAL UPLOAD FOTO */}
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Upload Foto Pengalaman</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-2">
+              <Form.Label>Judul Foto</Form.Label>
+              <Form.Control
+                value={uploadTitle}
+                onChange={e => setUploadTitle(e.target.value)}
+                placeholder="Judul foto"
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Kategori</Form.Label>
+              <Form.Select
+                value={uploadCategory}
+                onChange={e => setUploadCategory(e.target.value)}
+              >
+                {categories.filter(c => c !== "Semua").map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Foto</Form.Label>
+              <Form.Control
+                type="file"
+                accept="image/*"
+                onChange={e => setUploadFile(e.target.files[0])}
+              />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label>Cerita di balik foto (opsional)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={uploadStory}
+                onChange={e => setUploadStory(e.target.value)}
+                placeholder="Ceritakan pengalaman Anda..."
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowUploadModal(false)}>Batal</Button>
+          <Button variant="success" onClick={handleUploadPhoto} disabled={uploading || !uploadFile || !uploadTitle}>
+            {uploading ? <Spinner size="sm" /> : "Upload"}
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       {/* TESTIMONIAL SLIDER */}
@@ -468,29 +563,6 @@ const Gallery = () => {
         </Container>
       </section>
 
-      {/* PARTNER / SOCIAL PROOF */}
-      <section className="py-5 bg-white">
-        <Container>
-          <h2 className="fw-bold text-center mb-4" data-aos="fade-up">
-            <FaHandshake className="me-2 text-primary" />
-            Partner & Klien Kami
-          </h2>
-          <Row className="justify-content-center align-items-center">
-            {partners.map((p, i) => (
-              <Col md={2} sm={3} xs={4} key={i} className="mb-4 text-center" data-aos="zoom-in" data-aos-delay={i * 80}>
-                <img
-                  src={p.logo}
-                  alt={p.name}
-                  className="img-fluid mb-2"
-                  style={{ maxHeight: 60, objectFit: "contain", filter: "grayscale(0.3)" }}
-                />
-                <div className="small text-muted">{p.name}</div>
-              </Col>
-            ))}
-          </Row>
-        </Container>
-      </section>
-
       {/* MAP SECTION */}
       <section className="py-5 bg-light">
         <Container>
@@ -502,7 +574,7 @@ const Gallery = () => {
             <Col md={8} data-aos="zoom-in">
               <div className="ratio ratio-16x9 rounded-4 shadow-lg overflow-hidden">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.123456789!2d106.800000!3d-6.200000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f1c000000000%3A0x0000000000000000!2sRental+Mobil+HS!5e0!3m2!1sid!2sid!4v1680000000000!5m2!1sid!2sid"
+                  src="https://www.google.com/maps?q=-7.543583,110.747000&hl=id&z=16&output=embed"
                   title="Lokasi Rental Mobil HS"
                   style={{ border: 0 }}
                   allowFullScreen=""

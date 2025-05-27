@@ -7,6 +7,7 @@ const db = require('../models');
 const Notification = db.Notification;
 const { Order, Layanan, User } = db;
 const { sendMail } = require("../utils/email");
+const { sendWhatsappFonnte } = require("../utils/whatsapp");
 const Testimoni = require('../models/testimoni'); // pastikan sudah di-import
 
 // Helper
@@ -245,34 +246,46 @@ exports.createOrder = async (req, res) => {
 
     // Kirim email ke admin
     await sendMail({
-      to: "yogacode86@gmail.com", // email admin
-      subject: "Pesanan Baru Masuk",
+      to: "rentalhs591@gmail.com", // email admin
+      subject: `Pesanan Baru #${newOrder.id} dari ${req.user.name}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 480px; margin:0 auto; border:1px solid #eee; border-radius:8px; overflow:hidden;">
-          <div style="background:#1976d2; color:#fff; padding:18px 24px;">
-            <h2 style="margin:0; font-size:1.3rem;">🚗 Pesanan Baru Rental Mobil</h2>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin:0 auto; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
+          <div style="background:#1976d2; color:#fff; padding:24px;">
+            <h2 style="margin:0; font-size:1.3rem;">🚗 Pesanan Baru Masuk</h2>
           </div>
-          <div style="padding:24px;">
-            <p style="margin-bottom:10px;">Hai Admin, ada pesanan baru masuk:</p>
+          <div style="padding:28px 24px;">
+            <p style="margin-bottom:16px;">Halo Admin,</p>
+            <p style="margin-bottom:18px;">Ada pesanan baru yang perlu diproses. Berikut detailnya:</p>
             <table style="width:100%; font-size:1rem; margin-bottom:18px;">
               <tr>
-                <td style="padding:4px 0;">ID Pesanan</td>
-                <td style="padding:4px 0;"><b>${newOrder.id}</b></td>
+                <td style="padding:6px 0; color:#555;">ID Pesanan</td>
+                <td style="padding:6px 0;"><b>#${newOrder.id}</b></td>
               </tr>
               <tr>
-                <td style="padding:4px 0;">Nama Pelanggan</td>
-                <td style="padding:4px 0;"><b>${req.user.name}</b></td>
+                <td style="padding:6px 0; color:#555;">Nama Pelanggan</td>
+                <td style="padding:6px 0;">${req.user.name}</td>
               </tr>
               <tr>
-                <td style="padding:4px 0;">Tanggal Sewa</td>
-                <td style="padding:4px 0;">${pickup_date} - ${return_date}</td>
+                <td style="padding:6px 0; color:#555;">Email Pelanggan</td>
+                <td style="padding:6px 0;">${req.user.email}</td>
               </tr>
               <tr>
-                <td style="padding:4px 0;">Total</td>
-                <td style="padding:4px 0;"><b>Rp${total.toLocaleString("id-ID")}</b></td>
+                <td style="padding:6px 0; color:#555;">Tanggal Sewa</td>
+                <td style="padding:6px 0;">${pickup_date} s/d ${return_date}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0; color:#555;">Total</td>
+                <td style="padding:6px 0;"><b>Rp${Number(total).toLocaleString("id-ID")}</b></td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0; color:#555;">Metode Pembayaran</td>
+                <td style="padding:6px 0;">${payment_method}</td>
               </tr>
             </table>
-            <a href="http://localhost:3001/admin/orders" style="display:inline-block; background:#1976d2; color:#fff; text-decoration:none; padding:10px 22px; border-radius:5px; font-weight:600;">Lihat di Dashboard</a>
+            <div style="margin:18px 0;">
+              <a href="http://localhost:3001/admin/orders" style="display:inline-block; background:#1976d2; color:#fff; text-decoration:none; padding:10px 22px; border-radius:5px; font-weight:600;">Lihat di Dashboard Admin</a>
+            </div>
+            <p style="color:#888; font-size:0.97rem; margin-top:24px;">Segera proses pesanan ini agar pelanggan mendapatkan pelayanan terbaik.</p>
           </div>
           <div style="background:#f8f9fa; color:#888; text-align:center; font-size:0.95rem; padding:12px 0;">
             Rental Mobil &copy; ${new Date().getFullYear()}
@@ -284,15 +297,62 @@ exports.createOrder = async (req, res) => {
     // Kirim email ke pelanggan
     await sendMail({
       to: req.user.email,
-      subject: "Pesanan Anda Berhasil Dibuat",
+      subject: `Pesanan Anda Berhasil Dibuat (#${newOrder.id})`,
       html: `
-        <h3>Terima kasih telah memesan!</h3>
-        <p>ID Pesanan: <b>${newOrder.id}</b></p>
-        <p>Tanggal Sewa: ${pickup_date} - ${return_date}</p>
-        <p>Total: Rp${total}</p>
-        <p>Kami akan segera memproses pesanan Anda.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin:0 auto; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
+          <div style="background:#1976d2; color:#fff; padding:24px;">
+            <h2 style="margin:0; font-size:1.2rem;">Terima Kasih, Pesanan Anda Berhasil!</h2>
+          </div>
+          <div style="padding:28px 24px;">
+            <p style="margin-bottom:10px;">Halo <b>${req.user.name}</b>,</p>
+            <p style="margin-bottom:18px;">Pesanan Anda telah berhasil dibuat. Berikut detail pesanan Anda:</p>
+            <table style="width:100%; font-size:1rem; margin-bottom:18px;">
+              <tr>
+                <td style="padding:6px 0; color:#555;">ID Pesanan</td>
+                <td style="padding:6px 0;"><b>#${newOrder.id}</b></td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0; color:#555;">Tanggal Sewa</td>
+                <td style="padding:6px 0;">${pickup_date} s/d ${return_date}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0; color:#555;">Total</td>
+                <td style="padding:6px 0;"><b>Rp${Number(total).toLocaleString("id-ID")}</b></td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0; color:#555;">Metode Pembayaran</td>
+                <td style="padding:6px 0;">${payment_method}</td>
+              </tr>
+            </table>
+            <div style="background:#e3f2fd; border-radius:6px; padding:14px 18px; margin-bottom:18px; color:#1976d2;">
+              <b>Catatan:</b> Mohon segera lakukan pembayaran sesuai metode yang dipilih.<br>
+              Status pesanan dan pembayaran dapat dipantau melalui dashboard akun Anda.
+            </div>
+            <div style="margin:18px 0;">
+              <a href="http://localhost:3000/orders" style="display:inline-block; background:#1976d2; color:#fff; text-decoration:none; padding:10px 22px; border-radius:5px; font-weight:600;">Lihat Pesanan Saya</a>
+            </div>
+            <p style="color:#888; font-size:0.97rem; margin-top:24px;">Jika ada pertanyaan, silakan hubungi admin melalui kontak yang tersedia di website.</p>
+          </div>
+          <div style="background:#f8f9fa; color:#888; text-align:center; font-size:0.95rem; padding:12px 0;">
+            Rental Mobil &copy; ${new Date().getFullYear()}
+          </div>
+        </div>
       `,
     });
+
+    // Kirim WhatsApp ke admin
+    await sendWhatsappFonnte(
+      process.env.ADMIN_WA,
+      `🚗 Pesanan Baru Masuk!\n\nID Pesanan: #${newOrder.id}\nNama Pelanggan: ${req.user.name}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nMobil: ${car.nama}\nTotal: Rp${Number(total).toLocaleString("id-ID")}\n\nSegera proses pesanan ini di dashboard admin.`
+    );
+
+    // Kirim WhatsApp ke user
+    if (req.user.no_telp) {
+      await sendWhatsappFonnte(
+        req.user.no_telp,
+        `✅ Pesanan Anda Berhasil!\n\nTerima kasih, ${req.user.name}.\nPesanan Anda (#${newOrder.id}) telah diterima.\n\nDetail Pesanan:\nMobil: ${car.nama}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nTotal: Rp${Number(total).toLocaleString("id-ID")}\n\nKami akan segera memproses pesanan Anda.\nCek status pesanan di website atau hubungi admin jika ada pertanyaan.`
+      );
+    }
 
     return res.status(201).json({
       success: true,
@@ -444,6 +504,26 @@ exports.verifyPayment = async (req, res) => {
     const durasi = hitungDurasiSewa(order.pickup_date, order.return_date);
 
     await transaction.commit();
+
+    // Kirim email ke user
+    if (order.user_id) {
+      const user = await User.findByPk(order.user_id);
+      if (user && user.email) {
+        await sendMail({
+          to: user.email,
+          subject: `Status Pembayaran Pesanan #${order.id}`,
+          html: `
+            <div style="font-family: Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <h2>Status Pembayaran Pesanan Anda</h2>
+              <p>Halo <b>${user.name}</b>,</p>
+              <p>Pembayaran pesanan Anda untuk mobil <b>${car?.nama || "-"}</b> telah <b>${status === 'paid' ? 'DITERIMA' : 'DITOLAK'}</b>.</p>
+              <p>ID Pesanan: <b>#${order.id}</b></p>
+              <p>Terima kasih telah menggunakan layanan kami.</p>
+            </div>
+          `
+        });
+      }
+    }
 
     return res.json({
       success: true,
@@ -785,14 +865,60 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const order = await Order.findByPk(id);
+    const order = await Order.findByPk(id, {
+      include: [
+        { model: User, as: 'user', attributes: ['name', 'email'] },
+        { model: Layanan, as: 'layanan', attributes: ['nama'] }
+      ]
+    });
     if (!order) {
       return res.status(404).json({ success: false, message: "Pesanan tidak ditemukan" });
     }
     order.status = status;
     await order.save();
+
+    // Kirim email notifikasi ke user
+    if (order.user && order.user.email) {
+      let statusLabel = "";
+      switch (status) {
+        case "pending": statusLabel = "Menunggu"; break;
+        case "confirmed": statusLabel = "Dikonfirmasi"; break;
+        case "completed": statusLabel = "Selesai"; break;
+        case "cancelled": statusLabel = "Dibatalkan"; break;
+        case "rejected": statusLabel = "Ditolak"; break;
+        default: statusLabel = status;
+      }
+      await sendMail({
+        to: order.user.email,
+        subject: `Status Pesanan #${order.id} Diubah Menjadi ${statusLabel}`,
+        html: `
+          <div style="font-family: Arial,sans-serif;max-width:600px;margin:0 auto;">
+            <h2>Status Pesanan Anda Telah Diubah</h2>
+            <p>Halo <b>${order.user.name}</b>,</p>
+            <p>Status pesanan Anda untuk mobil <b>${order.layanan?.nama || "-"}</b> telah diubah menjadi <b>${statusLabel}</b>.</p>
+            <p>ID Pesanan: <b>#${order.id}</b></p>
+            <p>Terima kasih telah menggunakan layanan kami.</p>
+          </div>
+        `
+      });
+    }
+
     res.json({ success: true, message: "Status pesanan berhasil diupdate", data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: "Gagal update status pesanan" });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Pesanan tidak ditemukan" });
+    }
+    await order.destroy();
+    res.json({ success: true, message: "Pesanan berhasil dihapus" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Gagal menghapus pesanan" });
   }
 };

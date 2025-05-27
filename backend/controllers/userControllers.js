@@ -2,6 +2,8 @@ require("dotenv").config();
 const User = require("../models/user"); // Make sure to adjust if you are using a different ORM or model
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+const fs = require("fs");
 
 // Fungsi untuk register user
 const registerUser = async (req, res) => {
@@ -191,6 +193,31 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Fungsi untuk mengupload foto
+const uploadPhoto = async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Tidak ada file yang diupload" });
+    }
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ success: false, message: "User tidak ditemukan." });
+
+    // Hapus foto lama jika ada
+    if (user.photo && fs.existsSync(path.join(__dirname, "../uploads", path.basename(user.photo)))) {
+      fs.unlinkSync(path.join(__dirname, "../uploads", path.basename(user.photo)));
+    }
+
+    // Simpan path foto baru
+    user.photo = `/uploads/${req.file.filename}`;
+    await user.save();
+
+    res.json({ success: true, photo: user.photo });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Export semua fungsi
 module.exports = {
   registerUser,
@@ -200,4 +227,5 @@ module.exports = {
   updateUser,
   deleteUser,
   changePassword,
+  uploadPhoto,
 };

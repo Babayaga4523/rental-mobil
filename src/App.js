@@ -33,6 +33,7 @@ import AdminReport from "./Admin/Report";
 import UserOrdersPage from "./pages/UserOrdersPage";
 import Gallery from "./pages/Gallery";
 import Profile from "./pages/Profile";
+import TestimoniReplyPage from "./Admin/TestimoniReplyPage";
 // Bootstrap
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
@@ -129,6 +130,7 @@ function AppContent() {
           <Route path="report" element={
             <AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
           } />
+           <Route path="testimoni" element={< TestimoniReplyPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
         </Route>
 
         {/* Error Routes */}
