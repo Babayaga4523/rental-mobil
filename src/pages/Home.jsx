@@ -41,7 +41,7 @@ const Home = () => {
     setIsLoading(true);
     Promise.all([
       fetch("http://localhost:3000/api/testimoni").then(res => res.json()).catch(() => []),
-      fetch("http://localhost:3000/api/layanan?limit=8").then(res => res.json()).catch(() => ({ data: [] }))
+      fetch("http://localhost:3000/api/layanan?limit=3").then(res => res.json()).catch(() => ({ data: [] }))
     ]).then(([testiData, carsData]) => {
       setTestimonials(Array.isArray(testiData.data) ? testiData.data : Array.isArray(testiData) ? testiData : []);
       setPopularCars(Array.isArray(carsData.data) ? carsData.data : Array.isArray(carsData) ? carsData : []);
@@ -52,91 +52,121 @@ const Home = () => {
 
   return (
     <div className="home-page-root">
-      {/* Floating WhatsApp Button */}
-      <a
+      {/* Floating WhatsApp Button dengan animasi Framer Motion */}
+      <motion.a
         href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`}
         className="home-page-wa-float shadow-lg"
         target="_blank"
         rel="noopener noreferrer"
         title="Chat via WhatsApp"
         data-aos="fade-left"
+        initial={{ opacity: 0, x: 60 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.2, duration: 0.7 }}
+        whileHover={{ scale: 1.08, boxShadow: "0 8px 32px rgba(37,211,102,0.18)" }}
       >
-        {/* Tambahkan icon WhatsApp di dalam button */}
         <i className="bi bi-whatsapp me-2" style={{ fontSize: 24 }}></i>
         <span className="ms-2 d-none d-sm-inline">Hubungi Kami</span>
-      </a>
+      </motion.a>
 
       {/* HERO SECTION */}
+      {/* Hero Section dengan animasi Framer Motion */}
       <section className="landing-hero position-relative d-flex align-items-center py-5" style={{ minHeight: "100vh" }}>
-  <div className="home-page-hero-overlay"></div>
-  <div className="container position-relative z-index-2">
-    <div className="row align-items-center">
-      <div className="col-lg-6 text-center text-lg-start" data-aos="fade-right">
-        <h1 className="display-3 fw-bold mb-4 home-page-hero-title">
-          Sewa Mobil <span className="text-gradient">Premium</span> & Nyaman
-        </h1>
-        <p className="lead mb-4 text-light home-page-hero-subtitle">
-          Solusi rental mobil terbaik untuk bisnis, liburan, dan perjalanan keluarga. Armada terawat, harga transparan, layanan 24 jam.
-        </p>
-        {/* Search Bar */}
-        <motion.div
-          className="d-flex flex-wrap gap-3 mb-4 justify-content-center justify-content-lg-start home-page-hero-cta"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-        </motion.div>
-        <motion.ul
-          className="list-unstyled mt-3 text-light hero-features"
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.7, duration: 0.6 }}
-        >
-          <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Driver profesional & ramah</li>
-          <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Armada terbaru & bersih</li>
-          <li><i className="bi bi-check-circle-fill text-gold me-2"></i>Booking mudah & cepat</li>
-        </motion.ul>
-      </div>
-      <div className="col-lg-6 text-center mt-5 mt-lg-0 position-relative" data-aos="zoom-in">
-        <img
-          src="/images/Home.png"
-          alt="Rental Mobil"
-          className="img-fluid rounded-4 shadow-lg landing-hero-img"
-          style={{ maxWidth: "90%", transition: "transform 0.4s" }}
-          width={600}
-          height={300}
-          loading="eager"
-          fetchpriority="high"
-        />
-      </div>
-    </div>
-    <div className="scroll-down" onClick={() => document.getElementById('cars').scrollIntoView({ behavior: 'smooth' })}>
-      <div className="scroll-line bg-white"></div>
-      <span className="text-white">Scroll Down</span>
-    </div>
-  </div>
-</section>
+        <div className="home-page-hero-overlay"></div>
+        <div className="container position-relative z-index-2">
+          <div className="row align-items-center">
+            <motion.div
+              className="col-lg-6 text-center text-lg-start"
+              data-aos="fade-right"
+              initial={{ opacity: 0, x: -60 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="display-3 fw-bold mb-4 home-page-hero-title">
+                Sewa Mobil <span className="text-gradient">Premium</span> & Nyaman
+              </h1>
+              <motion.p
+                className="lead mb-4 text-light home-page-hero-subtitle"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.7 }}
+              >
+                Solusi rental mobil terbaik untuk bisnis, liburan, dan perjalanan keluarga. Armada terawat, harga transparan, layanan 24 jam.
+              </motion.p>
+              <motion.div
+                className="d-flex flex-wrap gap-3 mb-4 justify-content-center justify-content-lg-start home-page-hero-cta"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+              >
+                {/* ...existing code... */}
+              </motion.div>
+              <motion.ul
+                className="list-unstyled mt-3 text-light hero-features"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+              >
+                <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Driver profesional & ramah</li>
+                <li className="mb-2"><i className="bi bi-check-circle-fill text-gold me-2"></i>Armada terbaru & bersih</li>
+                <li><i className="bi bi-check-circle-fill text-gold me-2"></i>Booking mudah & cepat</li>
+              </motion.ul>
+            </motion.div>
+            <motion.div
+              className="col-lg-6 text-center mt-5 mt-lg-0 position-relative"
+              data-aos="zoom-in"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, duration: 0.7 }}
+            >
+              <picture>
+                <source srcSet="/images/Home.png" type="image/webp" />
+                <img
+                  src="/images/Home.png"
+                  alt="Rental Mobil"
+                  className="img-fluid rounded-4 shadow-lg landing-hero-img"
+                  style={{ maxWidth: "90%", transition: "transform 0.4s" }}
+                  width={600}
+                  height={300}
+                  loading="eager"
+                  fetchpriority="high"
+                />
+              </picture>
+            </motion.div>
+          </div>
+          <motion.div
+            className="scroll-down"
+            onClick={() => document.getElementById('cars').scrollIntoView({ behavior: 'smooth' })}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1, duration: 0.7 }}
+          >
+            <div className="scroll-line bg-white"></div>
+            <span className="text-white">Scroll Down</span>
+          </motion.div>
+        </div>
+      </section>
 
       {/* COUNTERS */}
       <section className="home-page-counters-section py-5 bg-white position-relative">
         <div className="container position-relative z-index-1">
           <div className="row g-4 justify-content-center">
             <div className="col-md-4" data-aos="fade-up">
-              <div className="home-page-counter-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
+              <div className="home-page-counter-card glass-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
                 <div className="home-page-counter-number display-4 fw-bold mb-2">{counters.cars}+</div>
                 <h5 className="home-page-counter-label fw-semibold">Armada Mobil</h5>
                 <p className="text-muted mb-0">Berbagai jenis & kelas</p>
               </div>
             </div>
             <div className="col-md-4" data-aos="fade-up" data-aos-delay="100">
-              <div className="home-page-counter-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
+              <div className="home-page-counter-card glass-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
                 <div className="home-page-counter-number display-4 fw-bold mb-2">{counters.customers}+</div>
                 <h5 className="home-page-counter-label fw-semibold">Pelanggan</h5>
                 <p className="text-muted mb-0">Telah mempercayai kami</p>
               </div>
             </div>
             <div className="col-md-4" data-aos="fade-up" data-aos-delay="200">
-              <div className="home-page-counter-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
+              <div className="home-page-counter-card glass-card p-4 rounded-4 shadow-sm border-0 text-center bg-white">
                 <div className="home-page-counter-number display-4 fw-bold mb-2">{counters.years}+</div>
                 <h5 className="home-page-counter-label fw-semibold">Tahun</h5>
                 <p className="text-muted mb-0">Pengalaman melayani</p>
@@ -166,8 +196,7 @@ const Home = () => {
     <div className="row g-4">
       {/* Feature 1 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up">
-        <div className="feature-card p-4 rounded-3 h-100 text-center transition-all"
-             style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', height: '100%' }}>
+        <div className="feature-card glass-card p-4 rounded-3 h-100 text-center transition-all">
           <div className="icon-wrapper mb-4 p-3 rounded-circle d-inline-flex align-items-center justify-content-center" 
                style={{ backgroundColor: '#eff6ff', width: '70px', height: '70px' }}>
             <i className="bi bi-car-front-fill" style={{ fontSize: '1.75rem', color: '#3b82f6' }}></i>
@@ -181,8 +210,7 @@ const Home = () => {
       
       {/* Feature 2 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-        <div className="feature-card p-4 rounded-3 h-100 text-center transition-all"
-             style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', height: '100%' }}>
+        <div className="feature-card glass-card p-4 rounded-3 h-100 text-center transition-all">
           <div className="icon-wrapper mb-4 p-3 rounded-circle d-inline-flex align-items-center justify-content-center" 
                style={{ backgroundColor: '#ecfdf5', width: '70px', height: '70px' }}>
             <i className="bi bi-shield-check" style={{ fontSize: '1.75rem', color: '#10b981' }}></i>
@@ -196,8 +224,7 @@ const Home = () => {
       
       {/* Feature 3 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
-        <div className="feature-card p-4 rounded-3 h-100 text-center transition-all"
-             style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', height: '100%' }}>
+        <div className="feature-card glass-card p-4 rounded-3 h-100 text-center transition-all">
           <div className="icon-wrapper mb-4 p-3 rounded-circle d-inline-flex align-items-center justify-content-center" 
                style={{ backgroundColor: '#fef2f2', width: '70px', height: '70px' }}>
             <i className="bi bi-credit-card" style={{ fontSize: '1.75rem', color: '#ef4444' }}></i>
@@ -211,8 +238,7 @@ const Home = () => {
       
       {/* Feature 4 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
-        <div className="feature-card p-4 rounded-3 h-100 text-center transition-all"
-             style={{ backgroundColor: 'white', border: '1px solid #e2e8f0', height: '100%' }}>
+        <div className="feature-card glass-card p-4 rounded-3 h-100 text-center transition-all">
           <div className="icon-wrapper mb-4 p-3 rounded-circle d-inline-flex align-items-center justify-content-center" 
                style={{ backgroundColor: '#f3e8ff', width: '70px', height: '70px' }}>
             <i className="bi bi-headset" style={{ fontSize: '1.75rem', color: '#8b5cf6' }}></i>
@@ -250,29 +276,45 @@ const Home = () => {
                     whileHover={{ y: -8, scale: 1.03 }}
                     transition={{ type: "spring", stiffness: 200 }}
                   >
-                    <div className="home-page-car-img-container position-relative rounded-4 overflow-hidden mb-3" style={{ aspectRatio: "16/9", background: "#f3f4f6" }}>
-                      <img
-                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
-                        alt={car.nama}
-                        className="img-fluid w-100 h-100 home-page-car-image"
-                        style={{
-                          objectFit: "cover",
-                          objectPosition: "center",
-                          width: "100%",
-                          height: "100%",
-                          transition: "transform 0.4s"
-                        }}
-                        loading="lazy"
-                      />
-                      {car.promo > 0 && (
-                        <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
-                          <i className="bi bi-bolt-fill me-1"></i>Promo {car.promo}%
-                        </span>
-                      )}
-                      <span className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
-                        POPULER
-                      </span>
-                    </div>
+                    <div
+  className="home-page-car-img-container position-relative rounded-4 overflow-hidden mb-3"
+  style={{
+    aspectRatio: "16/8", // lebih lebar dari 16/9
+    background: "#f3f4f6",
+    height: 210, // tambahkan tinggi agar gambar lebih besar
+    maxHeight: 220,
+    minHeight: 180,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+  <img
+    src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
+    alt={car.nama}
+    className="img-fluid home-page-car-image"
+    style={{
+      objectFit: "contain", // ubah dari cover ke contain agar tidak terpotong
+      objectPosition: "center",
+      width: "100%",
+      height: "100%",
+      maxHeight: 200,
+      transition: "transform 0.4s",
+      background: "#fff",
+      padding: 10,
+      borderRadius: "1.2rem"
+    }}
+    loading="lazy"
+  />
+  {car.promo > 0 && (
+    <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
+      <i className="bi bi-bolt-fill me-1"></i>Promo {car.promo}%
+    </span>
+  )}
+  <span className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
+    POPULER
+  </span>
+</div>
                     <div className="p-4">
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <h5 className="fw-bold mb-1">{car.nama}</h5>
@@ -318,32 +360,20 @@ const Home = () => {
                           </span>
                         ))}
                       </div>
-                      <div className="d-flex gap-2 mt-auto">
+                      <div className="d-flex mt-auto justify-content-center">
   <Link
     to={`/detail/${car.id}`}
-    className="btn btn-outline-primary btn-lg flex-fill rounded-pill fw-semibold d-flex align-items-center justify-content-center"
-    style={{ minWidth: 0, fontSize: "1rem", height: 44 }}
+    className="btn btn-outline-primary btn-lg rounded-pill fw-semibold d-flex align-items-center px-4 shadow-sm"
+    style={{
+      fontSize: "1.05rem",
+      height: 44,
+      letterSpacing: "0.5px",
+      borderWidth: 2,
+      transition: "background 0.2s, color 0.2s, box-shadow 0.2s"
+    }}
   >
     <i className="bi bi-info-circle me-2"></i>
-    Detail
-  </Link>
-  <Link
-    to="/booking"
-    state={{
-      carId: car.id,
-      carName: car.nama,
-      price: car.harga,
-      discount: car.promo,
-      image: car.gambar,
-      kapasitas: car.kapasitas,
-      transmisi: car.transmisi,
-      fitur: car.fitur,
-    }}
-    className="btn btn-gold btn-lg flex-fill rounded-pill fw-semibold d-flex align-items-center justify-content-center"
-    style={{ minWidth: 0, fontSize: "1rem", height: 44 }}
-  >
-    <i className="bi bi-calendar-check me-2"></i>
-    Pesan
+    Lihat Detail
   </Link>
 </div>
                     </div>
@@ -373,7 +403,7 @@ const Home = () => {
     <div className="row g-4 justify-content-center">
       {/* Step 1 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up">
-        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
+        <div className="process-step-card glass-card p-4 rounded-3 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
              style={{ backgroundColor: 'white', minHeight: '300px' }}>
           <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle" 
                style={{ width: '50px', height: '50px', backgroundColor: '#3498db', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
@@ -391,7 +421,7 @@ const Home = () => {
       
       {/* Step 2 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
+        <div className="process-step-card glass-card p-4 rounded-3 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
              style={{ backgroundColor: 'white', minHeight: '300px' }}>
           <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle" 
                style={{ width: '50px', height: '50px', backgroundColor: '#2ecc71', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
@@ -409,7 +439,7 @@ const Home = () => {
 
       {/* Step 3 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
-        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all"
+        <div className="process-step-card glass-card p-4 rounded-3 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all"
              style={{ backgroundColor: 'white', minHeight: '300px' }}>
           <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle"
                style={{ width: '50px', height: '50px', backgroundColor: '#2ecc71', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
@@ -431,7 +461,7 @@ const Home = () => {
       
       {/* Step 4 */}
       <div className="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
-        <div className="process-step-card p-4 rounded-4 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
+        <div className="process-step-card glass-card p-4 rounded-3 h-100 text-center d-flex flex-column align-items-center shadow-sm hover-shadow transition-all" 
              style={{ backgroundColor: 'white', minHeight: '300px' }}>
           <div className="step-number mb-3 d-flex align-items-center justify-content-center rounded-circle" 
                style={{ width: '50px', height: '50px', backgroundColor: '#9b59b6', color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>
@@ -451,61 +481,75 @@ const Home = () => {
 </section>
 
       {/* TESTIMONI */}
-      <section className="home-page-testimonials-section py-5 position-relative">
-        <div className="container position-relative z-index-1">
-          <div className="section-header text-center mb-5" data-aos="fade-up">
-            <h2 className="fw-bold display-5">Apa Kata Pelanggan Kami?</h2>
-            <p className="lead text-muted">Testimoni jujur dari pelanggan yang puas</p>
-          </div>
-          <Carousel indicators={false} interval={5000} className="testimonial-carousel" data-aos="fade-up">
-            {testimonials.length > 0 ? (
-              testimonials.slice(0, 6).map((t, idx) => (
-                <Carousel.Item key={t.id}>
-                  <div className="home-page-testimonial-card p-5 rounded-4 shadow-sm border-0 bg-white mx-auto text-center">
-                    <div className="home-page-testimonial-rating mb-3">
-                      {[...Array(5)].map((_, i) => (
-                        <i key={i} className="bi bi-star-fill text-gold mx-1"></i>
-                      ))}
-                    </div>
-                    <p className="home-page-testimonial-text lead mb-4 fst-italic">"{t.pesan}"</p>
-                    <div className="home-page-testimonial-author d-flex align-items-center justify-content-center">
-                      <div className="home-page-author-avatar rounded-circle bg-light d-flex align-items-center justify-content-center me-3">
-                        <i className="bi bi-person-fill text-gold fs-4"></i>
-                      </div>
-                      <div className="text-start">
-                        <h6 className="fw-bold mb-0">{t.nama}</h6>
-                        <small className="text-muted">{t.lokasi || 'Pelanggan Setia'}</small>
-                      </div>
-                    </div>
-                  </div>
-                </Carousel.Item>
-              ))
-            ) : (
-              <Carousel.Item>
-                <div className="text-center py-4">
-                  <p className="text-muted">Belum ada testimoni</p>
+      <section className="home-page-testimonials-section py-5 position-relative" style={{ background: "linear-gradient(90deg, #f8fafc 0%, #e7e9ef 100%)" }}>
+  <div className="container position-relative z-index-1">
+    <div className="section-header text-center mb-5" data-aos="fade-up">
+      <h2 className="fw-bold display-5 text-gradient" style={{ letterSpacing: "1px" }}>
+        Apa Kata Pelanggan Kami?
+      </h2>
+      <p className="lead text-secondary" style={{ fontWeight: 500 }}>
+        Testimoni jujur dari pelanggan yang puas
+      </p>
+    </div>
+    <Carousel indicators={false} interval={5000} className="testimonial-carousel" data-aos="fade-up">
+      {testimonials.length > 0 ? (
+        testimonials.slice(0, 6).map((t, idx) => (
+          <Carousel.Item key={t.id}>
+            <div
+              className="home-page-testimonial-card glass-card p-5 rounded-4 shadow border-0 bg-white mx-auto text-center"
+              style={{
+                maxWidth: 650,
+                border: "1.5px solid #f1c40f22",
+                boxShadow: "0 8px 32px rgba(212,175,55,0.07)",
+              }}
+            >
+              <div className="home-page-testimonial-rating mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <i key={i} className="bi bi-star-fill text-gold mx-1 fs-5"></i>
+                ))}
+              </div>
+              <p
+                className="home-page-testimonial-text lead mb-4 fst-italic"
+                style={{
+                  color: "#222",
+                  fontSize: "1.25rem",
+                  lineHeight: 1.6,
+                  fontWeight: 500,
+                  textShadow: "0 1px 0 #fff8",
+                }}
+              >
+                “{t.pesan}”
+              </p>
+              <div className="home-page-testimonial-author d-flex align-items-center justify-content-center mt-4">
+                <div
+                  className="home-page-author-avatar rounded-circle bg-gold d-flex align-items-center justify-content-center me-3 shadow"
+                  style={{
+                    width: 56,
+                    height: 56,
+                    border: "3px solid #fff",
+                    boxShadow: "0 2px 8px #ffd70033",
+                  }}
+                >
+                  <i className="bi bi-person-fill text-white fs-3"></i>
                 </div>
-              </Carousel.Item>
-            )}
-          </Carousel>
-        </div>
-      </section>
-
-      {/* PARTNER */}
-      <section className="home-page-partner-section py-5 bg-light">
-        <div className="container">
-          <div className="section-header text-center mb-5" data-aos="fade-up">
-            <h2 className="fw-bold display-5">Dipercaya Oleh</h2>
-            <p className="lead text-muted">Perusahaan dan institusi terkemuka</p>
+                <div className="text-start">
+                  <h6 className="fw-bold mb-0" style={{ color: "#1e3c72" }}>{t.nama}</h6>
+                  <small className="text-muted">{t.lokasi || 'Pelanggan Setia'}</small>
+                </div>
+              </div>
+            </div>
+          </Carousel.Item>
+        ))
+      ) : (
+        <Carousel.Item>
+          <div className="text-center py-4">
+            <p className="text-muted">Belum ada testimoni</p>
           </div>
-          <div className="home-page-partner-logos d-flex flex-wrap justify-content-center align-items-center gap-5" data-aos="fade-up">
-            <img src="/images/partner1.png" alt="Partner 1" className="img-fluid" />
-            <img src="/images/partner2.png" alt="Partner 2" className="img-fluid" />
-            <img src="/images/partner3.png" alt="Partner 3" className="img-fluid" />
-            <img src="/images/partner4.png" alt="Partner 4" className="img-fluid" />
-          </div>
-        </div>
-      </section>
+        </Carousel.Item>
+      )}
+    </Carousel>
+  </div>
+</section>
 
       {/* FAQ */}
       <section className="home-page-faq-section py-5">
@@ -516,7 +560,7 @@ const Home = () => {
                 <h2 className="fw-bold display-5">Pertanyaan Umum</h2>
                 <p className="lead text-muted">Temukan jawaban untuk pertanyaan yang sering diajukan</p>
               </div>
-              <img src="/images/faq-image.jpg" alt="FAQ" className="img-fluid rounded-4 shadow-sm" />
+             
             </div>
             <div className="col-lg-7" data-aos="fade-left">
               <Accordion flush className="shadow-sm rounded-4 overflow-hidden">
@@ -527,7 +571,7 @@ const Home = () => {
       Apakah rental sudah termasuk supir? Apakah bisa lepas kunci?
     </Accordion.Header>
     <Accordion.Body className="bg-light">
-      <b>Semua layanan rental kami sudah termasuk supir profesional.</b> Kami <span className="text-danger fw-semibold">tidak melayani sewa lepas kunci (tanpa supir)</span> demi keamanan dan kenyamanan pelanggan.
+      <b>Semua layanan kami sudah termasuk supir profesional.</b> Kami <span className="text-danger fw-semibold">tidak melayani sewa lepas kunci (tanpa supir)</span> demi keamanan dan kenyamanan pelanggan.
     </Accordion.Body>
   </Accordion.Item>
   {/* FAQ Pembayaran */}
@@ -561,11 +605,7 @@ const Home = () => {
     </Accordion.Body>
   </Accordion.Item>
 </Accordion>
-              <div className="text-center mt-4">
-                <a href="/faq" className="btn btn-outline-gold rounded-pill">
-                  Lihat FAQ Lainnya <i className="bi bi-arrow-right ms-2"></i>
-                </a>
-              </div>
+              
             </div>
           </div>
         </div>

@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   FaCar, FaCalendarAlt, FaMoneyBillWave, FaUser, FaFileInvoice, FaPrint, FaArrowLeft, FaCheckCircle, FaCreditCard, FaUniversity, FaMoneyCheckAlt, FaPhone, FaMapMarkerAlt, FaFileAlt, FaExclamationTriangle
 } from "react-icons/fa";
-import axios from "axios";
 import { format, parseISO, isValid } from "date-fns";
 import id from "date-fns/locale/id";
 import "../style/Receipt.css"; // Pastikan file ini ada
+
+const BACKEND_URL = "http://localhost:3000";
 
 const formatDate = (dateString, formatPattern = "dd MMMM yyyy", includeTime = false) => {
   try {
@@ -67,49 +69,69 @@ const OrderReceipt = () => {
   useEffect(() => {
     const fetchReceipt = async () => {
       try {
+        setLoading(true);
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:3000/api/orders/${orderId}/receipt`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data && res.data.success && res.data.data) {
-          setReceipt(res.data.data);
+        if (!token) throw new Error("Token tidak ditemukan");
+
+        const response = await axios.get(
+          `${BACKEND_URL}/api/orders/${orderId}/receipt`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data?.success && response.data?.data) {
+          setReceipt(response.data.data);
         } else {
-          setError("Data struk tidak ditemukan.");
+          throw new Error("Data struk tidak valid");
         }
       } catch (err) {
-        setError(err.response?.data?.message || "Gagal memuat data struk");
+        setError(err.response?.data?.message || err.message || "Gagal memuat struk pesanan");
+        // Redirect ke daftar pesanan jika 404
+        if (err.response?.status === 404) {
+          setTimeout(() => {
+            navigate('/pesanan');
+          }, 3000);
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchReceipt();
-  }, [orderId]);
 
+    if (orderId) {
+      fetchReceipt();
+    } else {
+      setError("ID Pesanan tidak valid");
+      setLoading(false);
+    }
+  }, [orderId, navigate]);
+
+  // Show loading state
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+      <div className="receipt-page d-flex justify-content-center align-items-center">
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" style={{ width: "3rem", height: "3rem" }} role="status">
+          <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="lead mb-0">Memuat data struk...</p>
+          <p className="mt-2">Memuat struk pesanan...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !receipt || !receipt.order || !receipt.car || !receipt.user) {
+  // Show error state
+  if (error) {
     return (
-      <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-        <div className="card shadow-sm" style={{ maxWidth: "500px" }}>
-          <div className="card-body text-center p-5">
-            <FaExclamationTriangle className="text-danger mb-4" style={{ fontSize: "4rem" }} />
-            <h2 className="fw-bold mb-3">Struk Tidak Ditemukan</h2>
-            <p className="lead mb-4">{error || "Data struk tidak lengkap atau tidak ditemukan."}</p>
-            <button onClick={() => navigate("/orders")} className="btn btn-primary px-4 py-2">
-              <FaArrowLeft className="me-2" /> Kembali ke Daftar Pesanan
-            </button>
-          </div>
+      <div className="receipt-page d-flex justify-content-center align-items-center">
+        <div className="text-center">
+          <FaExclamationTriangle className="text-danger mb-3" style={{ fontSize: '3rem' }} />
+          <h4 className="mb-3">{error}</h4>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/pesanan')}
+          >
+            <FaArrowLeft className="me-2" />
+            Kembali ke Daftar Pesanan
+          </button>
         </div>
       </div>
     );
@@ -127,17 +149,15 @@ const OrderReceipt = () => {
           <div className="logo-title">
             <img src="/images/logo.png" alt="Logo" className="receipt-logo" />
             <div>
-              <h2>RENTAL MOBIL JAYA</h2>
+              <h2>RENTAL MOBIL HS</h2>
               <div className="receipt-contact">
-                <FaMapMarkerAlt /> Jl. Contoh No. 123, Kota Contoh, Indonesia<br />
-                <FaPhone /> 0812-3456-7890 | info@rental-mobil-jaya.com
+                <FaMapMarkerAlt /> Jl. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo
+Jawa Tengah 57164<br />
+                <FaPhone /> 0817-0455-544 | rentalhs591@gmail.com
               </div>
             </div>
           </div>
           <div className="receipt-actions no-print">
-            <button className="btn btn-outline-primary me-2" onClick={() => navigate(-1)}>
-              <FaArrowLeft className="me-1" /> Kembali
-            </button>
             <button className="btn btn-primary me-2" onClick={() => window.print()}>
               <FaPrint className="me-1" /> Cetak
             </button>

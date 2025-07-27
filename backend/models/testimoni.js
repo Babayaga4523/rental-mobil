@@ -1,5 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const express = require('express');
+const router = express.Router();
 
 const Testimoni = sequelize.define('Testimoni', {
   id: {

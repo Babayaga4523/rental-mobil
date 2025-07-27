@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Badge, Modal, Button, Tab, Nav, Carousel, Accordion, Form, Spinner } from "react-bootstrap";
 import {
-  FaCameraRetro, FaTag, FaTimes, FaMapMarkerAlt, FaSmile, FaBuilding, FaCar, FaUsers, FaHandshake, FaAward, FaRoute, FaStar, FaRegCalendarCheck, FaRegClock, FaPlay, FaCheckCircle, FaQuestionCircle, FaPhoneAlt, FaHeart, FaShareAlt
+  FaCameraRetro, FaTag, FaTimes, FaMapMarkerAlt, FaSmile, FaBuilding, FaCar, FaUsers, FaHandshake, FaAward, FaRoute, FaStar, FaRegCalendarCheck, FaRegClock, FaPlay, FaCheckCircle, FaQuestionCircle, FaPhoneAlt, FaHeart, FaShareAlt, FaQuoteLeft, FaQuoteRight
 } from "react-icons/fa";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -216,29 +216,29 @@ const Gallery = () => {
   };
 
   return (
-    <div className="gallery-page-root bg-light min-vh-100">
+    <div className="hs-gallery-page-root bg-light min-vh-100">
       {/* HERO SECTION */}
-      <section className="gallery-hero position-relative d-flex align-items-center justify-content-center">
-        <div className="gallery-hero-overlay"></div>
+      <section className="hs-gallery-hero position-relative d-flex align-items-center justify-content-center">
+        <div className="hs-gallery-hero-overlay"></div>
         <Container className="position-relative z-index-2 text-center">
           <div
-            className="hero-glass mx-auto mb-4"
+            className="hs-hero-glass mx-auto mb-4"
             data-aos="zoom-in"
             data-aos-delay="100"
           >
             <FaCameraRetro className="me-2 text-gold" size={48} />
           </div>
           <h1
-            className="display-4 fw-bold mb-3 hero-title"
+            className="display-4 fw-bold mb-3 hs-hero-title"
             data-aos="fade-down"
             data-aos-delay="200"
           >
-            <span className="hero-gradient-text">
+            <span className="hs-hero-gradient-text">
               Gallery Rental Mobil HS
             </span>
           </h1>
           <p
-            className="lead mb-4 hero-lead"
+            className="lead mb-4 hs-hero-lead"
             data-aos="fade-up"
             data-aos-delay="350"
           >
@@ -253,28 +253,28 @@ const Gallery = () => {
           </p>
           <Row className="justify-content-center mt-4" data-aos="fade-up" data-aos-delay="500">
             <Col xs={6} md={3} className="mb-3">
-              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hero-stat-glass">
+              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hs-hero-stat-glass">
                 <FaUsers className="text-primary mb-2" size={32} />
                 <div className="fw-bold fs-4 text-primary">10.000+</div>
                 <div className="text-muted small">Pelanggan Puas</div>
               </div>
             </Col>
             <Col xs={6} md={3} className="mb-3">
-              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hero-stat-glass">
+              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hs-hero-stat-glass">
                 <FaCar className="text-warning mb-2" size={32} />
                 <div className="fw-bold fs-4 text-warning">50+</div>
                 <div className="text-muted small">Armada Aktif</div>
               </div>
             </Col>
             <Col xs={6} md={3} className="mb-3">
-              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hero-stat-glass">
+              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hs-hero-stat-glass">
                 <FaRegClock className="text-success mb-2" size={32} />
                 <div className="fw-bold fs-4 text-success">24 Jam</div>
                 <div className="text-muted small">Layanan Nonstop</div>
               </div>
             </Col>
             <Col xs={6} md={3} className="mb-3">
-              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hero-stat-glass">
+              <div className="bg-white rounded-4 shadow-sm py-3 px-2 d-flex flex-column align-items-center hs-hero-stat-glass">
                 <FaAward className="text-gold mb-2" size={32} />
                 <div className="fw-bold fs-4 text-gold">Berkualitas</div>
                 <div className="text-muted small">Penghargaan & Apresiasi</div>
@@ -321,15 +321,8 @@ const Gallery = () => {
           </p>
         </div>
         <div className="d-flex flex-wrap justify-content-center mb-4 gap-2" data-aos="fade-up" data-aos-delay="100">
-          <Button
-            variant="success"
-            className="rounded-pill px-4 me-2"
-            onClick={() => setShowUploadModal(true)}
-            style={{ fontWeight: 600, letterSpacing: 0.5 }}
-          >
-            <FaCameraRetro className="me-2" />
-            Upload Foto Pengalaman
-          </Button>
+          
+           
           {categories.map((cat, idx) => (
             <Button
               key={cat}
@@ -355,22 +348,22 @@ const Gallery = () => {
               data-aos-delay={idx * 80}
             >
               <div
-                className="gallery-card shadow-sm rounded-4 overflow-hidden position-relative"
+                className="hs-gallery-card shadow-sm rounded-4 overflow-hidden position-relative"
                 onClick={() => handleShow(item)}
                 style={{ cursor: "pointer", background: "#fff" }}
               >
-                <div className="gallery-img-container position-relative">
+                <div className="hs-gallery-img-container position-relative">
                   <img
                     src={item.image}
                     alt={item.title}
-                    className="gallery-img w-100"
+                    className="hs-gallery-img w-100"
                     style={{
                       height: 220,
                       objectFit: "cover",
                       transition: "transform 0.3s"
                     }}
                   />
-                  <Badge bg="primary" className="gallery-category-badge">
+                  <Badge bg="primary" className="hs-gallery-category-badge">
                     {categoryIcons[item.category] || <FaTag className="me-1" />}
                     {item.category}
                   </Badge>
@@ -386,11 +379,11 @@ const Gallery = () => {
       </Container>
 
       {/* MODAL PREVIEW DENGAN CERITA */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg" contentClassName="gallery-modal-content">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" contentClassName="hs-gallery-modal-content">
         <Modal.Body className="p-0 position-relative">
           <Button
             variant="light"
-            className="gallery-modal-close"
+            className="hs-gallery-modal-close"
             onClick={handleClose}
             aria-label="Tutup"
           >
@@ -400,7 +393,7 @@ const Gallery = () => {
             <img
               src={activeImage.image}
               alt={activeImage.title}
-              className="w-100 gallery-modal-img"
+              className="w-100 hs-gallery-modal-img"
               style={{
                 maxHeight: "70vh",
                 objectFit: "contain",
@@ -511,26 +504,32 @@ const Gallery = () => {
             <FaStar className="me-2 text-warning" />
             Testimoni Pelanggan
           </h2>
-          <Carousel indicators={false} controls={testimonials.length > 1} interval={5000}>
+          <Carousel indicators={false} controls={testimonials.length > 1} interval={5000} className="testimonial-carousel">
             {testimonials.map((t, i) => (
               <Carousel.Item key={i}>
-                <div className="d-flex flex-column align-items-center justify-content-center py-4">
-                  <img
-                    src={t.image}
-                    alt={t.name}
-                    className="rounded-circle mb-3"
-                    style={{ width: 72, height: 72, objectFit: "cover", border: "3px solid #ffd700" }}
-                  />
-                  <h5 className="fw-bold mb-1">{t.name}</h5>
-                  <div className="mb-2">
-                    {[...Array(Math.floor(t.rating))].map((_, idx) => (
-                      <FaStar key={idx} className="text-warning" />
-                    ))}
-                    {t.rating % 1 !== 0 && <FaStar className="text-warning" style={{ opacity: 0.5 }} />}
+                <div className="d-flex justify-content-center align-items-center py-4">
+                  <div className="bg-white rounded-4 shadow-sm p-4 text-center mx-auto" style={{ maxWidth: 420, border: "1.5px solid #ffd70033" }}>
+                    <div className="d-flex flex-column align-items-center mb-3">
+                      <img
+                        src={t.image}
+                        alt={t.name}
+                        className="rounded-circle mb-2"
+                        style={{ width: 72, height: 72, objectFit: "cover", border: "3px solid #ffd700", boxShadow: "0 2px 8px #ffd70022" }}
+                      />
+                      <h5 className="fw-bold mb-1 text-primary">{t.name}</h5>
+                      <div className="mb-2">
+                        {[...Array(Math.floor(t.rating))].map((_, idx) => (
+                          <FaStar key={idx} className="text-warning" />
+                        ))}
+                        {t.rating % 1 !== 0 && <FaStar className="text-warning" style={{ opacity: 0.5 }} />}
+                      </div>
+                    </div>
+                    <p className="fst-italic text-secondary text-center" style={{ fontSize: "1.08rem", minHeight: 60 }}>
+                      <FaQuoteLeft className="me-2 text-gold" />
+                      {t.comment}
+                      <FaQuoteRight className="ms-2 text-gold" />
+                    </p>
                   </div>
-                  <p className="fst-italic text-muted text-center" style={{ maxWidth: 500 }}>
-                    "{t.comment}"
-                  </p>
                 </div>
               </Carousel.Item>
             ))}

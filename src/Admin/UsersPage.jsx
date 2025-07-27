@@ -1,66 +1,82 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, InputGroup, Form, Toast, ToastContainer, Row, Col, Card
+  Table, Spinner, Badge, Button, Modal,
+  InputGroup, Form, Toast, ToastContainer, Row, Col, Card,
+  Pagination, Nav, Container, FloatingLabel
 } from "react-bootstrap";
-import { FaEllipsisV, FaEdit, FaTrash, FaFileCsv, FaFileExcel, FaUser, FaMoon, FaSun, FaSort, FaSortUp, FaSortDown, FaHistory, FaKey, FaBell, FaPlus } from "react-icons/fa";
+import {
+  FaEllipsisV, FaEdit, FaTrashAlt, FaFileCsv, FaUser,
+  FaHistory, FaKey, FaBell, FaPlus, FaSearch,
+  FaRegCheckCircle, FaRegClock, FaUserShield, FaUserCircle,
+  FaUserCheck, FaUserTimes
+} from "react-icons/fa";
 import { CSVLink } from "react-csv";
-import * as XLSX from "xlsx";
-import moment from "moment";
+import './UsersPage.css';
 
 const API_URL = "http://localhost:3000/api";
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const UsersPage = ({ darkMode, toggleDarkMode }) => {
+const UsersPage = ({ darkMode }) => {
+  // State
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [pageSize] = useState(10);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [historyOrders, setHistoryOrders] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetUser, setResetUser] = useState(null);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [showNotifModal, setShowNotifModal] = useState(false);
-  const [notifMessage, setNotifMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+  const [stats, setStats] = useState({
+    total: 0, active: 0, inactive: 0, admin: 0, user: 0
+  });
 
-  const token = localStorage.getItem("token");
+  // Modal state
+  const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showBlast, setShowBlast] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
+  // Form state
+  const [form, setForm] = useState({ name: "", email: "", no_telp: "", role: "user", status: "active" });
+  const [resetPassword, setResetPassword] = useState('');
+  const [formError, setFormError] = useState('');
+  const [blastMessage, setBlastMessage] = useState("");
+  const [formTab, setFormTab] = useState('edit');
+
+  // Glass morphism style
+  const glassStyle = {
+    background: darkMode ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+    backdropFilter: 'blur(10px)',
+    border: darkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)'
+  };
+
+  // Fetch users
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line
-  }, [token]);
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/users`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.get(`${API_URL}/users`);
+      const data = res.data.data || [];
+      setUsers(data);
+      setStats({
+        total: data.length,
+        active: data.filter(u => u.status === "active").length,
+        inactive: data.filter(u => u.status !== "active").length,
+        admin: data.filter(u => u.role === "admin").length,
+        user: data.filter(u => u.role === "user").length,
       });
-      setUsers(
-        Array.isArray(res.data.data)
-          ? res.data.data
-          : Array.isArray(res.data.users)
-          ? res.data.users
-          : Array.isArray(res.data)
-          ? res.data
-          : []
-      );
-    } catch (err) {
+    } catch {
       setUsers([]);
-      showToast("Gagal memuat data pengguna!", "danger");
+      showToast("Gagal mengambil data user", "danger");
     } finally {
       setLoading(false);
     }
@@ -68,663 +84,820 @@ const UsersPage = ({ darkMode, toggleDarkMode }) => {
 
   const showToast = (message, variant = "success") => {
     setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ ...toast, show: false }), 2500);
+    setTimeout(() => setToast({ show: false, message: "", variant }), 3000);
   };
 
-  // Filter & Search
-  const filteredUsers = users.filter(user => {
-    const searchLower = search.toLowerCase();
-    const matchSearch =
-      user.name?.toLowerCase().includes(searchLower) ||
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.id.toString().includes(searchLower);
-    const matchRole =
-      filterRole === "all" || user.role === filterRole;
-    const matchStatus =
-      filterStatus === "all" ||
-      (filterStatus === "active" && user.status === "active") ||
-      (filterStatus === "inactive" && user.status !== "active");
-    return matchSearch && matchRole && matchStatus;
-  });
-
-  // Sorting
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    const { key, direction } = sortConfig;
-    let valA = a[key], valB = b[key];
-    if (key === "id") {
-      valA = Number(a.id);
-      valB = Number(b.id);
-    }
-    if (valA < valB) return direction === "asc" ? -1 : 1;
-    if (valA > valB) return direction === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedUsers.length / pageSize);
-  const pagedUsers = sortedUsers.slice((page - 1) * pageSize, page * pageSize);
-
-  const handleSort = (key) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
-      }
-      return { key, direction: "asc" };
-    });
-  };
-
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <FaSort className="ms-1 text-muted" />;
-    return sortConfig.direction === "asc" ? (
-      <FaSortUp className="ms-1" />
-    ) : (
-      <FaSortDown className="ms-1" />
+  // UserAvatar component dengan efek shadow dan border neon
+  const UserAvatar = ({ name, role }) => {
+    const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'US';
+    const gradient = role === 'admin'
+      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+    return (
+      <div
+        className="users-avatar-futuristic"
+        style={{ background: gradient }}
+      >
+        {initials}
+      </div>
     );
   };
 
-  // CSV Export
-  const csvHeaders = [
-    { label: "ID", key: "id" },
-    { label: "Nama", key: "name" },
-    { label: "Email", key: "email" },
-    { label: "No. Telp", key: "no_telp" },
-    { label: "Role", key: "role" },
-    { label: "Status", key: "status" }
-  ];
-  const formatCSVData = (users) =>
-    users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      no_telp: user.no_telp,
-      role: user.role,
-      status: user.status === "active" ? "Aktif" : "Nonaktif"
-    }));
+  // Filtered, sorted and paginated users
+  const filteredUsers = users.filter(u => {
+    let roleOk = filterRole === "all" || u.role === filterRole;
+    let statusOk = filterStatus === "all" || (filterStatus === "active" ? u.status === "active" : u.status !== "active");
+    let searchOk = u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase());
+    return roleOk && statusOk && searchOk;
+  });
+  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const pagedUsers = filteredUsers.slice((page - 1) * pageSize, page * pageSize);
 
-  // Excel Export
-  const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(formatCSVData(sortedUsers));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Pengguna");
-    XLSX.writeFile(wb, `daftar-user-${Date.now()}.xlsx`);
-  };
-
-  // Modal helpers
-  const handleShowDeleteModal = (id) => {
-    setDeleteId(id);
-    setShowDeleteModal(true);
-  };
-  const handleDelete = async () => {
-    try {
-      await axios.delete(`${API_URL}/users/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(users => users.filter(u => u.id !== deleteId));
-      setShowDeleteModal(false);
-      showToast("User berhasil dihapus!");
-    } catch (err) {
-      showToast("Gagal menghapus user!", "danger");
-    }
-  };
-
-  const handleShowEditModal = (user) => {
-    setEditUser(user);
-    setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const data = {
-      nama: form.nama.value,
-      email: form.email.value,
-      no_telp: form.no_telp.value,
-      role: form.role.value,
-      status: form.status.value,
-    };
-    try {
-      await axios.put(`${API_URL}/users/${editUser.id}`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      showToast("User berhasil diupdate!");
-      setShowEditModal(false);
-      fetchUsers();
-    } catch (err) {
-      showToast("Gagal update user!", "danger");
-    }
-  };
-
-  // Tambah user
-  const handleShowAddModal = () => {
-    setShowAddModal(true);
-  };
-  const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const data = {
-      nama: form.nama.value,
-      email: form.email.value,
-      no_telp: form.no_telp.value,
-      password: form.password.value,
-      role: form.role.value,
-      status: form.status.value,
-    };
-    try {
-      await axios.post(`${API_URL}/users/register`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      showToast("User berhasil ditambahkan!");
-      setShowAddModal(false);
-      fetchUsers();
-    } catch (err) {
-      showToast("Gagal menambah user!", "danger");
-    }
-  };
-
-  // Reset password
-  const handleShowResetModal = (user) => {
-    setResetUser(user);
-    setShowResetModal(true);
-  };
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setResetLoading(true);
-    const form = e.target;
-    const data = {
-      oldPassword: form.oldPassword?.value || "adminreset", // adminreset sebagai bypass
-      newPassword: form.newPassword.value,
-    };
-    try {
-      await axios.put(`${API_URL}/users/${resetUser.id}/password`, data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      showToast("Password berhasil direset!");
-      setShowResetModal(false);
-    } catch (err) {
-      showToast("Gagal reset password!", "danger");
-    } finally {
-      setResetLoading(false);
-    }
-  };
-
-  // Riwayat pesanan user
-  const handleShowHistoryModal = async (user) => {
-    setShowHistoryModal(true);
-    setHistoryLoading(true);
-    try {
-      const res = await axios.get(`${API_URL}/orders/user/${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setHistoryOrders(Array.isArray(res.data.data) ? res.data.data : []);
-    } catch {
-      setHistoryOrders([]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  // Notifikasi blast
-  const handleNotifBlast = () => setShowNotifModal(true);
-
-  const handleSendNotifBlast = async (e) => {
-    e.preventDefault();
-    if (!notifMessage.trim()) {
-      showToast("Pesan tidak boleh kosong!", "danger");
+  // --- CRUD HANDLERS ---
+  // Add User
+  const handleAddUser = async () => {
+    setFormError("");
+    if (!form.name || !form.email || !form.no_telp) {
+      setFormError("Semua field wajib diisi.");
       return;
     }
-    setNotifLoading(true);
     try {
-      await axios.post(`${API_URL}/notifications/blast`, { message: notifMessage }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.post(`${API_URL}/users/register`, {
+        nama: form.name,
+        email: form.email,
+        password: "password123",
+        no_telp: form.no_telp
       });
-      showToast("Notifikasi berhasil dikirim ke semua user!");
-      setShowNotifModal(false);
-      setNotifMessage("");
-    } catch {
-      showToast("Gagal mengirim notifikasi!", "danger");
-    } finally {
-      setNotifLoading(false);
+      setShowAdd(false);
+      fetchUsers();
+      showToast("User berhasil ditambahkan", "success");
+    } catch (err) {
+      setFormError(err?.response?.data?.message || err?.message || "Gagal menambah user");
     }
   };
 
+  // Edit User
+  const handleEditUser = async () => {
+    setFormError("");
+    if (!form.name || !form.email || !form.no_telp) {
+      setFormError("Semua field wajib diisi.");
+      return;
+    }
+    try {
+      await axios.put(`${API_URL}/users/${selectedUser.id}`, {
+        nama: form.name,
+        email: form.email,
+        no_telp: form.no_telp,
+        role: form.role,
+        status: form.status
+      });
+      setShowEdit(false);
+      fetchUsers();
+      showToast("User berhasil diupdate", "success");
+    } catch (err) {
+      setFormError(err?.response?.data?.message || err?.message || "Gagal update user");
+    }
+  };
+
+  // Delete User
+  const handleDeleteUser = async () => {
+    try {
+      await axios.delete(`${API_URL}/users/${selectedUser.id}`);
+      setShowDelete(false);
+      fetchUsers();
+      showToast("User berhasil dihapus", "success");
+    } catch (err) {
+      showToast(err?.response?.data?.message || err?.message || "Gagal menghapus user", "danger");
+    }
+  };
+
+  // Reset Password
+  const handleResetPassword = async () => {
+    if (!resetPassword || !selectedUser) return;
+    setFormError("");
+    try {
+      await axios.put(`${API_URL}/users/${selectedUser.id}/password`, {
+        newPassword: resetPassword
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      showToast("Password berhasil direset", "success");
+      setShowReset(false);
+      setShowEdit(false);
+      setResetPassword("");
+    } catch (err) {
+      setFormError(err?.response?.data?.message || err?.message || "Gagal reset password");
+    }
+  };
+
+  // Notifikasi blast (kirim notifikasi ke semua user via backend dengan pesan)
+  const handleNotifBlast = async () => {
+    setShowBlast(true);
+  };
+
+  const handleSendBlast = async () => {
+    if (!blastMessage.trim()) {
+      showToast("Pesan tidak boleh kosong", "danger");
+      return;
+    }
+    try {
+      await axios.post(`${API_URL}/notifications/blast`, { message: blastMessage }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      showToast("Notifikasi berhasil dikirim ke semua user", "success");
+      setShowBlast(false);
+      setBlastMessage("");
+    } catch (err) {
+      showToast(err?.response?.data?.message || "Gagal mengirim notifikasi blast", "danger");
+    }
+  };
+
+  // ...existing code...
+
+  // --- RENDER ---
   return (
-    <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container-fluid py-4">
-        {/* Header & Dark Mode Toggle */}
-        <Row className="align-items-center mb-4 g-2">
-          <Col xs={12} md={6}>
-            <h3 className="mb-0 fw-bold d-flex align-items-center">
-              <FaUser className="me-2" />Daftar Pengguna
-            </h3>
+    <Container fluid className={`px-4 py-4 ${darkMode ? "bg-dark text-light" : "bg-light"}`}>
+      {/* Header */}
+      <Card className="border-0 mb-4" style={glassStyle}>
+        <Card.Body className="py-3">
+          <Row className="align-items-center">
+            <Col md={8}>
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <FaUserCircle className="text-primary" size={32} />
+                </div>
+                <div>
+                  <h2 className="fw-bold mb-0">User Management</h2>
+                  <p className="text-muted mb-0">Manage all system users</p>
+                </div>
+              </div>
+            </Col>
+            <Col md={4} className="text-md-end mt-3 mt-md-0">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setForm({ name: "", email: "", no_telp: "", role: "user", status: "active" });
+                  setFormError("");
+                  setShowAdd(true);
+                }}
+                className="me-2"
+              >
+                <FaPlus className="me-1" /> Add User
+              </Button>
+              <Button
+                variant="info"
+                onClick={handleNotifBlast}
+              >
+                <FaBell className="me-1" /> Notify
+              </Button>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      {/* Stats Cards */}
+      <Row className="mb-4 g-4">
+        {[
+          {
+            title: "Total Users",
+            value: stats.total,
+            icon: <FaUser className="text-primary bg-light rounded-circle p-2 shadow-sm" size={32} />, // Bootstrap icon style
+            color: "primary"
+          },
+          {
+            title: "Active",
+            value: stats.active,
+            icon: <FaUserCheck className="text-success bg-light rounded-circle p-2 shadow-sm" size={32} />, // Bootstrap icon style
+            color: "success"
+          },
+          {
+            title: "Admins",
+            value: stats.admin,
+            icon: <FaUserShield className="text-info bg-light rounded-circle p-2 shadow-sm" size={32} />, // Bootstrap icon style
+            color: "info"
+          },
+          {
+            title: "Inactive",
+            value: stats.inactive,
+            icon: <FaUserTimes className="text-warning bg-light rounded-circle p-2 shadow-sm" size={32} />, // Bootstrap icon style
+            color: "warning"
+          }
+        ].map((stat, index) => (
+          <Col xl={3} lg={6} md={6} key={index}>
+            <Card className="border-0 shadow h-100 text-center py-3 stats-card-bootstrap">
+              <Card.Body>
+                <div className="d-flex flex-column align-items-center justify-content-center gap-2">
+                  <div>{stat.icon}</div>
+                  <h6 className="text-uppercase text-muted mb-1 small fw-bold">{stat.title}</h6>
+                  <h2 className={`mb-0 fw-bold text-${stat.color}`}>{stat.value}</h2>
+                </div>
+              </Card.Body>
+            </Card>
           </Col>
-          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0 d-flex gap-2 justify-content-md-end">
-            <Button
-              variant={darkMode ? "light" : "dark"}
-              onClick={toggleDarkMode}
-              title={darkMode ? "Light Mode" : "Dark Mode"}
-            >
-              {darkMode ? <FaSun /> : <FaMoon />}
-            </Button>
-            <Button variant="info" onClick={handleNotifBlast} disabled={notifLoading}>
-              <FaBell className="me-2" />
-              Blast Notif
-            </Button>
-            <Button variant="success" onClick={handleShowAddModal}>
-              <FaPlus className="me-2" />Tambah User
-            </Button>
-          </Col>
-        </Row>
-        {/* Filter & Export */}
-        <Card className={`mb-4 shadow-sm ${darkMode ? "bg-secondary" : "bg-white"}`}>
-          <Card.Body>
-            <Row className="g-2 align-items-stretch">
-              <Col xs={12} sm={6} md={3}>
-                <InputGroup>
-                  <Form.Control
-                    type="text"
-                    placeholder="Cari nama/email/ID..."
-                    value={search}
-                    onChange={e => {
-                      setSearch(e.target.value);
-                      setPage(1);
-                    }}
-                  />
-                </InputGroup>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
+        ))}
+      </Row>
+
+      {/* Filter and Search */}
+      <Card className="border-0 mb-4" style={glassStyle}>
+        <Card.Body>
+          <Row className="g-3 align-items-center">
+            <Col md={4}>
+              <InputGroup>
+                <InputGroup.Text className={`bg-transparent ${darkMode ? 'text-light' : ''}`}>
+                  <FaSearch />
+                </InputGroup.Text>
+                <Form.Control
+                  placeholder="Search users..."
+                  value={search}
+                  onChange={e => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className={`${darkMode ? 'bg-dark text-light border-dark' : ''}`}
+                />
+              </InputGroup>
+            </Col>
+            <Col md={3}>
+              <FloatingLabel controlId="floatingRole" label="Role">
                 <Form.Select
                   value={filterRole}
                   onChange={e => {
                     setFilterRole(e.target.value);
                     setPage(1);
                   }}
+                  className={`${darkMode ? 'bg-dark text-light border-dark' : ''}`}
                 >
-                  <option value="all">Semua Role</option>
+                  <option value="all">All Roles</option>
                   <option value="admin">Admin</option>
                   <option value="user">User</option>
                 </Form.Select>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
+              </FloatingLabel>
+            </Col>
+            <Col md={3}>
+              <FloatingLabel controlId="floatingStatus" label="Status">
                 <Form.Select
                   value={filterStatus}
                   onChange={e => {
                     setFilterStatus(e.target.value);
                     setPage(1);
                   }}
+                  className={`${darkMode ? 'bg-dark text-light border-dark' : ''}`}
                 >
-                  <option value="all">Semua Status</option>
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </Form.Select>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
-                <Form.Select
-                  value={pageSize}
-                  onChange={e => {
-                    setPageSize(Number(e.target.value));
-                    setPage(1);
-                  }}
-                >
-                  {PAGE_SIZE_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt} / halaman</option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col xs={12} md={3} className="text-md-end mt-2 mt-md-0 d-flex gap-2">
-                <CSVLink
-                  data={formatCSVData(sortedUsers)}
-                  headers={csvHeaders}
-                  filename={`daftar-user-${Date.now()}.csv`}
-                  className="btn btn-outline-success w-100"
-                  separator=";"
-                  enclosingCharacter={'"'}
-                >
-                  <FaFileCsv className="me-2" />
-                  Export CSV
-                </CSVLink>
-                
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
-        {/* Table */}
-        {loading ? (
-          <div className="text-center py-5">
-            <Spinner animation="border" variant="primary" />
-            <div className="mt-2">Memuat data pengguna...</div>
-          </div>
-        ) : pagedUsers.length === 0 ? (
-          <Alert variant="info">Tidak ada data pengguna.</Alert>
-        ) : (
-          <div className="table-responsive shadow-sm rounded">
-            <Table striped bordered hover className={`align-middle mb-0 ${darkMode ? "table-dark" : ""}`}>
-              <thead className={darkMode ? "table-secondary" : "table-light"} style={{ position: "sticky", top: 0, zIndex: 1 }}>
+              </FloatingLabel>
+            </Col>
+            <Col md={2}>
+              <CSVLink
+                data={pagedUsers}
+                headers={[
+                  { label: "ID", key: "id" },
+                  { label: "Name", key: "name" },
+                  { label: "Email", key: "email" },
+                  { label: "Phone", key: "no_telp" },
+                  { label: "Role", key: "role" },
+                  { label: "Status", key: "status" }
+                ]}
+                filename={`users-export-${new Date().toISOString()}.csv`}
+                className={`btn btn-outline-primary w-100 ${darkMode ? 'border-light' : ''}`}
+              >
+                <FaFileCsv className="me-1" /> Export
+              </CSVLink>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      {/* Status Tabs */}
+      <Nav
+        variant="pills"
+        activeKey={activeTab}
+        onSelect={setActiveTab}
+        className="mb-4 px-2 py-2 rounded-pill"
+        style={{
+          background: darkMode
+            ? "linear-gradient(90deg, #232526 0%, #414345 100%)"
+            : "linear-gradient(90deg, #f8fafc 0%, #e0e7ef 100%)",
+          boxShadow: "0 2px 12px rgba(78,115,223,0.07)",
+          borderRadius: "2rem",
+          border: darkMode ? "1px solid #333" : "1px solid #e9ecef"
+        }}
+      >
+        {[
+          { key: "all", label: "All", count: stats.total, icon: <FaUser className="me-1" /> },
+          { key: "active", label: "Active", count: stats.active, icon: <FaUserCheck className="me-1" /> },
+          { key: "admin", label: "Admins", count: stats.admin, icon: <FaUserShield className="me-1" /> },
+          { key: "inactive", label: "Inactive", count: stats.inactive, icon: <FaUserTimes className="me-1" /> }
+        ].map(tab => (
+          <Nav.Item key={tab.key} className="me-2">
+            <Nav.Link
+              eventKey={tab.key}
+              className={`d-flex align-items-center fw-semibold px-4 py-2 rounded-pill border-0 ${
+                activeTab === tab.key
+                  ? darkMode
+                    ? "bg-primary text-light shadow"
+                    : "bg-primary text-white shadow"
+                  : darkMode
+                    ? "text-light"
+                    : "text-dark"
+              }`}
+              style={{
+                transition: "all 0.2s",
+                fontSize: "1rem",
+                marginBottom: "2px"
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+              <Badge
+                bg={activeTab === tab.key ? "light" : "secondary"}
+                text={activeTab === tab.key ? "primary" : undefined}
+                className="ms-2 px-2 py-1 rounded-pill"
+                style={{
+                  fontWeight: 600,
+                  fontSize: "0.95em",
+                  boxShadow: activeTab === tab.key ? "0 2px 8px rgba(78,115,223,0.10)" : undefined
+                }}
+              >
+                {tab.count}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+        ))}
+      </Nav>
+
+      {/* Users Table */}
+      <Card className="border-0 mb-4 users-table-container-futuristic" style={glassStyle}>
+        <Card.Body className="p-0">
+          <div className="table-responsive">
+            <Table hover className="mb-0 align-middle">
+              <thead className={darkMode ? "bg-dark text-light" : "bg-light"}>
                 <tr>
-                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("id")}>
-                    ID {getSortIcon("id")}
-                  </th>
-                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("name")}>
-                    Nama {getSortIcon("name")}
-                  </th>
-                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("email")}>
-                    Email {getSortIcon("email")}
-                  </th>
-                  <th>No. Telp</th>
-                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("role")}>
-                    Role {getSortIcon("role")}
-                  </th>
-                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("status")}>
-                    Status {getSortIcon("status")}
-                  </th>
-                  <th>Aksi</th>
+                  <th style={{ width: '50px' }}>#</th>
+                  <th>User</th>
+                  <th>Contact</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th className="text-end sticky-action-col" style={{ minWidth: 120, right: 0, zIndex: 2, position: 'sticky', background: darkMode ? '#23272f' : '#fff' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {pagedUsers.map(user => (
-                  <tr key={user.id}>
-                    <td>#{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.no_telp || "-"}</td>
-                    <td>
-                      <Badge pill bg={user.role === 'admin' ? 'primary' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge pill bg={user.status === 'active' ? 'success' : 'danger'}>
-                        {user.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Dropdown>
-                        <Dropdown.Toggle variant={darkMode ? "secondary" : "light"} size="sm" id="dropdown-actions">
-                          <FaEllipsisV />
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => handleShowEditModal(user)}>
-                            <FaEdit className="me-2" /> Edit
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleShowHistoryModal(user)}>
-                            <FaHistory className="me-2" /> Riwayat Pesanan
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleShowResetModal(user)}>
-                            <FaKey className="me-2" /> Reset Password
-                          </Dropdown.Item>
-                          <Dropdown.Item className="text-danger" onClick={() => handleShowDeleteModal(user.id)}>
-                            <FaTrash className="me-2" /> Hapus
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-5">
+                      <Spinner animation="border" variant="primary" />
                     </td>
                   </tr>
-                ))}
+                ) : pagedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-5 text-muted">
+                      No users found
+                    </td>
+                  </tr>
+                ) : (
+                  pagedUsers.map(user => (
+                    <tr key={user.id} className="transition-all" style={{ transition: 'all 0.2s ease' }}>
+                      <td className="fw-bold">#{user.id}</td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <UserAvatar name={user.name} role={user.role} />
+                          <div className="ms-3">
+                            <div className="fw-semibold">{user.name}</div>
+                            <small className="text-muted">{user.email}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div>{user.no_telp || '-'}</div>
+                      </td>
+                      <td>
+                        <Badge
+                          pill
+                          bg={user.role === 'admin' ? 'primary' : 'secondary'}
+                          className="px-3 py-2"
+                        >
+                          {user.role}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge
+                          pill
+                          bg={user.status === 'active' ? 'success' : 'danger'}
+                          className="px-3 py-2"
+                        >
+                          {user.status === 'active' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          variant={darkMode ? "outline-light" : "outline-secondary"}
+                          size="sm"
+                          className="px-2"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setForm({
+                              name: user.name,
+                              email: user.email,
+                              no_telp: user.no_telp,
+                              role: user.role,
+                              status: user.status
+                            });
+                            setFormError("");
+                            setShowEdit(true); // Modal multi-fitur akan dibuka
+                          }}
+                        >
+                          <FaEllipsisV />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </Table>
           </div>
-        )}
+        </Card.Body>
+      </Card>
 
-        {/* Pagination */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
-          <div>
-            Menampilkan {pagedUsers.length} dari {sortedUsers.length} pengguna
-          </div>
-          <div>
-            <Button
-              variant="outline-primary"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="me-2"
-            >
-              &lt;
-            </Button>
-            Halaman {page} / {totalPages}
-            <Button
-              variant="outline-primary"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="ms-2"
-            >
-              &gt;
-            </Button>
-          </div>
+      {/* Pagination */}
+      <div className="d-flex justify-content-between align-items-center">
+        <div className="text-muted">
+          Showing {pagedUsers.length} of {filteredUsers.length} users
         </div>
-
-        {/* Toast Notification */}
-        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-          <Toast
-            show={toast.show}
-            onClose={() => setToast({ ...toast, show: false })}
-            bg={toast.variant}
-            delay={2500}
-            autohide
-          >
-            <Toast.Body className="text-white">{toast.message}</Toast.Body>
-          </Toast>
-        </ToastContainer>
-
-        {/* Delete Modal */}
-        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Konfirmasi Hapus</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Apakah Anda yakin ingin menghapus user ini?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Batal</Button>
-            <Button variant="danger" onClick={handleDelete}>Hapus</Button>
-          </Modal.Footer>
-        </Modal>
-
-        {/* Edit Modal */}
-        <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Edit User</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleEditSubmit}>
-            <Modal.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Nama</Form.Label>
-                <Form.Control name="nama" defaultValue={editUser?.name || ""} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control name="email" type="email" defaultValue={editUser?.email || ""} required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>No. Telp</Form.Label>
-                <Form.Control name="no_telp" defaultValue={editUser?.no_telp || ""} />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Role</Form.Label>
-                <Form.Select name="role" defaultValue={editUser?.role || "user"}>
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Status</Form.Label>
-                <Form.Select name="status" defaultValue={editUser?.status || "active"}>
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
-                </Form.Select>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                Batal
-              </Button>
-              <Button variant="primary" type="submit">
-                Simpan
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        {/* Add Modal */}
-        <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Tambah User</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleAddSubmit}>
-            <Modal.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Nama</Form.Label>
-                <Form.Control name="nama" required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control name="email" type="email" required />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>No. Telp</Form.Label>
-                <Form.Control name="no_telp" />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Password</Form.Label>
-                <Form.Control name="password" type="password" required minLength={6} />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Role</Form.Label>
-                <Form.Select name="role" defaultValue="user">
-                  <option value="admin">Admin</option>
-                  <option value="user">User</option>
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label>Status</Form.Label>
-                <Form.Select name="status" defaultValue="active">
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
-                </Form.Select>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                Batal
-              </Button>
-              <Button variant="primary" type="submit">
-                Simpan
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        {/* Reset Password Modal */}
-        <Modal show={showResetModal} onHide={() => setShowResetModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Reset Password User</Modal.Title>
-          </Modal.Header>
-          <Form onSubmit={handleResetPassword}>
-            <Modal.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Password Baru</Form.Label>
-                <Form.Control name="newPassword" type="password" required minLength={6} />
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowResetModal(false)}>
-                Batal
-              </Button>
-              <Button variant="primary" type="submit" disabled={resetLoading}>
-                {resetLoading ? "Menyimpan..." : "Reset"}
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
-
-        {/* Riwayat Pesanan Modal */}
-        <Modal show={showHistoryModal} onHide={() => setShowHistoryModal(false)} centered size="lg">
-          <Modal.Header closeButton>
-            <Modal.Title>Riwayat Pesanan User</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {historyLoading ? (
-              <div className="text-center py-4">
-                <Spinner />
-              </div>
-            ) : historyOrders.length === 0 ? (
-              <div className="text-muted">Belum ada riwayat pesanan.</div>
-            ) : (
-              <div className="table-responsive">
-                <Table size="sm" bordered hover>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Mobil</th>
-                      <th>Tgl Sewa</th>
-                      <th>Tgl Kembali</th>
-                      <th>Status</th>
-                      <th>Pembayaran</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyOrders.map(order => (
-                      <tr key={order.id}>
-                        <td>#{order.id}</td>
-                        <td>{order.layanan?.nama || "-"}</td>
-                        <td>{moment(order.pickup_date).format("DD/MM/YYYY")}</td>
-                        <td>{moment(order.return_date).format("DD/MM/YYYY")}</td>
-                        <td>
-                          <Badge bg={
-                            order.status === "completed" ? "success" :
-                            order.status === "confirmed" ? "info" :
-                            order.status === "pending" ? "warning" :
-                            order.status === "cancelled" ? "danger" : "secondary"
-                          }>
-                            {order.status}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Badge bg={
-                            order.payment_status === "paid" ? "success" :
-                            order.payment_status === "pending_verification" ? "warning" :
-                            order.payment_status === "rejected" ? "danger" : "secondary"
-                          }>
-                            {order.payment_status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            )}
-          </Modal.Body>
-        </Modal>
-
-        {/* Kirim Notifikasi Modal */}
-        <Modal show={showNotifModal} onHide={() => setShowNotifModal(false)} centered>
-          <Form onSubmit={handleSendNotifBlast}>
-            <Modal.Header closeButton>
-              <Modal.Title>Kirim Notifikasi ke Semua User</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form.Group>
-                <Form.Label>Pesan Notifikasi</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={4}
-                  value={notifMessage}
-                  onChange={e => setNotifMessage(e.target.value)}
-                  required
-                />
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowNotifModal(false)}>
-                Batal
-              </Button>
-              <Button variant="primary" type="submit" disabled={notifLoading}>
-                {notifLoading ? "Mengirim..." : "Kirim"}
-              </Button>
-            </Modal.Footer>
-          </Form>
-        </Modal>
+        <Pagination className="users-pagination-futuristic">
+          <Pagination.Prev
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className={darkMode ? 'text-light' : ''}
+          />
+          {Array.from({ length: totalPages }).map((_, idx) => (
+            <Pagination.Item
+              key={idx + 1}
+              active={page === idx + 1}
+              onClick={() => setPage(idx + 1)}
+              className={darkMode ? (page === idx + 1 ? 'bg-primary' : 'bg-dark text-light') : ''}
+            >
+              {idx + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next
+            disabled={page === totalPages}
+            onClick={() => setPage(p => p + 1)}
+            className={darkMode ? 'text-light' : ''}
+          />
+        </Pagination>
       </div>
+
+      {/* Add User Modal */}
+      <Modal show={showAdd} onHide={() => setShowAdd(false)} centered className="users-modal-futuristic">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>Add New User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          <Form>
+            <FloatingLabel controlId="floatingName" label="Name" className="mb-3">
+              <Form.Control
+                placeholder="Name"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className={darkMode ? "bg-dark text-light" : ""}
+              />
+            </FloatingLabel>
+            <FloatingLabel controlId="floatingEmail" label="Email" className="mb-3">
+              <Form.Control
+                type="email"
+                placeholder="Email"
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                className={darkMode ? "bg-dark text-light" : ""}
+              />
+            </FloatingLabel>
+            <FloatingLabel controlId="floatingPhone" label="Phone" className="mb-3">
+              <Form.Control
+                placeholder="Phone"
+                value={form.no_telp}
+                onChange={e => setForm(f => ({ ...f, no_telp: e.target.value }))}
+                className={darkMode ? "bg-dark text-light" : ""}
+              />
+            </FloatingLabel>
+            <FloatingLabel controlId="floatingPassword" label="Password" className="mb-3">
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={form.password || ""}
+                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                className={darkMode ? "bg-dark text-light" : ""}
+                minLength={6}
+                required
+              />
+            </FloatingLabel>
+          </Form>
+          {formError && <div className="text-danger mt-2">{formError}</div>}
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark" : ""}>
+          <Button variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
+          <Button variant="primary" onClick={handleAddUser}>Add User</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal show={showEdit} onHide={() => setShowEdit(false)} centered className="users-modal-futuristic" size="lg">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>User Actions</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          <Row>
+            <Col md={4} className="border-end pe-4 mb-3 mb-md-0">
+              <div className="d-flex flex-column gap-3">
+                <Button variant="outline-primary" className="w-100 text-start d-flex align-items-center gap-2" onClick={() => setFormTab('edit')}><FaEdit /> Edit</Button>
+                <Button variant="outline-info" className="w-100 text-start d-flex align-items-center gap-2" onClick={() => setFormTab('history')}><FaHistory /> History</Button>
+                <Button variant="outline-warning" className="w-100 text-start d-flex align-items-center gap-2" onClick={() => setFormTab('reset')}><FaKey /> Reset Password</Button>
+                <Button variant="outline-danger" className="w-100 text-start d-flex align-items-center gap-2" onClick={() => setFormTab('delete')}><FaTrashAlt /> Delete</Button>
+              </div>
+            </Col>
+            <Col md={8}>
+              {formTab === 'edit' && (
+                <div>
+                  <h5>Edit User</h5>
+                  <Form>
+                    <FloatingLabel controlId="floatingEditName" label="Name" className="mb-3">
+                      <Form.Control
+                        placeholder="Name"
+                        value={form.name}
+                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                      />
+                    </FloatingLabel>
+                    <FloatingLabel controlId="floatingEditEmail" label="Email" className="mb-3">
+                      <Form.Control
+                        type="email"
+                        placeholder="Email"
+                        value={form.email}
+                        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                      />
+                    </FloatingLabel>
+                    <FloatingLabel controlId="floatingEditPhone" label="Phone" className="mb-3">
+                      <Form.Control
+                        placeholder="Phone"
+                        value={form.no_telp}
+                        onChange={e => setForm(f => ({ ...f, no_telp: e.target.value }))}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                      />
+                    </FloatingLabel>
+                    <FloatingLabel controlId="floatingEditRole" label="Role" className="mb-3">
+                      <Form.Select
+                        value={form.role}
+                        onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </Form.Select>
+                    </FloatingLabel>
+                    <FloatingLabel controlId="floatingEditStatus" label="Status" className="mb-3">
+                      <Form.Select
+                        value={form.status}
+                        onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </Form.Select>
+                    </FloatingLabel>
+                  </Form>
+                  {formError && <div className="text-danger mt-2">{formError}</div>}
+                  <div className="mt-3 text-end">
+                    <Button variant="primary" onClick={handleEditUser}>Save Changes</Button>
+                  </div>
+                </div>
+              )}
+              {formTab === 'history' && (
+                <div>
+                  <h5>Order History</h5>
+                  <UserHistoryContent userId={selectedUser?.id} darkMode={darkMode} />
+                </div>
+              )}
+              {formTab === 'reset' && (
+                <div>
+                  <h5>Reset Password</h5>
+                  <Form onSubmit={e => { e.preventDefault(); handleResetPassword(); }}>
+                    <FloatingLabel controlId="floatingPassword" label="New Password" className="mb-3">
+                      <Form.Control
+                        type="password"
+                        placeholder="New Password"
+                        value={resetPassword}
+                        onChange={e => setResetPassword(e.target.value)}
+                        className={darkMode ? "bg-dark text-light" : ""}
+                        minLength={6}
+                        required
+                      />
+                    </FloatingLabel>
+                    {formError && <div className="text-danger mb-2">{formError}</div>}
+                    <div className="mt-3 text-end">
+                      <Button variant="warning" type="submit">Reset Password</Button>
+                    </div>
+                  </Form>
+                </div>
+              )}
+              {formTab === 'delete' && (
+                <div>
+                  <h5>Delete User</h5>
+                  <p>Are you sure you want to delete user <b>{selectedUser?.name}</b>? This action cannot be undone.</p>
+                  <div className="mt-3 text-end">
+                    <Button variant="danger" onClick={handleDeleteUser}>Delete</Button>
+                  </div>
+                </div>
+              )}
+            </Col>
+          </Row>
+        </Modal.Body>
+      </Modal>
+
+      {/* Delete User Modal */}
+      <Modal show={showDelete} onHide={() => setShowDelete(false)} centered className="users-modal-futuristic">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>Delete User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          Are you sure you want to delete user <b>{selectedUser?.name}</b>? This action cannot be undone.
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark" : ""}>
+          <Button variant="secondary" onClick={() => setShowDelete(false)}>Cancel</Button>
+          <Button variant="danger" onClick={handleDeleteUser}>Delete</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Reset Password Modal */}
+      <Modal show={showReset} onHide={() => setShowReset(false)} centered className="users-modal-futuristic">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>Reset Password</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          <Form>
+            <FloatingLabel controlId="floatingPassword" label="New Password" className="mb-3">
+              <Form.Control
+                type="password"
+                placeholder="New Password"
+                value={resetPassword}
+                onChange={e => setResetPassword(e.target.value)}
+                className={darkMode ? "bg-dark text-light" : ""}
+              />
+            </FloatingLabel>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark" : ""}>
+          <Button variant="secondary" onClick={() => setShowReset(false)}>Cancel</Button>
+          <Button variant="primary" onClick={handleResetPassword}>Reset Password</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* User History Modal */}
+      <Modal show={showHistory} onHide={() => setShowHistory(false)} centered size="lg" className="users-modal-futuristic">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>User History</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          {selectedUser ? (
+            <UserHistoryContent userId={selectedUser.id} darkMode={darkMode} />
+          ) : (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="primary" />
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark" : ""}>
+          <Button variant="secondary" onClick={() => setShowHistory(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Blast Notification Modal */}
+      <Modal show={showBlast} onHide={() => setShowBlast(false)} centered className="users-modal-futuristic">
+        <Modal.Header closeButton className={darkMode ? "bg-dark text-light" : ""}>
+          <Modal.Title>Kirim Notifikasi Blast</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+          <Form>
+            <FloatingLabel controlId="floatingBlastMsg" label="Pesan Notifikasi" className="mb-3">
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Tulis pesan notifikasi..."
+                value={blastMessage}
+                onChange={e => setBlastMessage(e.target.value)}
+                className={darkMode ? "bg-dark text-light" : ""}
+              />
+            </FloatingLabel>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark" : ""}>
+          <Button variant="secondary" onClick={() => setShowBlast(false)}>Batal</Button>
+          <Button variant="primary" onClick={handleSendBlast}>Kirim</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Toast Notification */}
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
+        <Toast
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+          bg={toast.variant}
+          delay={3000}
+          autohide
+          className="border-0"
+        >
+          <Toast.Body className="d-flex align-items-center">
+            {toast.variant === 'success' ? (
+              <FaRegCheckCircle className="me-2 flex-shrink-0" />
+            ) : toast.variant === 'danger' ? (
+              <FaRegClock className="me-2 flex-shrink-0" />
+            ) : (
+              <FaBell className="me-2 flex-shrink-0" />
+            )}
+            {toast.message}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </Container>
+  );
+};
+
+// --- UserHistoryContent Component ---
+const UserHistoryContent = ({ userId, darkMode }) => {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // Fetch order history for user
+        const res = await axios.get(`${API_URL}/users/${userId}/history`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setHistory(res.data.data || []);
+      } catch (err) {
+        setError(err?.response?.data?.message || "Gagal mengambil riwayat pesanan user");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (userId) fetchHistory();
+  }, [userId]);
+
+  if (loading) return (
+    <div className="text-center py-4">
+      <Spinner animation="border" variant="primary" />
+      <div className="mt-2">Loading order history...</div>
+    </div>
+  );
+  if (error) return (
+    <div className="text-center py-4 text-danger">
+      <FaRegClock size={32} className="mb-2" />
+      <div>{error}</div>
+    </div>
+  );
+  if (!history.length) return (
+    <div className="text-center py-4 text-muted">
+      <FaHistory size={32} className="mb-2" />
+      <div>No order history found for this user.</div>
+    </div>
+  );
+  return (
+    <div className="user-history-list-futuristic">
+      <Table striped bordered hover responsive className={darkMode ? "bg-dark text-light" : "bg-light"}>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Order ID</th>
+            <th>Car</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Total Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map((order, idx) => (
+            <tr key={order.id || idx}>
+              <td>{idx + 1}</td>
+              <td>{order.id || '-'}</td>
+              <td>{order.car_name || order.car?.name || '-'}</td>
+              <td>{order.start_date ? new Date(order.start_date).toLocaleDateString() : '-'}</td>
+              <td>{order.end_date ? new Date(order.end_date).toLocaleDateString() : '-'}</td>
+              <td>
+                <Badge bg={order.status === 'completed' ? 'success' : order.status === 'cancelled' ? 'danger' : 'warning'}>
+                  {order.status || '-'}
+                </Badge>
+              </td>
+              <td>{order.total_price ? `Rp${order.total_price.toLocaleString()}` : '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </div>
   );
 };

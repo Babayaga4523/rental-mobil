@@ -3,47 +3,91 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(120deg, #0f2027, #2c5364, #00eaff, #4f46e5);
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease-in-out infinite;
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+@keyframes gradientMove {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+/* Card animasi fade-in-up */
 .auth-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(18px) saturate(180%);
   border-radius: 20px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-  padding: 3rem;
+  padding: 2.5rem 2rem 2rem 2rem;
+  box-shadow: 0 15px 40px rgba(0, 234, 255, 0.13), 0 2px 8px rgba(0,0,0,0.18);
+  border: 1.5px solid rgba(0,234,255,0.13);
+  animation: fadeInUp 1s cubic-bezier(.39,.575,.565,1) both;
+  max-width: 420px;
   width: 100%;
-  max-width: 500px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 0 auto;
 }
 
-.auth-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(40px);}
+  100% { opacity: 1; transform: translateY(0);}
 }
 
-.logo-container {
-  text-align: center;
-  margin-bottom: 2rem;
+.logo-wrapper {
+  position: relative;
 }
 
-.logo {
-  height: 80px;
-  width: auto;
-  transition: transform 0.3s ease;
+.logo-circle {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 60% 40%, #00eaff 0%, #4f46e5 80%, #2c5364 100%);
+  border: 2.5px solid #00eaff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 32px 6px #00eaff44,
+    0 0 0 8px #4f46e522,
+    0 4px 20px rgba(0, 234, 255, 0.15);
+  animation: pulseLogo 2.5s infinite alternate;
+  margin: 0 auto 1rem auto;
+  position: relative;
+  overflow: hidden;
 }
 
-.logo:hover {
-  transform: scale(1.05);
+@keyframes pulseLogo {
+  0% { box-shadow: 0 0 0 #00eaff00, 0 0 0 #4f46e500; }
+  50% { box-shadow: 0 0 32px 12px #00eaff77, 0 0 0 12px #4f46e555; }
+  100% { box-shadow: 0 0 0 #00eaff00, 0 0 0 #4f46e500; }
 }
 
-.app-name {
-  color: #4f46e5;
-  font-weight: 700;
-  margin-top: 0.75rem;
-  font-size: 1.8rem;
-  letter-spacing: -0.5px;
+.logo-img {
+  display: block;
+  max-width: 64%;
+  max-height: 64%;
+  margin: auto;
+  filter: drop-shadow(0 0 12px #00eaff88);
+  transition: transform 0.2s;
+}
+
+.logo-circle:hover .logo-img {
+  transform: scale(1.08) rotate(-2deg);
+  filter: drop-shadow(0 0 24px #00eaffcc);
+}
+
+.app-title {
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-top: 10px;
+  font-size: 1.5rem;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(90deg, #00eaff, #4f46e5);
+  text-shadow: 0 2px 16px #00eaff44;
 }
 
 .auth-header {
@@ -78,27 +122,29 @@
 }
 
 .form-label {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #4a5568;
+  color: #b0c4de;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
 }
 
 .form-control {
-  padding: 1rem 1.2rem;
+  background-color: #fff;
+  color: #222;
   border: 2px solid #e2e8f0;
   border-radius: 10px;
+  padding: 1rem 1.2rem;
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-  background-color: #f8fafc;
   box-sizing: border-box;
 }
 
 .form-control:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  border-color: #00eaff;
+  box-shadow: 0 0 0 3px #00eaff44;
   outline: none;
-  background-color: white;
+  background-color: #fff;
+  color: #222;
 }
 
 .form-control.is-invalid {
@@ -142,7 +188,7 @@
   color: #4f46e5;
 }
 .submit-button {
-  background: linear-gradient(to right, #4f46e5, #7c3aed);
+  background: linear-gradient(90deg, #00eaff 0%, #4f46e5 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -150,20 +196,23 @@
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(.39,.575,.565,1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
   margin-top: 0.5rem;
-  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 4px 16px #00eaff33;
   width: 100%;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-button:hover:not(:disabled) {
-  background: linear-gradient(to right, #4338ca, #6d28d9);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.2);
+  background: linear-gradient(90deg, #4f46e5 0%, #00eaff 100%);
+  box-shadow: 0 8px 24px #00eaff55;
+  transform: translateY(-2px) scale(1.03);
 }
 
 .submit-button:disabled {
@@ -172,78 +221,51 @@
   opacity: 0.8;
 }
 
+/* Spinner tetap */
 .spinner {
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  border-top: 2px solid white;
+  border-top: 2px solid #00eaff;
   width: 18px;
   height: 18px;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
 }
 
-.auth-footer {
-  text-align: center;
-  margin-top: 2rem;
-  color: #718096;
-  font-size: 0.95rem;
-}
-
+/* Neon effect on link */
 .auth-link {
-  color: #4f46e5;
+  color: #00eaff;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s;
 }
 
 .auth-link:hover {
-  color: #4338ca;
+  color: #4f46e5;
+  text-shadow: 0 2px 8px #00eaff44;
   text-decoration: underline;
 }
 
-/* Responsive styles */
+/* Responsive styles (tetap) */
 @media (max-width: 576px) {
   .auth-card {
     padding: 2rem 1.5rem;
     border-radius: 16px;
   }
-  
-  .auth-header h2 {
-    font-size: 1.6rem;
-  }
-  
-  .logo {
+  .logo-circle {
+    width: 70px;
     height: 70px;
   }
-  
-  .app-name {
-    font-size: 1.6rem;
-  }
-  
-  .form-control {
-    padding: 0.9rem 1.1rem;
-  }
-  
-  .submit-button {
-    padding: 0.9rem;
+  .app-title {
+    font-size: 1.3rem;
   }
 }
-
 @media (max-width: 400px) {
-  .auth-card {
-    padding: 1.5rem 1.25rem;
-  }
-  
-  .auth-header h2 {
-    font-size: 1.4rem;
-  }
-  
-  .app-name {
-    font-size: 1.4rem;
-  margin-top: 0.5rem;
-  }
+  .auth-card { padding: 1.5rem 1.25rem; }
+  .auth-header h2 { font-size: 1.4rem; }
+  .app-name { font-size: 1.4rem; margin-top: 0.5rem; }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -9,6 +9,8 @@ import { Spinner, Alert } from "react-bootstrap";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from "axios";
+import { toast } from "react-toastify";
+import { format } from 'date-fns';
 
 const defaultCarImage = '/images/default-car.jpg';
 const defaultGalleryImages = [
@@ -30,11 +32,6 @@ const DetailMobil = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
-  const [bookedDates, setBookedDates] = useState([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [dateError, setDateError] = useState("");
-  const [showAllBooked, setShowAllBooked] = useState(false);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true, easing: 'ease-in-out' });
@@ -78,15 +75,6 @@ const DetailMobil = () => {
       .catch(() => setLoadingReviews(false));
   }, [car?.id]);
 
-  // Fetch booked dates for the car
-  useEffect(() => {
-    if (!id) return;
-    axios
-      .get(`http://localhost:3000/api/layanan/${id}/availability`)
-      .then(res => setBookedDates(res.data.bookedDates || []))
-      .catch(() => setBookedDates([]));
-  }, [id]);
-
   const handleImageError = (imgElement, fallbackImage) => {
     imgElement.src = fallbackImage;
     imgElement.onerror = null;
@@ -110,7 +98,17 @@ const DetailMobil = () => {
   const discountedPrice = diskon ? totalPrice - (totalPrice * diskon / 100) : totalPrice;
 
   const handleBooking = () => {
-    if (!car) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error(
+        "Anda harus login terlebih dahulu untuk melakukan booking.",
+        { position: "top-right", autoClose: 2000 }
+      );
+      setTimeout(() => {
+        navigate("/login", { state: { from: `/detail/${car.id}` } });
+      }, 1200);
+      return;
+    }
     navigate("/booking", {
       state: {
         carId: car.id,
@@ -130,30 +128,6 @@ const DetailMobil = () => {
     if (typeof car.fitur === "string") return car.fitur.split(",").map(f => f.trim()).filter(Boolean);
     return [];
   }, [car]);
-
-  const handleDateChange = (type, value) => {
-    setDateError("");
-    if (type === "start") setStartDate(value);
-    else setEndDate(value);
-
-    // Validasi: tanggal mulai <= tanggal selesai
-    const start = type === "start" ? value : startDate;
-    const end = type === "end" ? value : endDate;
-    if (start && end && start > end) {
-      setDateError("Tanggal mulai tidak boleh setelah tanggal selesai.");
-      return;
-    }
-    // Validasi: tidak boleh overlap dengan bookedDates
-    if (start && end) {
-      const startObj = new Date(start);
-      const endObj = new Date(end);
-      const overlap = bookedDates.some(
-        (range) =>
-          (startObj <= new Date(range.end) && endObj >= new Date(range.start))
-      );
-      if (overlap) setDateError("Tanggal yang dipilih bentrok dengan booking lain.");
-    }
-  };
 
   if (loading) {
     return (
@@ -241,7 +215,7 @@ const DetailMobil = () => {
         <div className="car-detail-hero-wave">
           <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
             <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="currentColor"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="currentColor"></path>
+            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39 116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="currentColor"></path>
             <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="currentColor"></path>
           </svg>
         </div>
@@ -316,48 +290,6 @@ const DetailMobil = () => {
 
           {/* Booking Section */}
           <div className="col-lg-5">
-            {/* Informasi Tanggal Tidak Tersedia */}
-            <div className="mb-4">
-              <div className="card border-0 shadow-sm">
-                <div className="card-body">
-                  <h5 className="fw-bold mb-3">
-                    <i className="fas fa-calendar-times text-warning me-2"></i>
-                    Informasi Ketersediaan Mobil
-                  </h5>
-                  {bookedDates.length === 0 ? (
-                    <div className="alert alert-success mb-0 d-flex align-items-center">
-                      <i className="fas fa-check-circle me-2"></i>
-                      Mobil tersedia untuk semua tanggal.
-                    </div>
-                  ) : (
-                    <div className="alert alert-warning mb-0">
-                      <div className="mb-2">
-                        <i className="fas fa-exclamation-triangle me-2"></i>
-                        <b>Mobil tidak tersedia pada tanggal berikut:</b>
-                      </div>
-                      <ul className="list-group list-group-flush">
-                        {(showAllBooked ? bookedDates : bookedDates.slice(0, 3)).map((range, i) => (
-                          <li key={i} className="list-group-item bg-transparent px-0 py-1 border-0">
-                            <span className="badge bg-danger bg-opacity-75 me-2">
-                              {new Date(range.start).toLocaleDateString("id-ID")} - {new Date(range.end).toLocaleDateString("id-ID")}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                      {bookedDates.length > 3 && (
-                        <button
-                          className="btn btn-link p-0 mt-2"
-                          onClick={() => setShowAllBooked(!showAllBooked)}
-                        >
-                          {showAllBooked ? "Sembunyikan" : `Lihat Semua (${bookedDates.length})`}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Card Booking Section */}
             <div className="car-detail-booking-card" data-aos="fade-left">
               <div className="car-detail-booking-header">
@@ -448,7 +380,6 @@ const DetailMobil = () => {
                 </button>
 
                 <div className="text-center car-detail-payment-info">
-
                   <small className="text-muted">
                     <i className="fas fa-lock me-1"></i> Pembayaran aman dan terjamin
                   </small>

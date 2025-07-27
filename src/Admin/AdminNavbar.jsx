@@ -20,6 +20,7 @@ import {
   deleteNotification,
   deleteAllNotifications
 } from "./utils/notificationApi";
+import { socket } from "./utils/socket";
 
 const API_URL = "http://localhost:3000/api";
 
@@ -44,6 +45,12 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [alert, setAlert] = useState({ show: false, message: "", variant: "" });
   const [expandedNotification, setExpandedNotification] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    no_telp: ""
+  });
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -92,22 +99,44 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
 
   // Fetch notifications
   useEffect(() => {
-    let isMounted = true;
     const getNotif = async () => {
-      const data = await fetchNotifications(token);
-      if (isMounted) {
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.read).length);
-      }
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
+      setUnreadCount((res.data || []).filter(n => !n.read).length);
     };
     getNotif();
-    // Polling setiap 30 detik
+    // polling setiap 30 detik
     const interval = setInterval(getNotif, 30000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [token]);
+
+  // Listener notifikasi baru
+  useEffect(() => {
+    // Notifikasi umum
+    socket.on("new_notification", (notif) => {
+      setNotifications((prev) => [{ ...notif, id: Date.now(), read: false }, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    });
+    // Notifikasi pesanan masuk
+    socket.on("new_order", (order) => {
+      const notif = {
+        id: Date.now(),
+        title: "Pesanan Baru",
+        message: `Pesanan baru dari ${order.customerName || 'Pelanggan'} untuk ${order.carName || 'mobil'}.`,
+        type: "success",
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      setNotifications((prev) => [notif, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    });
+    return () => {
+      socket.off("new_notification");
+      socket.off("new_order");
+    };
+  }, []);
 
   // Logout
   const handleLogout = () => {
@@ -187,8 +216,6 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   // Tandai satu notifikasi sebagai sudah dibaca
   const handleMarkAsRead = async (id) => {
     try {
-      const notif = notifications.find(n => n.id === id);
-      if (!notif || notif.read) return;
       await markAsRead(id, token);
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, read: true } : n)
@@ -251,6 +278,44 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
+      });
+    }
+  };
+
+  const handleEditProfile = () => {
+    setEditForm({
+      name: admin.name,
+      email: admin.email,
+      no_telp: admin.no_telp
+    });
+    setEditMode(true);
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${API_URL}/users/${admin.id}`,
+        {
+          nama: editForm.name,
+          email: editForm.email,
+          no_telp: editForm.no_telp
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAdmin(prev => ({
+        ...prev,
+        name: editForm.name,
+        email: editForm.email,
+        no_telp: editForm.no_telp
+      }));
+      setEditMode(false);
+      setAlert({ show: true, message: "Profile updated successfully!", variant: "success" });
+    } catch (err) {
+      setAlert({
+        show: true,
+        message: err.response?.data?.message || "Failed to update profile",
+        variant: "danger"
       });
     }
   };
@@ -328,7 +393,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                     onClick={handleDeleteAllNotifications}
                   >
                     Clear all
-                  </button>
+                    </button>
                 </div>
               </div>
               <div className="notification-list">
@@ -460,14 +525,6 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
               </Dropdown.Item>
 
               <Dropdown.Divider />
-
-              <Dropdown.Item
-                className="profile-menu-item logout"
-                onClick={handleLogout}
-              >
-                <FaSignOutAlt className="menu-icon" />
-                <span>Logout</span>
-              </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
         </div>
@@ -476,94 +533,144 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
       {/* Profile Modal */}
       <Modal
         show={showProfile}
-        onHide={() => setShowProfile(false)}
+        onHide={() => {
+          setShowProfile(false);
+          setEditMode(false);
+          setAlert({ show: false, message: "", variant: "" });
+        }}
         centered
         className="admin-modal"
       >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <FiUser className="modal-title-icon" />
-            Admin Profile
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="d-flex align-items-center gap-2">
+            <FiUser className="modal-title-icon fs-4 text-primary" />
+            <span className="fw-semibold">Admin Profile</span>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="profile-modal-content">
-            <div className="profile-avatar-large">
-              <div
-                className="avatar-circle"
-                style={{ backgroundColor: admin.avatarColor }}
-              >
-                {admin.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="profile-status">
-                <div className="status-badge online">Online</div>
-              </div>
+          <div className="d-flex flex-column align-items-center mb-4">
+            <div
+              className="rounded-circle d-flex align-items-center justify-content-center shadow"
+              style={{
+                width: 90,
+                height: 90,
+                backgroundColor: admin.avatarColor,
+                fontSize: 38,
+                color: "#fff",
+                marginBottom: 8
+              }}
+            >
+              {admin.name.charAt(0).toUpperCase()}
             </div>
-
-            <div className="profile-details">
-              <div className="detail-item">
-                <div className="detail-icon">
-                  <FiUser />
-                </div>
-                <div className="detail-content">
-                  <div className="detail-label">Name</div>
-                  <div className="detail-value">{admin.name}</div>
-                </div>
-              </div>
-
-              <div className="detail-item">
-                <div className="detail-icon">
-                  <FaEnvelope />
-                </div>
-                <div className="detail-content">
-                  <div className="detail-label">Email</div>
-                  <div className="detail-value">{admin.email}</div>
-                </div>
-              </div>
-
-              <div className="detail-item">
-                <div className="detail-icon">
-                  <FaPhone />
-                </div>
-                <div className="detail-content">
-                  <div className="detail-label">Phone</div>
-                  <div className="detail-value">{admin.no_telp}</div>
-                </div>
-              </div>
-
-              <div className="detail-item">
-                <div className="detail-icon">
-                  <FaUserShield />
-                </div>
-                <div className="detail-content">
-                  <div className="detail-label">Role</div>
-                  <div className="detail-value">
-                    <Badge bg="primary" pill>
-                      {admin.role}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div className="detail-item">
-                <div className="detail-icon">
-                  <FaCog />
-                </div>
-                <div className="detail-content">
-                  <div className="detail-label">Last Login</div>
-                  <div className="detail-value">{formatLastLogin(admin.lastLogin)}</div>
-                </div>
-              </div>
-            </div>
+            <span className="badge bg-success mb-2">Online</span>
           </div>
+
+          {alert.show && (
+            <Alert variant={alert.variant} className="mb-3 w-100 text-center">
+              {alert.message}
+            </Alert>
+          )}
+
+          {!editMode ? (
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <FiUser className="me-2 text-primary" />
+                  <span className="fw-bold">Name:</span>
+                </div>
+                <div className="ps-4">{admin.name}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <FaEnvelope className="me-2 text-primary" />
+                  <span className="fw-bold">Email:</span>
+                </div>
+                <div className="ps-4">{admin.email}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <FaPhone className="me-2 text-primary" />
+                  <span className="fw-bold">Phone:</span>
+                </div>
+                <div className="ps-4">{admin.no_telp}</div>
+              </div>
+              <div className="col-12 col-md-6">
+                <div className="d-flex align-items-center mb-2">
+                  <FaUserShield className="me-2 text-primary" />
+                  <span className="fw-bold">Role:</span>
+                </div>
+                <div className="ps-4">
+                  <Badge bg="primary" pill className="px-3 py-1 text-capitalize">
+                    {admin.role}
+                  </Badge>
+                </div>
+              </div>
+              <div className="col-12">
+                <div className="d-flex align-items-center mb-2">
+                  <FaCog className="me-2 text-primary" />
+                  <span className="fw-bold">Last Login:</span>
+                </div>
+                <div className="ps-4">{formatLastLogin(admin.lastLogin)}</div>
+              </div>
+            </div>
+          ) : (
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  required
+                  autoFocus
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  value={editForm.email}
+                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Phone</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={editForm.no_telp}
+                  onChange={e => setEditForm({ ...editForm, no_telp: e.target.value })}
+                  required
+                />
+              </Form.Group>
+            </Form>
+          )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="outline-secondary" onClick={() => setShowProfile(false)}>
+        <Modal.Footer className="border-0 pt-0">
+          <Button
+            variant="outline-secondary"
+            onClick={() => {
+              setShowProfile(false);
+              setEditMode(false);
+              setAlert({ show: false, message: "", variant: "" });
+            }}
+          >
             Close
           </Button>
-          <Button variant="primary">
-            Edit Profile
-          </Button>
+          {!editMode ? (
+            <Button variant="primary" onClick={handleEditProfile}>
+              Edit Profile
+            </Button>
+          ) : (
+            <>
+              <Button variant="success" onClick={handleSaveProfile}>
+                Save
+              </Button>
+              <Button variant="secondary" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
+            </>
+          )}
         </Modal.Footer>
       </Modal>
 

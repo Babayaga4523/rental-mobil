@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaUserCircle, FaEnvelope, FaPhoneAlt, FaCheckCircle, FaCamera, FaKey, FaBell, FaCarSide } from "react-icons/fa";
 import "../style/Profil.css";
+import { socket } from "../Admin/utils/socket";
+
 const BACKEND_URL = "http://localhost:3000";
 
 const Profile = () => {
@@ -46,15 +48,30 @@ const Profile = () => {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setOrders(res.data.data || []));
-      // Ambil notifikasi
-      axios
-        .get(`${BACKEND_URL}/api/notifications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => setNotif(res.data || []))
-        .finally(() => setNotifLoading(false));
     }
   }, [userId, token]);
+
+  // Fetch notifikasi awal & polling
+  useEffect(() => {
+    const fetchNotif = async () => {
+      const res = await axios.get(`${BACKEND_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotif(res.data || []);
+    };
+    fetchNotif();
+    const interval = setInterval(fetchNotif, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  // Listener notifikasi baru dari socket.io
+  useEffect(() => {
+    socket.on("new_notification", notif => {
+      setNotif(prev => [{ ...notif, id: Date.now(), read: false }, ...prev]);
+      // Optional: tampilkan toast jika notif.user_id === user.id
+    });
+    return () => socket.off("new_notification");
+  }, []);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -134,7 +151,7 @@ const Profile = () => {
     );
 
   return (
-    <div className="container py-5">
+    <div className="profil-container" style={{ paddingTop: 100 }}>
       <div className="row justify-content-center g-5">
         {/* Kartu Profil */}
         <div className="col-lg-5">

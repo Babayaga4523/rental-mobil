@@ -44,3 +44,24 @@
 .admin-content {
   padding-top: 70px; /* Sesuaikan dengan tinggi navbar */
 }
+
+/* Tambahkan di style/global.css atau style/App.css */
+.home-page-root,
+.booking-page-root,
+.user-orders-root,
+.layanan-page-root,
+.about-page,
+.kontak-page-root {
+  padding-top: 70px; /* atau sesuai tinggi navbar Anda */
+}
+
+/* App.css atau global.css */
+.app-root-flex {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content-flex {
+  flex: 1 0 auto;
+}

@@ -2,27 +2,21 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   FaCar, 
-  FaCalendarAlt, 
   FaMoneyBillWave, 
-  FaPercentage,
-  FaCreditCard,
-  FaUniversity,
-  FaMoneyCheckAlt,
-  FaQrcode,
-  FaArrowLeft,
-  FaFileAlt,
-  FaUpload,
-  FaTimesCircle,
-  FaCheckCircle
+  FaCalendarAlt, 
+  FaPercentage, 
+  FaCreditCard, 
+  FaArrowLeft, 
+  FaTimesCircle 
 } from "react-icons/fa";
-import { toast } from "react-toastify";
-import axios from "axios";
 import { format, addDays, isBefore } from "date-fns";
-import PropTypes from "prop-types";
-import "../style/BookingPage.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { QRCodeSVG } from "qrcode.react";
+import PropTypes from "prop-types";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "../style/BookingPage.css";
+import axios from "axios";
   
 const BACKEND_URL = "http://localhost:3000";
 
@@ -66,10 +60,10 @@ const Booking = () => {
     layanan_id: carId,
     pickup_date: "",
     return_date: "",
-    payment_method: "bank_transfer",
+    payment_method: "midtrans", // default midtrans
     additional_notes: "",
     total_price: totalHarga,
-    payment_proof: null,
+    // payment_proof: null, // HAPUS
   });
 
   const [errors, setErrors] = useState({});
@@ -82,7 +76,9 @@ const Booking = () => {
 
   // Tambahkan state baru
   const [isAvailable, setIsAvailable] = useState(null);
-  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+
+  // Tambahkan state ini
   const [bookedDates, setBookedDates] = useState([]);
   const [showAllBooked, setShowAllBooked] = useState(false);
 
@@ -159,6 +155,7 @@ const Booking = () => {
     setPreviewImage(null);
   };
 
+  // Hapus validasi payment_proof di validateForm
   const validateForm = () => {
     const newErrors = {};
     const today = new Date();
@@ -178,10 +175,6 @@ const Booking = () => {
 
     if (!formData.payment_method) {
       newErrors.payment_method = "Payment method is required";
-    }
-
-    if (!formData.payment_proof && formData.payment_method !== "credit_card") {
-      newErrors.payment_proof = "Payment proof is required";
     }
 
     setErrors(newErrors);
@@ -216,6 +209,16 @@ const Booking = () => {
         formDataToSend.append('payment_proof', formData.payment_proof);
       }
 
+      console.log("Booking data:", {
+        layanan_id: Number(formData.layanan_id),
+        pickup_date: formData.pickup_date,
+        return_date: formData.return_date,
+        payment_method: formData.payment_method,
+        additional_notes: formData.additional_notes,
+        total_price: formData.total_price,
+        payment_proof: formData.payment_proof,
+      });
+
       const response = await axios.post(
         "http://localhost:3000/api/orders",
         formDataToSend,
@@ -241,7 +244,17 @@ const Booking = () => {
         toast.error("Gagal mendapatkan ID pesanan dari server");
         return;
       }
-      navigate(`/orders/${orderId}/receipt`);
+      const responseReceipt = await axios.get(
+        `${BACKEND_URL}/api/orders/${orderId}/receipt`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Langsung redirect ke OrderReceipt jika berhasil
+      if (responseReceipt.data?.data?.id) {
+        // Hapus setTimeout dan langsung navigate
+        navigate(`/orders/${responseReceipt.data.data.id}/receipt`);
+      } else {
+        toast.error("Gagal mendapatkan ID pesanan");
+      }
     } catch (error) {
       console.error("Order creation error:", error);
       let errorMessage = "Gagal membuat pesanan";
@@ -305,39 +318,68 @@ const Booking = () => {
     }
   };
 
-  // Fungsi cek ketersediaan
-  const checkAvailability = async (carId, pickup, ret) => {
-    setCheckingAvailability(true);
-    setIsAvailable(null);
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/layanan/${carId}`);
-      // Cek status mobil
-      if (res.data?.data?.status !== "available") {
-        setIsAvailable(false);
-        return;
+  // Check availability on component mount and when carId changes
+  useEffect(() => {
+    if (!carId) return;
+    
+    const fetchBookedDates = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${BACKEND_URL}/api/orders/layanan/${carId}/booked-dates`, {
+          headers: { 
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.data.success) {
+          setBookedDates(res.data.bookedDates);
+        }
+      } catch (error) {
+        console.error('Error fetching booked dates:', error);
+        setBookedDates([]);
       }
-      // Cek bentrok order (opsional: backend bisa tambahkan endpoint khusus)
-      const orderRes = await axios.get(`${BACKEND_URL}/api/orders`, {
-        params: { layanan_id: carId, status: "confirmed" }
-      });
-      const orders = orderRes.data.data || [];
-      const overlap = orders.some(order =>
-        (pickup <= order.return_date && ret >= order.pickup_date)
-      );
-      setIsAvailable(!overlap);
-    } catch {
+    };
+
+    fetchBookedDates();
+  }, [carId]);
+
+  const checkAvailability = async (pickup, returnDate) => {
+    if (!pickup || !returnDate) {
       setIsAvailable(null);
+      return;
+    }
+    setIsChecking(true);
+    try {
+      const response = await axios.get(`${BACKEND_URL}/api/orders/check-availability`, {
+        params: {
+          layanan_id: carId,
+          pickup_date: pickup,
+          return_date: returnDate
+        }
+      });
+      // Perbaikan: handle response tanpa field success
+      if (typeof response.data.available === "boolean") {
+        setIsAvailable(response.data.available);
+        if (!response.data.available) {
+          toast.error('Mobil tidak tersedia pada tanggal yang dipilih');
+        }
+      } else {
+        setIsAvailable(null);
+        toast.error('Gagal mengecek ketersediaan mobil');
+      }
+    } catch (error) {
+      setIsAvailable(false);
+      toast.error('Gagal mengecek ketersediaan mobil');
     } finally {
-      setCheckingAvailability(false);
+      setIsChecking(false);
     }
   };
 
-  // Panggil saat tanggal berubah
+  // Tambahkan useEffect untuk cek availability saat tanggal berubah
   useEffect(() => {
-    if (formData.layanan_id && formData.pickup_date && formData.return_date) {
-      checkAvailability(formData.layanan_id, formData.pickup_date, formData.return_date);
+    if (formData.pickup_date && formData.return_date) {
+      checkAvailability(formData.pickup_date, formData.return_date);
     }
-  }, [formData.layanan_id, formData.pickup_date, formData.return_date]);
+  }, [formData.pickup_date, formData.return_date]);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
@@ -347,10 +389,122 @@ const Booking = () => {
   useEffect(() => {
     if (!carId) return;
     axios
-      .get(`${BACKEND_URL}/api/layanan/${carId}/availability`)
+      .get(`${BACKEND_URL}/api/orders/layanan/${carId}/booked-dates`)
       .then((res) => setBookedDates(res.data.bookedDates || []))
       .catch(() => setBookedDates([]));
   }, [carId]);
+
+  // Tambahkan fungsi handleMidtransPayment di dalam komponen Booking
+  const handleMidtransPayment = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Anda harus login terlebih dahulu.");
+        return;
+      }
+
+      const order_id = `ORDER-${Date.now()}`;
+      const gross_amount = formData.total_price;
+      const layanan_id = Number(formData.layanan_id);
+
+      // Dapatkan Snap token dari backend
+      const res = await axios.post(
+        `${BACKEND_URL}/api/payment/midtrans-token`,
+        {
+          order_id,
+          gross_amount,
+          layanan_id, // atau car_id
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data && res.data.token) {
+        window.snap.pay(res.data.token, {
+          onSuccess: async function(result) {
+            // Ambil payment_type dari Midtrans
+            const paymentMethod = result.payment_type || "midtrans";
+            // Buat order di backend dengan status paid
+            const orderRes = await axios.post(
+              `${BACKEND_URL}/api/orders`,
+              {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
+                payment_status: "paid",
+                midtrans_order_id: result.order_id,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            // Redirect ke OrderReceipt tanpa delay
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Gagal mendapatkan ID pesanan");
+            }
+          },
+          onPending: async function(result) {
+            // Ambil payment_type dari Midtrans
+            const paymentMethod = result.payment_type || "midtrans";
+            // Buat order di backend dengan status pending
+            const orderRes = await axios.post(
+              `${BACKEND_URL}/api/orders`,
+              {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
+                payment_status: "unpaid",
+                midtrans_order_id: result.order_id,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            // Redirect ke OrderReceipt tanpa delay
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Gagal mendapatkan ID pesanan");
+            }
+          },
+          onError: async function(result) {
+            // Buat order di backend dengan status failed
+            const paymentMethod = result?.payment_type || "midtrans";
+            const orderRes = await axios.post(
+              `${BACKEND_URL}/api/orders`,
+              {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
+                payment_status: "failed",
+                midtrans_order_id: result?.order_id,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Pembayaran gagal dan pesanan tidak tercatat.");
+            }
+          },
+          onClose: function() {
+            toast.info("Anda menutup popup pembayaran");
+          }
+        });
+      } else {
+        toast.error("Gagal mendapatkan token pembayaran");
+      }
+    } catch (err) {
+      console.error("Payment error:", err);
+      toast.error("Gagal memulai pembayaran");
+    }
+  };
 
   if (isSessionExpired) {
     return null;
@@ -379,59 +533,15 @@ const Booking = () => {
   }
 
   return (
-    <div className="booking-page-root bg-light">
-      {/* HERO SECTION */}
-      <section className="booking-hero-section position-relative d-flex align-items-center justify-content-center">
-        <div className="booking-hero-overlay"></div>
-        <div className="container position-relative z-2 text-center">
-          <h1
-            className="display-4 fw-bold mb-3 booking-hero-title"
-            data-aos="fade-down"
-          >
-            <span className="booking-hero-gradient-text">
-              Booking Mobil Mudah & Cepat
-            </span>
-          </h1>
-          <p
-            className="lead text-white-50 mb-4 booking-hero-subtitle"
-            data-aos="fade-up"
-            data-aos-delay="100"
-          >
-            Isi formulir pemesanan di bawah ini untuk pengalaman rental mobil terbaik bersama kami.<br />
-            Proses mudah, aman, dan transparan. Armada siap antar ke mana saja!
-          </p>
-          <div className="d-flex justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
-            <button
-              className="btn btn-primary btn-lg rounded-pill px-4 py-3 shadow"
-              onClick={() => window.scrollTo({ top: 600, behavior: "smooth" })}
-            >
-              <FaCar className="me-2" />
-              Mulai Booking
-            </button>
-            <a
-              href="https://wa.me/6281381339149"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline-light btn-lg rounded-pill px-4 py-3"
-            >
-              <FaFileAlt className="me-2" />
-              Chat Admin
-            </a>
-          </div>
-        </div>
-      </section>
-
+    <div className="booking-page-root" style={{ paddingTop: 100 }}>
       {/* CONTENT SECTION */}
       <div className="container">
         <div className="row justify-content-center">
           <div className="col-lg-10">
-            <div className="booking-page-card border-0 shadow-sm">
-              <div className="booking-page-card-header bg-primary text-white py-3">
-                <div className="d-flex align-items-center">
-                  <button 
-                    className="btn btn-sm btn-outline-light me-3"
-                    onClick={() => navigate(-1)}
-                  >
+            <div className="booking-page-card border-0 shadow-sm" data-aos="fade-up">
+              <div className="booking-page-card-header bg-primary text-white py-3 d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center gap-3">
+                  <button className="btn btn-sm btn-outline-light me-3" onClick={() => navigate(-1)}>
                     <FaArrowLeft />
                   </button>
                   <h1 className="h4 mb-0 fw-bold">
@@ -439,34 +549,32 @@ const Booking = () => {
                     {activeTab === "booking" ? "Formulir Pemesanan" : "Pembayaran"}
                   </h1>
                 </div>
+                <span className="badge bg-gradient-primary fs-6 px-3 py-2 shadow-sm" style={{ background: "linear-gradient(90deg,#ffd700,#ffb300)", color: "#222" }}>
+                  Premium Service
+                </span>
               </div>
-
               <div className="booking-page-card-body p-4">
                 <div className="row g-4">
                   {/* Summary Section */}
                   <div className="col-lg-5">
-                    <div className="booking-page-summary card border-0 shadow-sm p-0">
-                      <div className="booking-page-card-img-top-custom">
+                    <div className="booking-page-summary card border-0 shadow-sm p-0" data-aos="zoom-in">
+                      <div className="booking-page-card-img-top-custom position-relative">
                         <img
-                          src={
-                            image
-                              ? image.startsWith("http")
-                                ? image
-                                : BACKEND_URL + image
-                              : "/images/default-car.jpg"
-                          }
+                          src={image ? (image.startsWith("http") ? image : BACKEND_URL + image) : "/images/default-car.jpg"}
                           alt={carName}
                           className="booking-page-img-cover-custom"
                         />
+                        {discount > 0 && (
+                          <span className="badge bg-warning text-dark position-absolute top-0 end-0 m-3 fs-6 shadow">Diskon {discount}%</span>
+                        )}
                       </div>
                       <div className="card-body pb-3">
-                        <h3 className="h5 fw-bold mb-3">{carName}</h3>
+                        <h3 className="h5 fw-bold mb-3 text-gradient">{carName}</h3>
                         <ul className="list-unstyled mb-4">
                           <li className="mb-2 d-flex align-items-center">
                             <FaMoneyBillWave className="text-primary me-2 flex-shrink-0" />
                             <span>
-                              Harga per hari:{" "}
-                              {discount > 0 ? (
+                              Harga per hari: {discount > 0 ? (
                                 <>
                                   <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
                                     Rp {price?.toLocaleString("id-ID")}
@@ -482,18 +590,8 @@ const Booking = () => {
                           </li>
                           <li className="mb-2 d-flex align-items-center">
                             <FaCalendarAlt className="text-primary me-2 flex-shrink-0" />
-                            <span>
-                              Durasi sewa: <strong>{days} hari</strong>
-                            </span>
+                            <span>Durasi sewa: <strong>{days} hari</strong></span>
                           </li>
-                          {discount > 0 && (
-                            <li className="mb-2 d-flex align-items-center">
-                              <FaPercentage className="text-success me-2 flex-shrink-0" />
-                              <span>
-                                Diskon: <strong className="text-success">{discount}%</strong>
-                              </span>
-                            </li>
-                          )}
                         </ul>
                         <div className="border-top pt-3">
                           <div className="d-flex justify-content-between align-items-center">
@@ -502,17 +600,14 @@ const Booking = () => {
                               Rp {totalHarga?.toLocaleString("id-ID")}
                             </h3>
                           </div>
-                          <small className="text-muted d-block mt-1">
-                            Termasuk pajak dan asuransi
-                          </small>
+                          <small className="text-muted d-block mt-1">Termasuk pajak dan asuransi</small>
                         </div>
                       </div>
                     </div>
                   </div>
-
                   {/* Form Section */}
                   <div className="col-lg-7">
-                    {/* Informasi Tanggal Tidak Tersedia */}
+                    {/* Info Ketersediaan */}
                     <div className="mb-4">
                       <div className="card border-0 shadow-sm">
                         <div className="card-body">
@@ -553,8 +648,7 @@ const Booking = () => {
                         </div>
                       </div>
                     </div>
-
-                    <div className="card h-100 border-0 shadow-sm">
+                    <div className="card h-100 border-0 shadow-sm" data-aos="fade-left">
                       <div className="card-body">
                         <div className="booking-step-indicator mb-4">
                           <div className={`step ${activeTab === "booking" ? "active" : ""}`}>
@@ -567,7 +661,6 @@ const Booking = () => {
                             <span className="step-label">Pembayaran</span>
                           </div>
                         </div>
-
                         <ul className="nav nav-tabs mb-4">
                           <li className="nav-item">
                             <button
@@ -636,10 +729,30 @@ const Booking = () => {
                                 type="button"
                                 className="btn btn-primary w-100 py-3"
                                 onClick={() => setActiveTab("payment")}
-                                disabled={!formData.pickup_date || !formData.return_date}
+                                disabled={
+                                  !formData.pickup_date ||
+                                  !formData.return_date ||
+                                  isChecking ||
+                                  isAvailable === false // <-- tombol disabled jika mobil tidak tersedia
+                                }
                               >
-                                Lanjut ke Pembayaran
+                                {isChecking ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-2" />
+                                    Mengecek ketersediaan...
+                                  </>
+                                ) : isAvailable === false ? (
+                                  "Mobil Tidak Tersedia"
+                                ) : (
+                                  "Lanjut ke Pembayaran"
+                                )}
                               </button>
+                              {isAvailable === false && (
+                                <div className="alert alert-danger mt-3">
+                                  <i className="fas fa-exclamation-circle me-2"></i>
+                                  Mobil tidak tersedia pada tanggal yang dipilih. Silakan pilih tanggal lain.
+                                </div>
+                              )}
                             </>
                           ) : (
                             <>
@@ -647,133 +760,18 @@ const Booking = () => {
                                 <label className="form-label fw-bold d-block mb-3">
                                   Metode Pembayaran
                                 </label>
-                                <div className="d-flex gap-3 flex-wrap">
-                                  <button
-                                    type="button"
-                                    className={`btn payment-method-btn flex-grow-1 ${formData.payment_method === "bank_transfer" ? "btn-primary active" : "btn-outline-primary"}`}
-                                    onClick={() => handleChange({ target: { name: "payment_method", value: "bank_transfer" } })}
-                                  >
-                                    <FaUniversity className="me-2 fs-4" />
-                                    Transfer Bank (BCA)
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* BANK TRANSFER */}
-                              {formData.payment_method === "bank_transfer" && (
-                                <div className="alert alert-info mt-3 d-flex flex-wrap align-items-center gap-4">
-                                  <div>
-                                    <div className="fw-bold mb-1">Transfer ke Rekening:</div>
-                                    <div className="mb-1">
-                                      <span className="me-1"><strong>Bank:</strong> {BANK_INFO.bank}</span>
-                                    </div>
-                                    <div className="mb-1">
-                                      <span className="me-1"><strong>Nomor Rekening:</strong> {BANK_INFO.norek}</span>
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-primary ms-1"
-                                        onClick={() => copyToClipboard(BANK_INFO.norek)}
-                                        title="Salin nomor rekening"
-                                      >
-                                        Salin
-                                      </button>
-                                    </div>
-                                    <div className="mb-2">
-                                      <span className="me-1"><strong>Atas Nama:</strong> {BANK_INFO.nama}</span>
-                                    </div>
-                                    <small className="text-muted">
-                                      Cantumkan <b>ID pesanan</b> di keterangan transfer.
-                                    </small>
-                                  </div>
-                                  <div className="qrcode-box text-center ms-auto">
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Upload Bukti Pembayaran */}
-                              <div className="mb-4">
-                                <label className="form-label fw-bold d-block mb-3">
-                                  Unggah Bukti Pembayaran
-                                </label>
-                                <div className="border rounded-3 p-3">
-                                  {formData.payment_proof ? (
-                                    <div className="position-relative">
-                                      {previewImage ? (
-                                        <img
-                                          src={previewImage}
-                                          alt="Preview bukti pembayaran"
-                                          className="img-fluid rounded mb-3"
-                                          style={{ maxHeight: "200px" }}
-                                        />
-                                      ) : (
-                                        <div className="p-4 bg-light rounded text-center mb-3">
-                                          <FaFileAlt className="fs-1 text-muted mb-2" />
-                                          <p className="mb-0">{formData.payment_proof.name}</p>
-                                        </div>
-                                      )}
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
-                                        onClick={removePaymentProof}
-                                        aria-label="Hapus bukti pembayaran"
-                                      >
-                                        <FaTimesCircle />
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <label
-                                        htmlFor="paymentProof"
-                                        className="d-block cursor-pointer text-center p-4 border-2 border-dashed rounded"
-                                      >
-                                        <FaUpload className="fs-1 text-muted mb-3" />
-                                        <p className="mb-1 fw-bold">Klik untuk mengunggah bukti pembayaran</p>
-                                        <small className="text-muted">
-                                          (Format: JPG, PNG, PDF, maksimal 5MB)
-                                        </small>
-                                      </label>
-                                      <input
-                                        type="file"
-                                        id="paymentProof"
-                                        className="d-none"
-                                        onChange={handleFileChange}
-                                        accept="image/jpeg,image/png,application/pdf"
-                                      />
-                                    </>
-                                  )}
-                                  {errors.payment_proof && (
-                                    <div className="text-danger small mt-2">{errors.payment_proof}</div>
-                                  )}
-                                  {isUploading && (
-                                    <div className="mt-3">
-                                      <div className="progress">
-                                        <div
-                                          className="progress-bar progress-bar-striped progress-bar-animated"
-                                          style={{ width: `${uploadProgress}%` }}
-                                          aria-valuenow={uploadProgress}
-                                          aria-valuemin="0"
-                                          aria-valuemax="100"
-                                        >
-                                          {uploadProgress}%
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Notifikasi Otomatis */}
-                             
-
-                              {/* Notifikasi email */}
-                              {activeTab === "payment" && (
                                 <div className="alert alert-info d-flex align-items-center gap-2 mb-4">
-                                  <FaCheckCircle className="me-2" />
-                                  Setelah pesanan berhasil, detail pesanan dan status pembayaran akan dikirim ke email Anda.
+                                  <FaCreditCard className="me-2" />
+                                  Pembayaran hanya dapat dilakukan melalui Midtrans (Virtual Account).
                                 </div>
-                              )}
-
-                              {/* Catatan Tambahan & Tombol */}
+                                {/* Tambahkan alert jika mobil tidak tersedia */}
+                                {isAvailable === false && (
+                                  <div className="alert alert-danger d-flex align-items-center gap-2 mb-4">
+                                    <FaTimesCircle className="me-2" />
+                                    Mobil tidak tersedia pada tanggal yang dipilih. Silahkan pilih mobil yang lain.
+                                  </div>
+                                )}
+                              </div>
                               <div className="mb-4">
                                 <label htmlFor="additional_notes" className="form-label fw-bold">
                                   Catatan Tambahan
@@ -797,21 +795,13 @@ const Booking = () => {
                                   Kembali
                                 </button>
                                 <button
-                                  type="submit"
-                                  className="btn btn-primary flex-grow-1 py-3"
-                                  disabled={isLoading || isUploading}
+                                  type="button"
+                                  className="btn btn-success flex-grow-1 py-3"
+                                  onClick={handleMidtransPayment}
+                                  disabled={isLoading || isAvailable === false}
                                 >
-                                  {isLoading || isUploading ? (
-                                    <>
-                                      <span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                      Memproses...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <FaCheckCircle className="me-2" />
-                                      Selesaikan Pemesanan
-                                    </>
-                                  )}
+                                  <FaCreditCard className="me-2" />
+                                  Bayar Sekarang
                                 </button>
                               </div>
                             </>

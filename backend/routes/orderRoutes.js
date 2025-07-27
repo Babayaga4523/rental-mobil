@@ -1,16 +1,16 @@
 const express = require("express");
 const router = express.Router();
+const { check } = require('express-validator');
+const upload = require('../middleware/upload');
 const orderController = require("../controllers/orderController");
+const { authMiddleware, checkAdmin } = require('../middleware/authMiddleware');
 
-const { check } = require("express-validator");
+// Setup Multer untuk upload bukti pembayaran
+const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 require("dotenv").config();
-const multer = require('multer');
-const {authMiddleware, checkAdmin } = require("../middleware/authMiddleware");
-
-// Setup Multer untuk upload bukti pembayaran
-const upload = multer({
+const uploadMulter = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const dir = path.join(__dirname, '../uploads/payment_proofs');
@@ -37,13 +37,24 @@ const upload = multer({
   }
 });
 
-// Middleware auth global
+// Route yang TIDAK perlu auth (letakkan SEBELUM router.use(authMiddleware))
+router.get(
+  '/check-availability',
+  orderController.checkCarAvailability
+);
+
+router.get(
+  '/layanan/:id/booked-dates',
+  orderController.getBookedDates
+);
+
+// Middleware auth global (setelah route di atas)
 router.use(authMiddleware);
 
 // Create order dengan bukti pembayaran opsional
 router.post(
   '/',
-  upload.single('payment_proof'),
+  uploadMulter.single('payment_proof'),
   [
     check('layanan_id', 'Car ID is required').isInt(),
     check('pickup_date', 'Valid pickup date is required').isISO8601(),
@@ -67,7 +78,7 @@ router.get(
 // Upload bukti pembayaran untuk order yang sudah ada
 router.put(
   '/:id/payment',
-  upload.single('payment_proof'),
+  uploadMulter.single('payment_proof'),
   [
     check('id', 'Invalid order ID').isInt()
   ],
@@ -148,6 +159,27 @@ router.delete(
   authMiddleware,
   checkAdmin,
   orderController.deleteOrder
+);
+
+// Contoh penggunaan:
+router.post(
+  '/:id/upload-payment',
+  upload.single('payment_proof'),
+  [
+    check('some_field').notEmpty().withMessage('Field wajib diisi')
+  ],
+  orderController.uploadPaymentProof
+);
+
+router.post("/add-to-calendar", authMiddleware, orderController.addToCalendar);
+
+// Route dinamis (harus di bawah)
+router.get(
+  "/:id",
+  [
+    check("id", "Invalid order ID").isInt()
+  ],
+  orderController.getOrderById
 );
 
 module.exports = router;

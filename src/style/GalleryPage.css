@@ -1,10 +1,11 @@
-.gallery-page-root {
+.hs-gallery-page-root {
   font-family: 'Poppins', sans-serif;
   background: #f8fafc;
   min-height: 100vh;
+  color: #222 !important; /* warna dasar font utama */
 }
 
-.gallery-hero {
+.hs-gallery-hero {
   min-height: 110vh;
   height: 110vh;
   background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
@@ -18,7 +19,7 @@
   overflow: hidden;
 }
 
-.hero-glass {
+.hs-hero-glass {
   background: rgba(255,255,255,0.13);
   border-radius: 2rem;
   box-shadow: 0 8px 32px rgba(30,60,114,0.13);
@@ -28,32 +29,34 @@
   margin-bottom: 1.5rem;
   border: 1.5px solid rgba(255,255,255,0.18);
 }
-.hero-title {
+.hs-hero-title {
   font-size: 3.2rem;
   font-weight: 800;
   letter-spacing: -1px;
   margin-bottom: 1.2rem;
+  color: #1e3c72 !important; /* warna biru branding untuk judul */
 }
-.hero-gradient-text {
+.hs-hero-gradient-text {
   background: linear-gradient(90deg, #ffd700 0%, #ffb300 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.hero-lead {
+
+.hs-hero-lead {
   font-size: 1.25rem;
   color: #e3e8f3;
   max-width: 700px;
   margin: 0 auto 1.5rem auto;
 }
-.hero-stat-glass {
+.hs-hero-stat-glass {
   background: rgba(255,255,255,0.18) !important;
   border: 1.5px solid rgba(255,255,255,0.18);
   box-shadow: 0 4px 24px rgba(30,60,114,0.10);
   backdrop-filter: blur(4px);
   transition: transform 0.2s;
 }
-.hero-stat-glass:hover {
+.hs-hero-stat-glass:hover {
   transform: translateY(-4px) scale(1.04);
   box-shadow: 0 8px 32px rgba(30,60,114,0.18);
 }
@@ -61,16 +64,17 @@
 .bg-gold { background-color: #d4af37 !important; }
 
 @media (max-width: 768px) {
-  .gallery-hero {
+  .hs-gallery-hero {
     min-height: 60vh;
     height: 60vh;
     padding-top: 40px;
     padding-bottom: 20px;
   }
-  .hero-title {
+  .hs-hero-title {
     font-size: 2rem;
+    color: #1e3c72 !important;
   }
-  .hero-glass {
+  .hs-hero-glass {
     padding: 0.7rem 1.2rem;
   }
 }
@@ -94,7 +98,7 @@
 }
 
 /* Gallery grid */
-.gallery-card {
+.hs-gallery-card {
   transition: box-shadow 0.2s, transform 0.2s;
   border-radius: 1.5rem;
   background: #fff;
@@ -107,15 +111,15 @@
   justify-content: flex-start;
   cursor: pointer;
 }
-.gallery-card:hover {
+.hs-gallery-card:hover {
   box-shadow: 0 16px 40px rgba(30,60,114,0.18);
   transform: translateY(-8px) scale(1.03);
 }
-.gallery-img-container {
+.hs-gallery-img-container {
   position: relative;
   overflow: hidden;
 }
-.gallery-img {
+.hs-gallery-img {
   border-radius: 1.5rem 1.5rem 0 0;
   transition: transform 0.3s;
   min-height: 220px;
@@ -124,11 +128,11 @@
   width: 100%;
   filter: brightness(0.96) contrast(1.08);
 }
-.gallery-card:hover .gallery-img {
+.hs-gallery-card:hover .hs-gallery-img {
   transform: scale(1.07) rotate(-1deg);
   filter: brightness(1.02) contrast(1.12);
 }
-.gallery-category-badge {
+.hs-gallery-category-badge {
   position: absolute;
   top: 14px;
   right: 14px;
@@ -142,29 +146,30 @@
   box-shadow: 0 2px 8px rgba(30,60,114,0.10);
   letter-spacing: 0.5px;
 }
-.gallery-card .p-3 {
+.hs-gallery-card .p-3 {
   background: #f9fafd;
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
 }
-.gallery-card h5 {
+.hs-gallery-card h5 {
   font-weight: 700;
   color: #1e3c72;
 }
-.gallery-card p {
+.hs-gallery-card p {
   font-size: 1.02rem;
   color: #5a5a5a;
+  color: #444 !important; /* warna abu-abu gelap untuk deskripsi */
 }
 
 /* Modal */
-.gallery-modal-content {
+.hs-gallery-modal-content {
   background: transparent;
   border: none;
   box-shadow: none;
 }
-.gallery-modal-close {
+.hs-gallery-modal-close {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -173,7 +178,7 @@
   font-size: 1.2rem;
   box-shadow: 0 2px 8px rgba(30,60,114,0.10);
 }
-.gallery-modal-img {
+.hs-gallery-modal-img {
   border-radius: 1.5rem;
   background: #222;
   display: block;
@@ -181,16 +186,16 @@
   box-shadow: 0 8px 32px rgba(30,60,114,0.18);
 }
 @media (max-width: 768px) {
-  .gallery-card {
+  .hs-gallery-card {
     border-radius: 1rem;
     min-height: 320px;
   }
-  .gallery-img {
+  .hs-gallery-img {
     border-radius: 1rem 1rem 0 0;
     min-height: 160px;
     max-height: 160px;
   }
-  .gallery-modal-img {
+  .hs-gallery-modal-img {
     border-radius: 1rem;
   }
 }
@@ -207,7 +212,29 @@
 .bg-white, .bg-light {
   border-radius: 1.5rem;
   box-shadow: 0 4px 24px rgba(30,60,114,0.06);
+  color: #222 !important;
 }
 section {
   margin-bottom: 2rem;
+}
+.faq-question, .faq-answer, .hs-hero-lead, .hs-gallery-card p {
+  color: #333 !important;
+}
+.carousel .carousel-item,
+.carousel-indicators [data-bs-target] {
+  color: #222 !important;
+}
+.fst-italic.text-secondary {
+  color: #555 !important; /* warna font testimonial */
+}
+section h2,
+section h4,
+section h5 {
+  color: #1e3c72 !important;
+}
+.btn-primary, .btn-outline-primary {
+  color: #fff !important;
+}
+.btn-primary:hover, .btn-outline-primary:hover {
+  color: #222 !important;
 }

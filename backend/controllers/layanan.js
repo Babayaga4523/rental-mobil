@@ -158,7 +158,15 @@ exports.getOmzetLayanan = async (req, res) => {
       ],
       group: ['layanan_id']
     });
-    res.json({ success: true, data: omzet });
+
+    // Pastikan hasilnya array of plain object
+    const omzetData = omzet.map(item => ({
+      layanan_id: item.layanan_id,
+      total_omzet: Number(item.get('total_omzet')) || 0,
+      jumlah_order: Number(item.get('jumlah_order')) || 0
+    }));
+
+    res.json({ success: true, data: omzetData });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

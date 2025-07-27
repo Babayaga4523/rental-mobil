@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form, InputGroup, Toast, ToastContainer, Row, Col, Card
+  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form,
+  InputGroup, Toast, ToastContainer, Row, Col, Card, Pagination,
+  ProgressBar, Accordion, ListGroup, Container
 } from "react-bootstrap";
-import { FaEllipsisV, FaEdit, FaTrash, FaPlus, FaSort, FaSortUp, FaSortDown, FaFileCsv, FaFileExcel, FaCar, FaMoon, FaSun, FaEye, FaStar } from "react-icons/fa";
+import {
+  FaEllipsisV, FaEdit, FaTrash, FaPlus, FaSort, FaSortUp,
+  FaSortDown, FaFileCsv, FaCar, FaSearch, FaInfoCircle, FaEye, FaStar, FaChartLine, FaCalendarAlt
+} from "react-icons/fa";
 import { CSVLink } from "react-csv";
-import * as XLSX from "xlsx";
 import moment from "moment";
 
 const API_URL = "http://localhost:3000/api";
@@ -32,12 +36,14 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [formImage, setFormImage] = useState(null);
-  // Tambahkan filter di filter & search
   const [filterSewaAktif, setFilterSewaAktif] = useState(false);
-  const [omzetMap, setOmzetMap] = useState({});
-
-  // Tambahkan fungsi ini:
-  const getOmzet = (carId) => omzetMap[carId] || 0;
+  const [stats, setStats] = useState({
+    totalCars: 0,
+    available: 0,
+    rented: 0,
+    topRated: null,
+    mostRented: null
+  });
 
   const token = localStorage.getItem("token");
 
@@ -47,13 +53,31 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
       const res = await axios.get(`${API_URL}/layanan`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCars(
-        Array.isArray(res.data.data)
-          ? res.data.data
-          : Array.isArray(res.data)
-          ? res.data
-          : []
-      );
+      const carsData = Array.isArray(res.data.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+      
+      setCars(carsData);
+      
+      // Calculate stats
+      const available = carsData.filter(c => c.status === 'available').length;
+      const rented = carsData.filter(c => c.status === 'unavailable').length;
+      const topRated = [...carsData].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0];
+      const mostRented = [...carsData].sort((a, b) => 
+        (orders.filter(o => o.layanan?.id === b.id).length) - 
+        (orders.filter(o => o.layanan?.id === a.id).length)
+      )[0];
+      
+      setStats({
+        totalCars: carsData.length,
+        available,
+        rented,
+        topRated,
+        mostRented
+      });
+      
     } catch (err) {
       setCars([]);
       showToast("Gagal memuat data mobil!", "danger");
@@ -73,34 +97,17 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     }
   };
 
-  const fetchOmzet = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/layanan/omzet`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const map = {};
-      (res.data.data || []).forEach(item => {
-        map[item.layanan_id] = Number(item.total_omzet || 0);
-      });
-      setOmzetMap(map);
-    } catch {
-      setOmzetMap({});
-    }
-  };
-
   useEffect(() => {
     fetchCars();
     fetchOrders();
-    fetchOmzet();
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const showToast = (message, variant = "success") => {
     setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ ...toast, show: false }), 2500);
+    setTimeout(() => setToast({ ...toast, show: false }), 3000);
   };
 
-  // --- PINDAHKAN getSewaAktif KE ATAS SEBELUM filteredCars ---
   const getSewaAktif = (carId) => {
     const now = moment();
     const aktif = orders.find(order =>
@@ -109,16 +116,11 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
       moment(order.pickup_date).isSameOrBefore(now, "day") &&
       moment(order.return_date).isSameOrAfter(now, "day")
     );
-    if (aktif) {
-      return `${moment(aktif.pickup_date).format("DD/MM/YYYY")} - ${moment(aktif.return_date).format("DD/MM/YYYY")}`;
-    }
-    return "-";
+    return aktif ? `${moment(aktif.pickup_date).format("DD/MM/YYYY")} - ${moment(aktif.return_date).format("DD/MM/YYYY")}` : "-";
   };
 
-  const getDisewa = (carId) =>
-    orders.filter(order => order.layanan?.id === carId).length;
+  const getDisewa = (carId) => orders.filter(order => order.layanan?.id === carId).length;
 
-  // Jumlah order aktif hari ini (disewa hari ini)
   const getDisewaHariIni = (carId) => {
     const today = moment().startOf('day');
     return orders.filter(order =>
@@ -129,12 +131,8 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     ).length;
   };
 
-  // Ambil semua kategori unik
-  const kategoriList = [
-    ...new Set(cars.map(car => car.kategori).filter(Boolean))
-  ];
+  const kategoriList = [...new Set(cars.map(car => car.kategori).filter(Boolean))];
 
-  // Filter & Search
   const filteredCars = cars.filter(car => {
     const searchLower = search.toLowerCase();
     const matchSearch =
@@ -154,12 +152,10 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     const matchHarga =
       !filterHarga ||
       (Number(car.harga) >= Number(filterHarga));
-    // Tambahkan filter untuk sewa aktif
     const matchSewaAktif = !filterSewaAktif || getSewaAktif(car.id) !== "-";
     return matchSearch && matchStatus && matchKategori && matchPromo && matchHarga && matchSewaAktif;
   });
 
-  // Sorting
   const sortedCars = [...filteredCars].sort((a, b) => {
     const { key, direction } = sortConfig;
     let valA = a[key], valB = b[key];
@@ -172,7 +168,6 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     return 0;
   });
 
-  // Pagination
   const totalPages = Math.ceil(sortedCars.length / pageSize);
   const pagedCars = sortedCars.slice((page - 1) * pageSize, page * pageSize);
 
@@ -184,6 +179,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
       return { key, direction: "asc" };
     });
   };
+
   const getSortIcon = (key) => {
     if (sortConfig.key !== key) return <FaSort className="ms-1 text-muted" />;
     return sortConfig.direction === "asc" ? (
@@ -193,7 +189,6 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     );
   };
 
-  // CSV Export
   const csvHeaders = [
     { label: "ID", key: "id" },
     { label: "Nama Mobil", key: "nama" },
@@ -202,9 +197,9 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     { label: "Promo (%)", key: "promo" },
     { label: "Status", key: "status" },
     { label: "Disewa", key: "disewa" },
-    { label: "Omzet", key: "omzet" },
     { label: "Rating", key: "rating" }
   ];
+
   const formatCSVData = (cars) =>
     cars.map((car) => ({
       id: car.id,
@@ -213,43 +208,26 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
       harga: car.harga ? Number(car.harga).toLocaleString("id-ID") : "",
       promo: car.promo || 0,
       status: car.status === "available" ? "Tersedia" : "Tidak Tersedia",
-      disewa: car.disewa || 0,
-      omzet: car.omzet ? Number(car.omzet).toLocaleString("id-ID") : "0",
+      disewa: getDisewa(car.id),
       rating: car.rating || "-"
     }));
 
-  // Excel Export
-  const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(formatCSVData(sortedCars));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Mobil");
-    XLSX.writeFile(wb, `daftar-mobil-${Date.now()}.xlsx`);
-  };
-
-  // Modal helpers
   const handleShowDeleteModal = (id) => {
     setDeleteId(id);
     setShowDeleteModal(true);
   };
+
   const handleShowDetailModal = async (car) => {
-    try {
-      const res = await axios.get(`${API_URL}/layanan/${car.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setDetailCar(res.data.data || car);
-      setShowDetailModal(true);
-    } catch {
-      setDetailCar(car);
-      setShowDetailModal(true);
-    }
+    setDetailCar(car);
+    setShowDetailModal(true);
   };
+
   const handleShowFormModal = (car = null) => {
     setEditCar(car);
     setFormImage(null);
     setShowFormModal(true);
   };
 
-  // Delete
   const handleDelete = async () => {
     try {
       await axios.delete(`${API_URL}/layanan/${deleteId}`, {
@@ -263,28 +241,27 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     }
   };
 
-  // Add/Edit
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
     const data = new FormData();
 
-    // Wajib
     data.append("nama", form.nama.value.trim());
     data.append("kategori", form.kategori.value.trim());
     data.append("harga", form.harga.value);
     data.append("status", form.status.value);
     data.append("deskripsi", form.deskripsi.value.trim());
 
-    // Opsional
     if (formImage) data.append("gambar", formImage);
-    if (form.promo.value && Number(form.promo.value) > 0) data.append("promo", form.promo.value);
+    if (form.promo.value !== "" && !isNaN(Number(form.promo.value))) {
+      data.append("promo", Number(form.promo.value));
+    } else {
+      data.append("promo", 0);
+    }
     if (form.transmisi.value) data.append("transmisi", form.transmisi.value);
     if (form.kapasitas.value && Number(form.kapasitas.value) > 0) data.append("kapasitas", form.kapasitas.value);
-
-    // Fitur: pastikan array string
     if (form.fitur.value) {
-      data.append("fitur", form.fitur.value); // cukup string, misal: "AC, Bluetooth"
+      data.append("fitur", form.fitur.value);
     }
 
     try {
@@ -319,6 +296,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
     if (typeof fitur === "string") return fitur.split(",").map(f => f.trim()).filter(Boolean);
     return [];
   };
+
   const FiturBadges = ({ fitur }) => {
     const fiturList = getFiturList(fitur);
     return fiturList.length > 0
@@ -328,50 +306,152 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
       : <span className="text-muted">-</span>;
   };
 
-  // Statistik pemakaian mobil (jumlah disewa & omzet)
-  useEffect(() => {
-    // Ambil statistik dari backend jika ada endpoint, atau hitung manual dari relasi order jika tersedia
-    // Contoh: backend sudah menambahkan field disewa & omzet pada response mobil
-    // Jika belum, bisa fetch /api/orders dan hitung manual di sini
-  }, [cars]);
-
   const getRiwayatSewa = (carId) => {
     return orders
       .filter(order => order.layanan?.id === carId)
       .sort((a, b) => new Date(b.pickup_date) - new Date(a.pickup_date));
   };
 
+  const StatusBadge = ({ status }) => {
+    const variants = {
+      available: { bg: "success", text: "Tersedia" },
+      unavailable: { bg: "danger", text: "Tidak Tersedia" },
+      pending: { bg: "warning", text: "Pending" },
+      confirmed: { bg: "info", text: "Dikonfirmasi" },
+      completed: { bg: "success", text: "Selesai" },
+      cancelled: { bg: "secondary", text: "Dibatalkan" }
+    };
+    
+    const { bg, text } = variants[status] || { bg: "secondary", text: status };
+    return <Badge pill bg={bg}>{text}</Badge>;
+  };
+
   return (
     <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container-fluid py-4">
+      <Container fluid className="py-4 px-4">
         {/* Header */}
         <Row className="align-items-center mb-4">
           <Col xs={12} md={6}>
-            <h3 className="mb-0 fw-bold">
+            <h2 className="mb-0 fw-bold text-gradient">
               <FaCar className="me-2" />
-              Daftar Mobil
-            </h3>
+              Fleet Management Dashboard
+            </h2>
+            <p className="text-muted mb-0">Kelola armada kendaraan dengan mudah</p>
           </Col>
           <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0">
-            <Button
-              variant={darkMode ? "light" : "dark"}
-              onClick={toggleDarkMode}
-              title={darkMode ? "Light Mode" : "Dark Mode"}
-              className="me-2"
+            <Button 
+              variant="primary" 
+              onClick={() => handleShowFormModal()} 
+              className="fw-bold rounded-pill px-4 shadow-sm"
             >
-              {darkMode ? <FaSun /> : <FaMoon />}
-            </Button>
-            <Button variant="success" onClick={() => handleShowFormModal()} className="fw-bold">
               <FaPlus className="me-2" />Tambah Mobil
             </Button>
           </Col>
         </Row>
+
+        {/* Stats Cards */}
+        <Row className="mb-4 g-4">
+          <Col xs={12} md={6} lg={3}>
+            <Card className={`neumorphism-card h-100`}>
+              <Card.Body className="p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 className="text-uppercase text-muted mb-2">Total Vehicles</h6>
+                    <h3 className="mb-0">{stats.totalCars}</h3>
+                    <ProgressBar 
+                      now={100} 
+                      variant="primary-gradient" 
+                      className="mt-2" 
+                      style={{ height: '6px', borderRadius: '3px' }}
+                    />
+                  </div>
+                  <div className="icon-circle bg-primary-light">
+                    <FaCar className="text-primary" size={20} />
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={12} md={6} lg={3}>
+            <Card className="neumorphism-card h-100">
+              <Card.Body className="p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 className="text-uppercase text-muted mb-2">Available</h6>
+                    <h3 className="mb-0">{stats.available}</h3>
+                    <ProgressBar 
+                      now={(stats.available / stats.totalCars) * 100} 
+                      variant="success" 
+                      className="mt-2" 
+                      style={{ height: '6px', borderRadius: '3px' }}
+                    />
+                  </div>
+                  <div className="icon-circle bg-success-light">
+                    <FaCar className="text-success" size={20} />
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={12} md={6} lg={3}>
+            <Card className="neumorphism-card h-100">
+              <Card.Body className="p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 className="text-uppercase text-muted mb-2">Rented</h6>
+                    <h3 className="mb-0">{stats.rented}</h3>
+                    <ProgressBar 
+                      now={(stats.rented / stats.totalCars) * 100} 
+                      variant="warning" 
+                      className="mt-2" 
+                      style={{ height: '6px', borderRadius: '3px' }}
+                    />
+                  </div>
+                  <div className="icon-circle bg-warning-light">
+                    <FaChartLine className="text-warning" size={20} />
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col xs={12} md={6} lg={3}>
+            <Card className="neumorphism-card h-100">
+              <Card.Body className="p-3">
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 className="text-uppercase text-muted mb-2">Top Rated</h6>
+                    <h4 className="mb-0">
+                      {stats.topRated ? (
+                        <>
+                          <span className="d-block text-truncate" style={{maxWidth: '120px'}}>
+                            {stats.topRated.nama}
+                          </span>
+                          <div className="d-flex align-items-center">
+                            <FaStar className="text-warning me-1" />
+                            <span>{stats.topRated.rating || '-'}</span>
+                          </div>
+                        </>
+                      ) : '-'}
+                    </h4>
+                  </div>
+                  <div className="icon-circle bg-info-light">
+                    <FaInfoCircle className="text-info" size={20} />
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
         {/* Filter & Export */}
-        <Card className={`mb-4 shadow-sm border-0 ${darkMode ? "bg-secondary" : "bg-white"}`}>
+        <Card className={`mb-4 shadow-sm border-0 ${darkMode ? "bg-dark-2" : "bg-white"}`}>
           <Card.Body>
-            <Row className="g-2 align-items-center">
-              <Col xs={12} md={3}>
+            <Row className="g-3 align-items-center">
+              <Col xs={12} md={4}>
                 <InputGroup>
+                  <InputGroup.Text className={darkMode ? "bg-dark border-dark" : ""}>
+                    <FaSearch />
+                  </InputGroup.Text>
                   <Form.Control
                     type="text"
                     placeholder="Cari nama/kategori/ID..."
@@ -380,9 +460,11 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                       setSearch(e.target.value);
                       setPage(1);
                     }}
+                    className={darkMode ? "bg-dark border-dark text-light" : ""}
                   />
                 </InputGroup>
               </Col>
+              
               <Col xs={6} md={2}>
                 <Form.Select
                   value={filterStatus}
@@ -390,12 +472,14 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     setFilterStatus(e.target.value);
                     setPage(1);
                   }}
+                  className={darkMode ? "bg-dark border-dark text-light" : ""}
                 >
                   <option value="all">Semua Status</option>
                   <option value="available">Tersedia</option>
                   <option value="unavailable">Tidak Tersedia</option>
                 </Form.Select>
               </Col>
+              
               <Col xs={6} md={2}>
                 <Form.Select
                   value={filterKategori}
@@ -403,6 +487,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     setFilterKategori(e.target.value);
                     setPage(1);
                   }}
+                  className={darkMode ? "bg-dark border-dark text-light" : ""}
                 >
                   <option value="all">Semua Kategori</option>
                   {kategoriList.map(kat => (
@@ -410,6 +495,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                   ))}
                 </Form.Select>
               </Col>
+              
               <Col xs={6} md={2}>
                 <Form.Select
                   value={filterPromo}
@@ -417,13 +503,15 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     setFilterPromo(e.target.value);
                     setPage(1);
                   }}
+                  className={darkMode ? "bg-dark border-dark text-light" : ""}
                 >
                   <option value="all">Promo/Non Promo</option>
                   <option value="promo">Promo</option>
                   <option value="no_promo">Tanpa Promo</option>
                 </Form.Select>
               </Col>
-              <Col xs={6} md={1}>
+              
+              <Col xs={6} md={2}>
                 <Form.Control
                   type="number"
                   min={0}
@@ -433,9 +521,11 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     setFilterHarga(e.target.value);
                     setPage(1);
                   }}
+                  className={darkMode ? "bg-dark border-dark text-light" : ""}
                 />
               </Col>
-              <Col xs={12} md={2} className="d-flex align-items-center gap-2 mt-2 mt-md-0">
+              
+              <Col xs={12} className="d-flex justify-content-between align-items-center">
                 <Form.Check
                   type="checkbox"
                   label="Sedang disewa"
@@ -443,11 +533,12 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                   onChange={e => setFilterSewaAktif(e.target.checked)}
                   className="me-2"
                 />
+                
                 <CSVLink
                   data={formatCSVData(sortedCars)}
                   headers={csvHeaders}
                   filename={`daftar-mobil-${Date.now()}.csv`}
-                  className="btn btn-outline-success"
+                  className="btn btn-outline-success rounded-pill px-3"
                   separator=";"
                   enclosingCharacter={'"'}
                 >
@@ -458,6 +549,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
             </Row>
           </Card.Body>
         </Card>
+
         {/* Table */}
         {loading ? (
           <div className="text-center py-5">
@@ -465,132 +557,158 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
             <div className="mt-2">Memuat data mobil...</div>
           </div>
         ) : pagedCars.length === 0 ? (
-          <Alert variant="info" className="rounded-3 shadow-sm">Tidak ada data mobil.</Alert>
+          <Alert variant="info" className="rounded-3 shadow-sm border-0">
+            <FaInfoCircle className="me-2" />
+            Tidak ada data mobil yang sesuai dengan filter.
+          </Alert>
         ) : (
-          <div className="table-responsive shadow-sm rounded-4" style={{ maxHeight: 600, overflowX: "auto" }}>
+          <div className="table-responsive rounded-4 shadow-sm">
             <Table
-              striped
-              bordered
               hover
               className={`align-middle mb-0 ${darkMode ? "table-dark" : ""}`}
               style={{ minWidth: 1200 }}
             >
-              <thead className={darkMode ? "table-secondary" : "table-light"} style={{ position: "sticky", top: 0, zIndex: 1 }}>
+              <thead className={darkMode ? "bg-dark-2" : "bg-light"} style={{ position: "sticky", top: 0 }}>
                 <tr>
                   <th style={{ cursor: "pointer" }} onClick={() => handleSort("id")}>
-                    ID {getSortIcon("id")}
+                    <span className="d-flex align-items-center">
+                      ID {getSortIcon("id")}
+                    </span>
                   </th>
                   <th>Gambar</th>
                   <th style={{ cursor: "pointer" }} onClick={() => handleSort("nama")}>
-                    Nama Mobil {getSortIcon("nama")}
+                    <span className="d-flex align-items-center">
+                      Nama Mobil {getSortIcon("nama")}
+                    </span>
                   </th>
                   <th style={{ cursor: "pointer" }} onClick={() => handleSort("kategori")}>
-                    Kategori {getSortIcon("kategori")}
+                    <span className="d-flex align-items-center">
+                      Kategori {getSortIcon("kategori")}
+                    </span>
                   </th>
                   <th style={{ cursor: "pointer" }} onClick={() => handleSort("harga")}>
-                    Harga {getSortIcon("harga")}
+                    <span className="d-flex align-items-center">
+                      Harga {getSortIcon("harga")}
+                    </span>
                   </th>
                   <th>Promo</th>
                   <th>Status</th>
                   <th>Disewa</th>
-                  <th>Disewa Saat Ini</th>
-                  <th>Omzet</th>
                   <th>Rating</th>
-                  <th>Aksi</th>
+                  <th className="text-end">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {pagedCars.map(car => (
-                  <tr key={car.id}>
+                  <tr key={car.id} className={darkMode ? "hover-dark" : "hover-light"}>
                     <td>
-                      <Badge bg="secondary" className="fw-bold rounded-pill px-3 py-2 fs-6">
+                      <Badge bg="secondary" className="fw-bold rounded-pill px-3 py-2">
                         #{car.id}
                       </Badge>
                     </td>
                     <td>
-                      <div
-                        className="bg-light rounded border"
-                        style={{
-                          width: '80px',
-                          height: '50px',
-                          backgroundImage: car.gambar
-                            ? `url(${car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar})`
-                            : 'none',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
-                        }}
-                      ></div>
+                      <div 
+                        className="rounded-3 overflow-hidden border" 
+                        style={{ width: 80, height: 50 }}
+                        onClick={() => handleShowDetailModal(car)}
+                        role="button"
+                      >
+                        <img
+                          src={car.gambar
+                            ? car.gambar.startsWith("http") 
+                              ? car.gambar 
+                              : BACKEND_URL + car.gambar
+                            : '/no-image.png'}
+                          alt={car.nama}
+                          className="img-fluid h-100 w-100 object-fit-cover"
+                          onError={e => { e.target.onerror = null; e.target.src = '/no-image.png'; }}
+                        />
+                      </div>
                     </td>
-                    <td className="fw-semibold">{car.nama}</td>
+                    <td className="fw-semibold">
+                      <div className="d-flex flex-column">
+                        <span>{car.nama}</span>
+                        <small className="text-muted">{car.transmisi || '-'}, {car.kapasitas || '-'} seat</small>
+                      </div>
+                    </td>
                     <td>{car.kategori || '-'}</td>
                     <td>
-                      {car.promo && car.promo > 0 ? (
-                        <>
-                          <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                      <div className="d-flex flex-column">
+                        {car.promo && car.promo > 0 ? (
+                          <>
+                            <span className="text-success fw-bold">
+                              Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}
+                            </span>
+                            <small className="text-decoration-line-through text-muted">
+                              Rp {car.harga?.toLocaleString('id-ID')}
+                            </small>
+                          </>
+                        ) : (
+                          <span className="fw-bold">
                             Rp {car.harga?.toLocaleString('id-ID')}
                           </span>
-                          <Badge bg="warning" text="dark" className="ms-1">
-                            Promo {car.promo}%
-                          </Badge>
-                          <br />
-                          <span className="fw-bold text-success">
-                            Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}
-                          </span>
-                        </>
-                      ) : (
-                        <>Rp {car.harga?.toLocaleString('id-ID')}</>
-                      )}
+                        )}
+                      </div>
                     </td>
                     <td>
                       {car.promo && car.promo > 0 ? (
-                        <Badge bg="warning" text="dark">{car.promo}%</Badge>
+                        <Badge bg="warning" text="dark" className="rounded-pill px-3 py-2">
+                          {car.promo}% OFF
+                        </Badge>
                       ) : (
                         <span className="text-muted">-</span>
                       )}
                     </td>
                     <td>
-                      <Badge pill bg={car.status === 'available' ? 'success' : 'danger'}>
-                        {car.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
+                      <StatusBadge status={car.status} />
+                      {getDisewaHariIni(car.id) > 0 && (
+                        <div className="text-warning mt-1">
+                          <small>Disewa: {getDisewaHariIni(car.id)}x</small>
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <Badge bg="info" className="rounded-pill px-3 py-2">
+                        {getDisewa(car.id)}x
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg="info">{getDisewa(car.id)}x</Badge>
-                    </td>
-                    <td>
-                      {/* Disewa Hari Ini */}
-                      {getDisewaHariIni(car.id) > 0 ? (
-                        <Badge bg="primary">{getDisewaHariIni(car.id)}x</Badge>
-                      ) : (
-                        <span className="text-muted">-</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className="fw-bold text-success">
-                        Rp{getOmzet(car.id).toLocaleString('id-ID')}
-                      </span>
-                    </td>
-                    <td>
                       {car.rating ? (
-                        <>
-                          <FaStar className="text-warning mb-1" /> {car.rating} <span className="text-muted">({car.jumlah_review || 0})</span>
-                        </>
+                        <div className="d-flex align-items-center">
+                          <span className="text-warning fw-bold me-1">{car.rating}</span>
+                          <small className="text-muted">({car.jumlah_review || 0})</small>
+                        </div>
                       ) : (
                         <span className="text-muted">-</span>
                       )}
                     </td>
-                    <td>
+                    <td className="text-end">
                       <Dropdown>
-                        <Dropdown.Toggle variant={darkMode ? "secondary" : "light"} size="sm" id="dropdown-actions">
+                        <Dropdown.Toggle 
+                          variant={darkMode ? "outline-light" : "outline-secondary"} 
+                          size="sm" 
+                          id="dropdown-actions"
+                          className="rounded-pill px-3"
+                        >
                           <FaEllipsisV />
                         </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => handleShowDetailModal(car)}>
+                        <Dropdown.Menu className={darkMode ? "bg-dark-2" : ""}>
+                          <Dropdown.Item 
+                            onClick={() => handleShowDetailModal(car)}
+                            className={darkMode ? "text-light hover-dark" : ""}
+                          >
                             <FaEye className="me-2" /> Detail
                           </Dropdown.Item>
-                          <Dropdown.Item onClick={() => handleShowFormModal(car)}>
+                          <Dropdown.Item 
+                            onClick={() => handleShowFormModal(car)}
+                            className={darkMode ? "text-light hover-dark" : ""}
+                          >
                             <FaEdit className="me-2" /> Edit
                           </Dropdown.Item>
-                          <Dropdown.Item className="text-danger" onClick={() => handleShowDeleteModal(car.id)}>
+                          <Dropdown.Item 
+                            className={`${darkMode ? "text-light hover-dark" : ""} text-danger`} 
+                            onClick={() => handleShowDeleteModal(car.id)}
+                          >
                             <FaTrash className="me-2" /> Hapus
                           </Dropdown.Item>
                         </Dropdown.Menu>
@@ -604,146 +722,257 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
         )}
 
         {/* Pagination */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
-          <div>
-            Menampilkan {pagedCars.length} dari {sortedCars.length} mobil
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 gap-3">
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted">Items per page:</span>
+            <Form.Select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              style={{ width: 80 }}
+              className={darkMode ? "bg-dark border-dark text-light" : ""}
+            >
+              {PAGE_SIZE_OPTIONS.map(size => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </Form.Select>
+            <span className="text-muted">
+              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, sortedCars.length)} of {sortedCars.length} items
+            </span>
           </div>
-          <div>
-            <nav>
-              <ul className="pagination mb-0">
-                <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPage(page - 1)}>&lt;</button>
-                </li>
-                {[...Array(totalPages)].map((_, idx) => (
-                  <li key={idx} className={`page-item ${page === idx + 1 ? "active" : ""}`}>
-                    <button className="page-link" onClick={() => setPage(idx + 1)}>{idx + 1}</button>
-                  </li>
-                ))}
-                <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPage(page + 1)}>&gt;</button>
-                </li>
-              </ul>
-            </nav>
-          </div>
+          
+          <Pagination className="mb-0">
+            <Pagination.Prev
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+              className={darkMode ? "bg-dark-2 text-light" : ""}
+            />
+            {[...Array(totalPages)].map((_, idx) => (
+              <Pagination.Item
+                key={idx + 1}
+                active={page === idx + 1}
+                onClick={() => setPage(idx + 1)}
+                className={darkMode ? page === idx + 1 ? "" : "bg-dark-2 text-light" : ""}
+              >
+                {idx + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className={darkMode ? "bg-dark-2 text-light" : ""}
+            />
+          </Pagination>
         </div>
 
-        {/* Toast Notification */}
-        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-          <Toast
-            show={toast.show}
-            onClose={() => setToast({ ...toast, show: false })}
-            bg={toast.variant}
-            delay={2500}
-            autohide
-          >
-            <Toast.Body className="text-white">{toast.message}</Toast.Body>
-          </Toast>
-        </ToastContainer>
-
         {/* Detail Modal */}
-        <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Detail Mobil</Modal.Title>
+        <Modal
+          show={showDetailModal}
+          onHide={() => setShowDetailModal(false)}
+          centered
+          size="lg"
+          contentClassName={darkMode ? "bg-dark-2 text-light" : ""}
+        >
+          <Modal.Header closeButton className={darkMode ? "border-dark" : ""}>
+            <Modal.Title className="fw-bold">
+              <FaCar className="me-2" />
+              Detail Mobil
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {detailCar && (
-              <Row>
-                <Col md={5} className="text-center mb-3 mb-md-0">
-                  <img
-                    src={
-                      detailCar.gambar
-                        ? detailCar.gambar.startsWith("http")
-                          ? detailCar.gambar
-                          : BACKEND_URL + detailCar.gambar
-                        : "/no-image.png"
-                    }
-                    alt={detailCar.nama}
-                    style={{ maxWidth: 180, maxHeight: 120, borderRadius: 12, border: "1px solid #ccc" }}
-                    onError={e => { e.target.onerror = null; e.target.src = "/no-image.png"; }}
-                  />
-                </Col>
-                <Col md={7}>
-                  <p><strong>ID:</strong> #{detailCar.id}</p>
-                  <p><strong>Nama Mobil:</strong> {detailCar.nama}</p>
-                  <p><strong>Kategori:</strong> {detailCar.kategori || '-'}</p>
-                  <p><strong>Harga:</strong>{" "}
-                    {detailCar.promo && detailCar.promo > 0 ? (
-                      <>
-                        <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
-                          Rp {detailCar.harga?.toLocaleString('id-ID')}
-                        </span>
-                        <Badge bg="warning" text="dark" className="ms-1">
+              <Row className="gy-4">
+                <Col md={5} className="text-center">
+                  <div className="position-relative">
+                    <img
+                      src={
+                        detailCar.gambar
+                          ? detailCar.gambar.startsWith("http")
+                            ? detailCar.gambar
+                            : BACKEND_URL + detailCar.gambar
+                          : "/no-image.png"
+                      }
+                      alt={detailCar.nama}
+                      className="img-fluid rounded-4 shadow-sm"
+                      style={{
+                        maxHeight: 220,
+                        width: '100%',
+                        objectFit: 'cover',
+                        border: '1px solid #eee'
+                      }}
+                      onError={e => { e.target.onerror = null; e.target.src = "/no-image.png"; }}
+                    />
+                    <div className="position-absolute top-0 end-0 m-2">
+                      <StatusBadge status={detailCar.status} />
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <h5 className="fw-bold">#{detailCar.id}</h5>
+                    <div className="d-flex justify-content-center gap-2 mt-2">
+                      <Badge bg="secondary" className="px-3 py-2">
+                        {detailCar.kategori || '-'}
+                      </Badge>
+                      {detailCar.transmisi && (
+                        <Badge bg="info" className="px-3 py-2">
+                          {detailCar.transmisi}
+                        </Badge>
+                      )}
+                      {detailCar.kapasitas && (
+                        <Badge bg="dark" className="px-3 py-2">
+                          {detailCar.kapasitas} Seat
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3">
+                      <h4 className="fw-bold">
+                        {detailCar.promo && detailCar.promo > 0 ? (
+                          <>
+                            <span className="text-success">
+                              Rp {getHargaSetelahPromo(detailCar).toLocaleString('id-ID')}
+                            </span>
+                            <div className="text-decoration-line-through text-muted fs-6">
+                              Rp {detailCar.harga?.toLocaleString('id-ID')}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-success">
+                            Rp {detailCar.harga?.toLocaleString('id-ID')}
+                          </span>
+                        )}
+                      </h4>
+                      {detailCar.promo && detailCar.promo > 0 && (
+                        <Badge bg="warning" text="dark" className="px-3 py-2 rounded-pill">
                           Promo {detailCar.promo}%
                         </Badge>
-                        <br />
-                        <span className="fw-bold text-success">
-                          Rp {getHargaSetelahPromo(detailCar).toLocaleString('id-ID')}
-                        </span>
-                      </>
-                    ) : (
-                      <>Rp {detailCar.harga?.toLocaleString('id-ID')}</>
-                    )}
-                  </p>
-                  <p><strong>Deskripsi:</strong> {detailCar.deskripsi || '-'}</p>
-                  <p>
-                    <strong>Status:</strong>{" "}
-                    <Badge pill bg={detailCar.status === 'available' ? 'success' : 'danger'}>
-                      {detailCar.status === 'available' ? 'Tersedia' : 'Tidak Tersedia'}
-                    </Badge>
-                  </p>
-                  <p><strong>Promo:</strong> {detailCar.promo ? `${detailCar.promo}%` : '-'}</p>
-                  <p><strong>Transmisi:</strong> {detailCar.transmisi || '-'}</p>
-                  <p><strong>Kapasitas:</strong> {detailCar.kapasitas || '-'}</p>
-                  <p><strong>Fitur:</strong> <FiturBadges fitur={detailCar.fitur} /></p>
-                  <p><strong>Rating:</strong> {detailCar.rating || '-'} ({detailCar.jumlah_review || 0} review)</p>
-                  <p><strong>Disewa:</strong> {detailCar.disewa || 0}x</p>
-                  <p><strong>Omzet:</strong> Rp{getOmzet(detailCar.id).toLocaleString('id-ID')}</p>
-                  <p><strong>Riwayat Sewa:</strong></p>
-                  {getRiwayatSewa(detailCar.id).length === 0 ? (
-                    <div className="text-muted mb-2">Belum pernah disewa.</div>
-                  ) : (
-                    <div className="table-responsive mb-2">
-                      <Table size="sm" bordered hover>
-                        <thead>
-                          <tr>
-                            <th>Pelanggan</th>
-                            <th>Tgl Sewa</th>
-                            <th>Tgl Kembali</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getRiwayatSewa(detailCar.id).map((order, idx) => (
-                            <tr key={order.id || idx}>
-                              <td>{order.user?.name || '-'}</td>
-                              <td>{moment(order.pickup_date).format("DD/MM/YYYY")}</td>
-                              <td>{moment(order.return_date).format("DD/MM/YYYY")}</td>
-                              <td>
-                                <Badge bg={
-                                  order.status === "completed" ? "success" :
-                                  order.status === "confirmed" ? "info" :
-                                  order.status === "pending" ? "warning" :
-                                  order.status === "cancelled" ? "danger" : "secondary"
-                                }>
-                                  {order.status}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </Table>
+                      )}
                     </div>
-                  )}
+                  </div>
+                </Col>
+                
+                <Col md={7}>
+                  <h3 className="fw-bold mb-3">{detailCar.nama}</h3>
+                  
+                  <div className="mb-4">
+                    <h5 className="fw-bold mb-2">Fitur:</h5>
+                    <div className="d-flex flex-wrap gap-2">
+                      <FiturBadges fitur={detailCar.fitur} />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h5 className="fw-bold mb-2">Statistik:</h5>
+                    <Row className="g-3">
+                      <Col xs={6} md={4}>
+                        <Card className={`h-100 ${darkMode ? "bg-dark border-dark" : ""}`}>
+                          <Card.Body className="text-center py-3">
+                            <div className="text-primary fw-bold fs-4">
+                              {getDisewa(detailCar.id)}x
+                            </div>
+                            <small className="text-muted">Total Disewa</small>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                      <Col xs={6} md={4}>
+                        <Card className={`h-100 ${darkMode ? "bg-dark border-dark" : ""}`}>
+                          <Card.Body className="text-center py-3">
+                            <div className="text-warning fw-bold fs-4">
+                              {getDisewaHariIni(detailCar.id)}x
+                            </div>
+                            <small className="text-muted">Sedang Disewa</small>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                      <Col xs={6} md={4}>
+                        <Card className={`h-100 ${darkMode ? "bg-dark border-dark" : ""}`}>
+                          <Card.Body className="text-center py-3">
+                            <div className="d-flex align-items-center justify-content-center">
+                              <FaStar className="text-warning me-1" />
+                              <span className="fw-bold fs-4">
+                                {detailCar.rating || '-'}
+                              </span>
+                            </div>
+                            <small className="text-muted">Rating ({detailCar.jumlah_review || 0})</small>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    </Row>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h5 className="fw-bold mb-2">Deskripsi:</h5>
+                    <p>{detailCar.deskripsi || '-'}</p>
+                  </div>
+                  
+                  <Accordion defaultActiveKey="0" className={darkMode ? "bg-dark" : ""}>
+                    <Accordion.Item eventKey="0" className={darkMode ? "bg-dark-2 text-light border-dark" : ""}>
+                      <Accordion.Header className={darkMode ? "bg-dark-2" : ""}>
+                        <h6 className="mb-0">Riwayat Sewa</h6>
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {getRiwayatSewa(detailCar.id).length === 0 ? (
+                          <div className="text-center py-3 text-muted">
+                            Belum pernah disewa.
+                          </div>
+                        ) : (
+                          <ListGroup variant="flush" className={darkMode ? "bg-dark-2" : ""}>
+                            {getRiwayatSewa(detailCar.id).map((order, idx) => (
+                              <ListGroup.Item key={order.id || idx} className={darkMode ? "bg-dark-2 text-light border-dark" : ""}>
+                                <div className="d-flex justify-content-between">
+                                  <div>
+                                    <div className="fw-bold">{order.user?.name || '-'}</div>
+                                    <small className="text-muted d-flex align-items-center">
+                                      <FaCalendarAlt className="me-1" />
+                                      {moment(order.pickup_date).format("DD/MM/YYYY")} - {moment(order.return_date).format("DD/MM/YYYY")}
+                                    </small>
+                                  </div>
+                                  <div>
+                                    <StatusBadge status={order.status} />
+                                  </div>
+                                </div>
+                              </ListGroup.Item>
+                            ))}
+                          </ListGroup>
+                        )}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  </Accordion>
                 </Col>
               </Row>
             )}
           </Modal.Body>
+          <Modal.Footer className={darkMode ? "border-dark" : ""}>
+            <Button 
+              variant={darkMode ? "outline-light" : "outline-secondary"} 
+              onClick={() => setShowDetailModal(false)}
+            >
+              Tutup
+            </Button>
+            <Button 
+              variant="primary"
+              onClick={() => {
+                setShowDetailModal(false);
+                handleShowFormModal(detailCar);
+              }}
+            >
+              <FaEdit className="me-2" /> Edit
+            </Button>
+          </Modal.Footer>
         </Modal>
 
         {/* Add/Edit Modal */}
-        <Modal show={showFormModal} onHide={() => setShowFormModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>{editCar ? "Edit Mobil" : "Tambah Mobil"}</Modal.Title>
+        <Modal 
+          show={showFormModal} 
+          onHide={() => setShowFormModal(false)} 
+          centered
+          size="lg"
+          contentClassName={darkMode ? "bg-dark-2 text-light" : ""}
+        >
+          <Modal.Header closeButton className={darkMode ? "border-dark" : ""}>
+            <Modal.Title>{editCar ? "Edit Mobil" : "Tambah Mobil Baru"}</Modal.Title>
           </Modal.Header>
           <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
             <Modal.Body>
@@ -751,28 +980,64 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Nama Mobil</Form.Label>
-                    <Form.Control name="nama" defaultValue={editCar?.nama || ""} required />
+                    <Form.Control 
+                      name="nama" 
+                      defaultValue={editCar?.nama || ""} 
+                      required 
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    />
                   </Form.Group>
+                  
                   <Form.Group className="mb-3">
                     <Form.Label>Kategori</Form.Label>
-                    <Form.Control name="kategori" defaultValue={editCar?.kategori || ""} required />
+                    <Form.Control 
+                      name="kategori" 
+                      defaultValue={editCar?.kategori || ""} 
+                      required 
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    />
                   </Form.Group>
+                  
                   <Form.Group className="mb-3">
-                    <Form.Label>Harga</Form.Label>
-                    <Form.Control name="harga" type="number" min={0} defaultValue={editCar?.harga || ""} required />
+                    <Form.Label>Harga (Rp)</Form.Label>
+                    <Form.Control 
+                      name="harga" 
+                      type="number" 
+                      min={0} 
+                      defaultValue={editCar?.harga || ""} 
+                      required 
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    />
                   </Form.Group>
+                  
                   <Form.Group className="mb-3">
                     <Form.Label>Status</Form.Label>
-                    <Form.Select name="status" defaultValue={editCar?.status || "available"}>
+                    <Form.Select 
+                      name="status" 
+                      defaultValue={editCar?.status || "available"}
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    >
                       <option value="available">Tersedia</option>
                       <option value="unavailable">Tidak Tersedia</option>
                     </Form.Select>
                   </Form.Group>
+                  
                   <Form.Group className="mb-3">
                     <Form.Label>Promo (%)</Form.Label>
-                    <Form.Control name="promo" type="number" min={0} max={100} defaultValue={editCar?.promo || ""} />
+                    <Form.Control 
+                      name="promo" 
+                      type="number" 
+                      min={0} 
+                      max={100} 
+                      defaultValue={editCar?.promo || ""}
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    />
+                    <Form.Text className="text-muted">
+                      Kosongkan atau isi 0 jika tidak ada promo
+                    </Form.Text>
                   </Form.Group>
                 </Col>
+                
                 <Col md={6}>
                   <Form.Group className="mb-3">
                     <Form.Label>Deskripsi</Form.Label>
@@ -782,69 +1047,163 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                       name="deskripsi"
                       defaultValue={editCar?.deskripsi || ""}
                       required
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
                     />
                   </Form.Group>
+                  
                   <Form.Group className="mb-3">
                     <Form.Label>Foto Mobil</Form.Label>
                     <Form.Control
                       type="file"
                       accept="image/*"
                       onChange={e => setFormImage(e.target.files[0])}
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
                     />
-                    {editCar?.gambar && (
+                    {editCar?.gambar && !formImage && (
                       <div className="mt-2">
                         <img
                           src={editCar.gambar.startsWith("http") ? editCar.gambar : BACKEND_URL + editCar.gambar}
                           alt="Preview"
-                          style={{ maxWidth: 120, borderRadius: 8, border: "1px solid #ccc" }}
+                          style={{ 
+                            maxWidth: 150, 
+                            borderRadius: 8, 
+                            border: "1px solid #ccc",
+                            aspectRatio: "16/9",
+                            objectFit: "cover"
+                          }}
                         />
                       </div>
                     )}
-                    <Form.Text>Upload foto mobil (jpg/png/webp).</Form.Text>
+                    {formImage && (
+                      <div className="mt-2">
+                        <img
+                          src={URL.createObjectURL(formImage)}
+                          alt="Preview"
+                          style={{ 
+                            maxWidth: 150, 
+                            borderRadius: 8, 
+                            border: "1px solid #ccc",
+                            aspectRatio: "16/9",
+                            objectFit: "cover"
+                          }}
+                        />
+                      </div>
+                    )}
                   </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Transmisi</Form.Label>
-                    <Form.Select name="transmisi" defaultValue={editCar?.transmisi || "Automatic"}>
-                      <option value="Automatic">Automatic</option>
-                      <option value="Manual">Manual</option>
-                    </Form.Select>
-                  </Form.Group>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Kapasitas</Form.Label>
-                    <Form.Control name="kapasitas" type="number" min={1} max={20} defaultValue={editCar?.kapasitas || ""} />
-                  </Form.Group>
+                  
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Transmisi</Form.Label>
+                        <Form.Select 
+                          name="transmisi" 
+                          defaultValue={editCar?.transmisi || "Automatic"}
+                          className={darkMode ? "bg-dark border-dark text-light" : ""}
+                        >
+                          <option value="Automatic">Automatic</option>
+                          <option value="Manual">Manual</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Kapasitas (Seat)</Form.Label>
+                        <Form.Control 
+                          name="kapasitas" 
+                          type="number" 
+                          min={1} 
+                          max={20} 
+                          defaultValue={editCar?.kapasitas || ""}
+                          className={darkMode ? "bg-dark border-dark text-light" : ""}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                  
                   <Form.Group className="mb-3">
                     <Form.Label>Fitur (pisahkan dengan koma)</Form.Label>
-                    <Form.Control name="fitur" defaultValue={Array.isArray(editCar?.fitur) ? editCar.fitur.join(", ") : ""} />
+                    <Form.Control 
+                      name="fitur" 
+                      defaultValue={Array.isArray(editCar?.fitur) ? editCar.fitur.join(", ") : editCar?.fitur || ""}
+                      className={darkMode ? "bg-dark border-dark text-light" : ""}
+                    />
                   </Form.Group>
                 </Col>
               </Row>
             </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowFormModal(false)}>
+            <Modal.Footer className={darkMode ? "border-dark" : ""}>
+              <Button 
+                variant={darkMode ? "outline-light" : "outline-secondary"} 
+                onClick={() => setShowFormModal(false)}
+              >
                 Batal
               </Button>
-              <Button variant="primary" type="submit">
-                Simpan
+              <Button 
+                variant="primary" 
+                type="submit"
+                className="px-4"
+              >
+                {editCar ? "Update Mobil" : "Simpan Mobil"}
               </Button>
             </Modal.Footer>
           </Form>
         </Modal>
 
         {/* Delete Modal */}
-        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-          <Modal.Header closeButton>
+        <Modal 
+          show={showDeleteModal} 
+          onHide={() => setShowDeleteModal(false)} 
+          centered
+          contentClassName={darkMode ? "bg-dark-2 text-light" : ""}
+        >
+          <Modal.Header closeButton className={darkMode ? "border-dark" : ""}>
             <Modal.Title>Konfirmasi Hapus</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            Apakah Anda yakin ingin menghapus mobil ini?
+            <div className="text-center py-3">
+              <FaTrash size={48} className="text-danger mb-3" />
+              <h5>Apakah Anda yakin ingin menghapus mobil ini?</h5>
+              <p className="text-muted">Data yang sudah dihapus tidak dapat dikembalikan.</p>
+            </div>
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Batal</Button>
-            <Button variant="danger" onClick={handleDelete}>Hapus</Button>
+          <Modal.Footer className={darkMode ? "border-dark" : ""}>
+            <Button 
+              variant={darkMode ? "outline-light" : "outline-secondary"} 
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleDelete}
+              className="px-4"
+            >
+              Ya, Hapus
+            </Button>
           </Modal.Footer>
         </Modal>
-      </div>
+
+        {/* Toast Notification */}
+        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
+          <Toast
+            show={toast.show}
+            onClose={() => setToast({ ...toast, show: false })}
+            bg={toast.variant}
+            delay={3000}
+            autohide
+            className={darkMode ? "bg-dark-2" : ""}
+          >
+            <Toast.Body className="d-flex align-items-center">
+              {toast.variant === "success" ? (
+                <FaInfoCircle className="me-2 flex-shrink-0" />
+              ) : (
+                <FaInfoCircle className="me-2 flex-shrink-0" />
+              )}
+              <span className="flex-grow-1">{toast.message}</span>
+            </Toast.Body>
+          </Toast>
+        </ToastContainer>
+      </Container>
     </div>
   );
 };

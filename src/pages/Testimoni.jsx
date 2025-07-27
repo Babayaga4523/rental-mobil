@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Testimoni.css";
+import { motion } from "framer-motion";
 
 const BACKEND_URL = "http://localhost:3000";
 
@@ -101,21 +102,38 @@ const Testimoni = () => {
   return (
     <div className="testimoni-page">
       {/* Hero Section */}
-      <section className="testimoni-hero d-flex align-items-center justify-content-center mb-5">
-        <div className="container text-center">
-          <h1 className="hero-title display-4 fw-bold mb-3">
+      <section className="testimoni-hero d-flex align-items-center justify-content-center mb-5 position-relative overflow-hidden">
+        <div className="hero-overlay position-absolute w-100 h-100 top-0 start-0" style={{background: "linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)", opacity: 0.92, zIndex: 1}}></div>
+        <div className="container text-center position-relative z-index-2">
+          <motion.h1
+            className="hero-title display-4 fw-bold mb-3"
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.7 }}
+          >
             <i className="fas fa-star text-warning me-2"></i>
             Bagikan <span className="text-gradient">Pengalaman</span> Anda
-          </h1>
-          <p className="hero-subtitle lead text-light opacity-75 mb-4 mx-auto" style={{ maxWidth: "650px" }}>
+          </motion.h1>
+          <motion.p
+            className="hero-subtitle lead text-light opacity-75 mb-4 mx-auto"
+            style={{ maxWidth: "650px" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.7 }}
+          >
             Ceritakan pengalaman menyewa mobil dengan kami dan bantu kami menjadi lebih baik.
-          </p>
-          <button
+          </motion.p>
+          <motion.button
             className="btn btn-gradient btn-lg rounded-pill px-4 py-3 shadow"
             onClick={() => document.getElementById('testimoni-form').scrollIntoView({ behavior: 'smooth' })}
+            whileHover={{ scale: 1.07 }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.7 }}
           >
             <i className="fas fa-pen me-2"></i>Tulis Testimoni
-          </button>
+          </motion.button>
         </div>
       </section>
 
@@ -124,7 +142,13 @@ const Testimoni = () => {
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-lg-8">
-              <div className="card glass-card border-0 shadow-lg rounded-4">
+              <motion.div
+                className="card glass-card border-0 shadow-lg rounded-4"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                viewport={{ once: true }}
+              >
                 <div className="card-header bg-gradient text-white py-3 text-center">
                   <h2 className="mb-0 fw-bold">
                     <i className="fas fa-edit me-2"></i>
@@ -205,7 +229,7 @@ const Testimoni = () => {
                     </div>
                   </form>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
@@ -215,19 +239,38 @@ const Testimoni = () => {
       <section className="testimoni-list py-5 bg-light">
         <div className="container">
           <div className="section-header text-center mb-5">
-            <h2 className="section-title display-6 fw-bold mb-2">
+            <motion.h2
+              className="section-title display-6 fw-bold mb-2"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
+              viewport={{ once: true }}
+            >
               <i className="fas fa-quote-left text-primary me-2"></i>
               Apa Kata Pelanggan Kami
-            </h2>
-            <p className="section-subtitle lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
+            </motion.h2>
+            <motion.p
+              className="section-subtitle lead text-muted mx-auto"
+              style={{ maxWidth: "700px" }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.7 }}
+              viewport={{ once: true }}
+            >
               Testimoni jujur dari pelanggan yang telah menggunakan layanan kami
-            </p>
+            </motion.p>
           </div>
           <div className="row g-4">
             {testimoni.length > 0 ? (
               testimoni.map((item, index) => (
                 <div className="col-md-6 col-lg-4" key={item.id}>
-                  <div className="card h-100 border-0 shadow-sm rounded-4 glass-card">
+                  <motion.div
+                    className="card h-100 border-0 shadow-sm rounded-4 glass-card"
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: index * 0.08 }}
+                    viewport={{ once: true }}
+                  >
                     <div className="card-body d-flex flex-column position-relative">
                       <div className="testimoni-quote-icon">
                         <i className="fas fa-quote-left text-gradient"></i>
@@ -255,12 +298,12 @@ const Testimoni = () => {
                       </div>
                       {item.reply && (
                         <div className="mt-3 p-2 bg-light border rounded">
-                          <strong className="text-primary">Balasan Admin:</strong>
-                          <div>{item.reply}</div>
+                          <strong style={{ color: '#1a237e', fontWeight: 700 }}>Balasan Admin:</strong>
+                          <div style={{ color: '#222', fontWeight: 500 }}>{item.reply}</div>
                         </div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               ))
             ) : (

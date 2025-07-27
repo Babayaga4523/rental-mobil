@@ -99,7 +99,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Fungsi untuk menghapus user
+// Fungsi untuk menghapus user (HARD DELETE)
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   try {
@@ -109,9 +109,8 @@ const deleteUser = async (req, res) => {
         .status(404)
         .json({ success: false, message: "User tidak ditemukan." });
     }
-    user.status = "inactive";
-    await user.save();
-    res.status(200).json({ success: true, message: "User berhasil dinonaktifkan." });
+    await user.destroy(); // Hapus user dari database
+    res.status(200).json({ success: true, message: "User berhasil dihapus dari database." });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

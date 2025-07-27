@@ -137,20 +137,33 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container" style={{ paddingTop: 70 }}>
+    <div className="register-container" style={{ paddingTop: 100 }}>
       <div className="auth-card">
-        <div className="logo-container">
-          <img 
-            src="/assets/logo-pawon.png" 
-            alt="Logo" 
-            className="logo"
-          />
-          <div className="app-name">Pawon</div>
+        <div className="logo-wrapper text-center mb-4">
+          <div
+            className="logo-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+            style={{
+              overflow: "hidden",
+              boxShadow: "0 0 32px 6px #00eaff44, 0 0 0 8px #4f46e522"
+            }}
+          >
+            <img
+              src="/images/logo.png"
+              alt="Logo"
+              className="logo-img"
+              style={{ width: "60%", height: "60%", objectFit: "contain" }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <i className="bi bi-person-plus fs-3" style={{ display: "none" }}></i>
+          </div>
+          <h2 className="app-title text-gradient">RENTAL HS</h2>
         </div>
-
-        <div className="auth-header">
-          <h2>Daftar Akun</h2>
-          <p>Lengkapi data untuk mendaftar akun baru</p>
+        <div className="auth-header text-center mb-4">
+          <h3 className="fw-bold mb-2">Daftar Akun</h3>
+          <p className="text-muted">Lengkapi data untuk mendaftar akun baru</p>
         </div>
 
         <form onSubmit={handleSubmit} className="register-form">

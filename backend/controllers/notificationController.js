@@ -2,12 +2,14 @@ const db = require('../models');
 const Notification = db.Notification;
 const User = db.User; // Pastikan model User sudah ada di db/index.js
 const { sendMail } = require("../utils/email");
-const { sendWA } = require("../utils/whatsapp"); // Jika ada
+const { sendWA, sendWhatsappFonnte } = require("../utils/whatsapp"); // Jika ada
 
 exports.getAll = async (req, res) => {
   try {
-    // Untuk admin: tampilkan semua, untuk user: hanya miliknya
-    const where = req.user.role === "admin" ? { type: "info" } : { user_id: req.user.id, type: "info" };
+    // Untuk admin: tampilkan semua notifikasi (order, payment, info, blast, dll)
+    const where = req.user.role === "admin"
+      ? {} // tampilkan semua tipe notifikasi
+      : { user_id: req.user.id }; // user hanya miliknya
     const notifications = await Notification.findAll({
       where,
       order: [['createdAt', 'DESC']],
@@ -103,5 +105,15 @@ exports.deleteOne = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+exports.sendWhatsapp = async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    await sendWhatsappFonnte(phone, message);
+    res.json({ success: true, message: "WhatsApp sent!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

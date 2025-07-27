@@ -7,8 +7,9 @@ const db = require('../models');
 const Notification = db.Notification;
 const { Order, Layanan, User } = db;
 const { sendMail } = require("../utils/email");
-const { sendWhatsappFonnte } = require("../utils/whatsapp");
+const { sendWhatsappFonnte } = require("../utils/whatsapp"); // pastikan sudah ada
 const Testimoni = require('../models/testimoni'); // pastikan sudah di-import
+const { io } = require('../utils/socket'); // pastikan ada file socket.js yang export io
 
 // Helper
 const calculateRentalDuration = (startDate, endDate) => {
@@ -137,22 +138,22 @@ async function getCarWithRating(car) {
 
 exports.createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
+  let car; // Declare car once at the top
   try {
-    const { 
-      layanan_id, 
-      pickup_date, 
-      return_date, 
-      payment_method = 'credit_card', 
+    // Ambil dari req.body
+    const {
+      layanan_id,
+      pickup_date,
+      return_date,
+      payment_method,
       additional_notes,
-      total_price
+      total_price,
+      payment_status,
+      midtrans_order_id
     } = req.body;
-
-    const user_id = req.user.id;
-    const payment_proof = req.file ? req.file.path : null;
 
     // Validasi input
     if (!layanan_id || !pickup_date || !return_date) {
-      deleteFileIfExist(payment_proof);
       if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
         await transaction.rollback();
       }
@@ -164,47 +165,10 @@ exports.createOrder = async (req, res) => {
 
     const pickupDate = new Date(pickup_date);
     const returnDate = new Date(return_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (pickupDate < today) {
-      deleteFileIfExist(payment_proof);
-      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
-        await transaction.rollback();
-      }
-      return res.status(400).json({
-        success: false,
-        message: "Tanggal pickup tidak boleh di masa lalu"
-      });
-    }
-
-    if (pickupDate >= returnDate) {
-      deleteFileIfExist(payment_proof);
-      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
-        await transaction.rollback();
-      }
-      return res.status(400).json({
-        success: false,
-        message: "Tanggal pengembalian harus setelah tanggal pickup"
-      });
-    }
 
     // Cek ketersediaan mobil
-    const car = await Layanan.findByPk(layanan_id, { transaction });
-    if (!car) {
-      deleteFileIfExist(payment_proof);
-      if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
-        await transaction.rollback();
-      }
-      return res.status(404).json({
-        success: false,
-        message: "Mobil tidak ditemukan"
-      });
-    }
-
     const isAvailable = await cekKetersediaanMobil(layanan_id, pickupDate, returnDate, transaction);
     if (!isAvailable) {
-      deleteFileIfExist(payment_proof);
       if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
         await transaction.rollback();
       }
@@ -214,40 +178,49 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // Hitung durasi dan total harga
-    const durasi = hitungDurasiSewa(pickupDate, returnDate);
-    const total = total_price || (car.harga_per_hari * durasi);
-
-    // Determine payment status
-    const payment_status = (payment_method === 'credit_card' || payment_proof) ? 'pending_verification' : 'unpaid';
-
     // Buat pesanan
     const newOrder = await Order.create({
-      user_id,
+      user_id: req.user.id,
       layanan_id,
       order_date: new Date(),
-      pickup_date: pickupDate,
-      return_date: returnDate,
-      total_price: total,
-      payment_method: payment_method || "credit_card",
-      payment_proof: payment_proof,
-      payment_status: payment_status,
+      pickup_date,
+      return_date,
+      total_price,
+      payment_method: payment_method || "midtrans",
+      payment_status: payment_status || "unpaid",
+      midtrans_order_id: midtrans_order_id || null,
       additional_notes: additional_notes || null,
-      status: "pending"
+      status: payment_status === "paid" ? "confirmed" : payment_status === "failed" ? "cancelled" : "pending"
     }, { transaction });
-    // Trigger notifikasi admin
+
+    // Ambil data mobil
+    car = await Layanan.findByPk(layanan_id);
+
+    // Simpan notifikasi ke database
     await Notification.create({
       user_id: null,
-      message: `Pesanan baru #${newOrder.id} dari ${req.user.name}`,
+      message: `Pesanan baru dari ${req.user.name} untuk ${car?.nama || 'mobil'}.`,
       type: 'order'
+    });
+    // Emit ke admin (atau broadcast)
+    req.app.get('io').emit('new_order', {
+      title: 'Pesanan Baru',
+      message: `Pesanan baru dari ${req.user.name} untuk ${car?.nama || 'mobil'}.`,
+      type: 'order',
+      createdAt: new Date().toISOString(),
+      read: false
     });
 
     await transaction.commit();
 
-    // Kirim email ke admin
+    // --- NOTIFIKASI EMAIL & WHATSAPP ---
+    // Ambil data user & mobil
+    const user = await User.findByPk(req.user.id);
+
+    // Email ke admin
     await sendMail({
-      to: "rentalhs591@gmail.com", // email admin
-      subject: `Pesanan Baru #${newOrder.id} dari ${req.user.name}`,
+      to: "rentalhs591@gmail.com",
+      subject: `Pesanan Baru #${newOrder.id} dari ${user.name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin:0 auto; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
           <div style="background:#1976d2; color:#fff; padding:24px;">
@@ -263,19 +236,23 @@ exports.createOrder = async (req, res) => {
               </tr>
               <tr>
                 <td style="padding:6px 0; color:#555;">Nama Pelanggan</td>
-                <td style="padding:6px 0;">${req.user.name}</td>
+                <td style="padding:6px 0;">${user.name}</td>
               </tr>
               <tr>
                 <td style="padding:6px 0; color:#555;">Email Pelanggan</td>
-                <td style="padding:6px 0;">${req.user.email}</td>
+                <td style="padding:6px 0;">${user.email}</td>
               </tr>
               <tr>
                 <td style="padding:6px 0; color:#555;">Tanggal Sewa</td>
                 <td style="padding:6px 0;">${pickup_date} s/d ${return_date}</td>
               </tr>
               <tr>
+                <td style="padding:6px 0; color:#555;">Mobil</td>
+                <td style="padding:6px 0;">${car?.nama || "-"}</td>
+              </tr>
+              <tr>
                 <td style="padding:6px 0; color:#555;">Total</td>
-                <td style="padding:6px 0;"><b>Rp${Number(total).toLocaleString("id-ID")}</b></td>
+                <td style="padding:6px 0;"><b>Rp${Number(total_price).toLocaleString("id-ID")}</b></td>
               </tr>
               <tr>
                 <td style="padding:6px 0; color:#555;">Metode Pembayaran</td>
@@ -294,9 +271,9 @@ exports.createOrder = async (req, res) => {
       `,
     });
 
-    // Kirim email ke pelanggan
+    // Email ke user
     await sendMail({
-      to: req.user.email,
+      to: user.email,
       subject: `Pesanan Anda Berhasil Dibuat (#${newOrder.id})`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin:0 auto; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
@@ -304,7 +281,7 @@ exports.createOrder = async (req, res) => {
             <h2 style="margin:0; font-size:1.2rem;">Terima Kasih, Pesanan Anda Berhasil!</h2>
           </div>
           <div style="padding:28px 24px;">
-            <p style="margin-bottom:10px;">Halo <b>${req.user.name}</b>,</p>
+            <p style="margin-bottom:10px;">Halo <b>${user.name}</b>,</p>
             <p style="margin-bottom:18px;">Pesanan Anda telah berhasil dibuat. Berikut detail pesanan Anda:</p>
             <table style="width:100%; font-size:1rem; margin-bottom:18px;">
               <tr>
@@ -316,8 +293,12 @@ exports.createOrder = async (req, res) => {
                 <td style="padding:6px 0;">${pickup_date} s/d ${return_date}</td>
               </tr>
               <tr>
+                <td style="padding:6px 0; color:#555;">Mobil</td>
+                <td style="padding:6px 0;">${car?.nama || "-"}</td>
+              </tr>
+              <tr>
                 <td style="padding:6px 0; color:#555;">Total</td>
-                <td style="padding:6px 0;"><b>Rp${Number(total).toLocaleString("id-ID")}</b></td>
+                <td style="padding:6px 0;"><b>Rp${Number(total_price).toLocaleString("id-ID")}</b></td>
               </tr>
               <tr>
                 <td style="padding:6px 0; color:#555;">Metode Pembayaran</td>
@@ -340,37 +321,47 @@ exports.createOrder = async (req, res) => {
       `,
     });
 
-    // Kirim WhatsApp ke admin
-    await sendWhatsappFonnte(
-      process.env.ADMIN_WA,
-      `🚗 Pesanan Baru Masuk!\n\nID Pesanan: #${newOrder.id}\nNama Pelanggan: ${req.user.name}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nMobil: ${car.nama}\nTotal: Rp${Number(total).toLocaleString("id-ID")}\n\nSegera proses pesanan ini di dashboard admin.`
-    );
-
-    // Kirim WhatsApp ke user
-    if (req.user.no_telp) {
+    // WhatsApp ke admin
+    if (process.env.ADMIN_WA) {
       await sendWhatsappFonnte(
-        req.user.no_telp,
-        `✅ Pesanan Anda Berhasil!\n\nTerima kasih, ${req.user.name}.\nPesanan Anda (#${newOrder.id}) telah diterima.\n\nDetail Pesanan:\nMobil: ${car.nama}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nTotal: Rp${Number(total).toLocaleString("id-ID")}\n\nKami akan segera memproses pesanan Anda.\nCek status pesanan di website atau hubungi admin jika ada pertanyaan.`
+        process.env.ADMIN_WA,
+        `🚗 Pesanan Baru Masuk!\n\nID Pesanan: #${newOrder.id}\nNama Pelanggan: ${user.name}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nMobil: ${car?.nama || "-"}\nTotal: Rp${Number(total_price).toLocaleString("id-ID")}\n\nSegera proses pesanan ini di dashboard admin.`
       );
     }
 
+    // WhatsApp ke user
+    if (user.no_telp) {
+      await sendWhatsappFonnte(
+        user.no_telp,
+        `✅ Pesanan Anda Berhasil!\n\nTerima kasih, ${user.name}.\nPesanan Anda (#${newOrder.id}) telah diterima.\n\nDetail Pesanan:\nMobil: ${car?.nama || "-"}\nTanggal Sewa: ${pickupDate.toLocaleDateString("id-ID")} s/d ${returnDate.toLocaleDateString("id-ID")}\nTotal: Rp${Number(total_price).toLocaleString("id-ID")}\n\nKami akan segera memproses pesanan Anda.\nCek status pesanan di website atau hubungi admin jika ada pertanyaan.`
+      );
+    }
+
+    // Setelah pesanan baru dibuat atau pembayaran diverifikasi:
+    const io = req.app.get("io");
+    io.emit("new_notification", {
+      type: "order",
+      message: `Pesanan baru #${newOrder.id} dari ${user.name}`,
+      time: new Date()
+    });
+
+    // Kirim response
     return res.status(201).json({
       success: true,
       message: "Pesanan berhasil dibuat",
-      data: formatResponOrder(newOrder, car, durasi)
+      data: { id: newOrder.id }
     });
-
   } catch (error) {
     if (transaction && transaction.finished !== "commit" && transaction.finished !== "rollback") {
       await transaction.rollback();
     }
-    deleteFileIfExist(req.file?.path);
-
-    console.error("Error membuat pesanan:", error);
+    console.error("Error membuat pesanan:", error, {
+      body: req.body
+    });
     return res.status(500).json({
       success: false,
       message: "Terjadi kesalahan pada server",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined
+      error: error.message
     });
   }
 };
@@ -524,6 +515,14 @@ exports.verifyPayment = async (req, res) => {
         });
       }
     }
+
+    // Setelah pembayaran diverifikasi
+    const io = req.app.get("io");
+    io.emit("new_notification", {
+      type: "payment",
+      message: `Pembayaran pesanan #${order.id} telah diverifikasi`,
+      time: new Date()
+    });
 
     return res.json({
       success: true,
@@ -791,6 +790,13 @@ exports.cancelOrder = async (req, res) => {
       payment_status: 'refunded'
     }, { transaction });
 
+    // Trigger notifikasi pembatalan
+    await Notification.create({
+      user_id: order.user_id,
+      message: `Pesanan #${order.id} telah dibatalkan.`,
+      type: 'order'
+    });
+
     await transaction.commit();
 
     const car = await Layanan.findByPk(order.layanan_id);
@@ -902,6 +908,21 @@ exports.updateOrderStatus = async (req, res) => {
         `
       });
     }
+    if (order.user && order.user.no_telp) {
+      await sendWhatsappFonnte(
+        order.user.no_telp,
+        `Status pesanan #${order.id} Anda telah diubah menjadi ${status}.`
+      );
+    }
+
+    // Kirim notifikasi ke admin via socket.io
+    req.app.get('io').emit('new_order', {
+      title: 'Status Pesanan Diperbarui',
+      message: `Status pesanan #${order.id} (${order.layanan?.nama || '-'}) diubah menjadi ${status}.`,
+      type: 'order',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
 
     res.json({ success: true, message: "Status pesanan berhasil diupdate", data: order });
   } catch (error) {
@@ -921,4 +942,50 @@ exports.deleteOrder = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: "Gagal menghapus pesanan" });
   }
+};
+
+// Mendapatkan daftar tanggal booking (range) untuk satu mobil
+exports.getBookedDates = async (req, res) => {
+  try {
+    const { id } = req.params; // id = layanan_id
+    const orders = await Order.findAll({
+      where: {
+        layanan_id: id,
+        status: { [Op.notIn]: ["cancelled", "completed"] }
+      },
+      attributes: ["pickup_date", "return_date"]
+    });
+    // Format: [{start: "2024-06-20", end: "2024-06-22"}, ...]
+    const bookedDates = orders.map(order => ({
+      start: order.pickup_date,
+      end: order.return_date
+    }));
+    res.json({ bookedDates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.checkCarAvailability = async (req, res) => {
+  try {
+    const { layanan_id, pickup_date, return_date } = req.query;
+    if (!layanan_id || !pickup_date || !return_date) {
+      return res.status(400).json({ available: false, message: "Parameter tidak lengkap" });
+    }
+    const isAvailable = await cekKetersediaanMobil(
+      layanan_id,
+      new Date(pickup_date),
+      new Date(return_date)
+    );
+    res.json({ available: isAvailable });
+  } catch (err) {
+    res.status(500).json({ available: false, message: err.message });
+  }
+};
+
+exports.addToCalendar = async (req, res) => {
+  // Simulasi, bisa diintegrasikan dengan Google Calendar API
+  const { title, start, end } = req.body;
+  // Simpan ke DB jika perlu
+  res.json({ success: true, message: "Booking berhasil ditambahkan ke Google Calendar (simulasi)." });
 };

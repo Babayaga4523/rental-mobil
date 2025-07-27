@@ -5,7 +5,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import { Modal, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Modal } from "react-bootstrap";
 import "../style/LayananPage.css";
 
 const BACKEND_URL = "http://localhost:3000";
@@ -22,7 +22,18 @@ const getFiturList = (fiturArray) => {
   return fiturArray.length > 3 ? [...fiturArray.slice(0, 3), 'Dan lainnya...'] : fiturArray;
 };
 
+const featureIcons = {
+  'AC': <i className="fas fa-snowflake me-1"></i>,
+  'Audio': <i className="fas fa-music me-1"></i>,
+  'WiFi': <i className="fas fa-wifi me-1"></i>,
+  'Airbag': <i className="fas fa-shield-alt me-1"></i>,
+  'Power Steering': <i className="fas fa-bolt me-1"></i>,
+  'Central Lock': <i className="fas fa-key me-1"></i>,
+  'Leather Seats': <i className="fas fa-couch me-1"></i>
+};
+
 const Layanan = () => {
+  // State declarations
   const [layanan, setLayanan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,9 +44,9 @@ const Layanan = () => {
   const [filterKapasitas, setFilterKapasitas] = useState("");
   const [filterPromo, setFilterPromo] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [selectedCar, setSelectedCar] = useState(null);
-  const [compareList, setCompareList] = useState([]); // Tambahkan state baru
-  const [showCompareModal, setShowCompareModal] = useState(false); // State untuk kontrol modal banding
+  const [selectedCar] = useState(null);
+  const [compareList, setCompareList] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [favoritIds, setFavoritIds] = useState([]);
   const navigate = useNavigate();
 
@@ -71,10 +82,9 @@ const Layanan = () => {
     fetchLayanan();
   }, []);
 
-  // Setelah fetchLayanan, hitung favorit
   useEffect(() => {
     if (layanan.length > 0) {
-      // Ambil 3 mobil dengan jumlah_review terbanyak (atau tambahkan field order_count jika ada)
+      // Ambil 3 mobil dengan jumlah_review terbanyak
       const sorted = [...layanan].sort((a, b) => (b.jumlah_review || 0) - (a.jumlah_review || 0));
       setFavoritIds(sorted.slice(0, 3).map(c => c.id));
     }
@@ -110,35 +120,32 @@ const Layanan = () => {
     }
   });
 
-  const handleQuickView = (car) => {
-    setSelectedCar(car);
-    setShowModal(true);
-  };
-
-  // Fungsi toggle compare
   const toggleCompare = (car) => {
     setCompareList(list => {
       if (list.find(c => c.id === car.id)) {
         return list.filter(c => c.id !== car.id);
       }
-      return list.length < 3 ? [...list, car] : list; // Maks 3 mobil
+      return list.length < 3 ? [...list, car] : list;
     });
   };
 
   return (
-    <div className="layanan-page-root">
-      {/* Hero Section */}
-      <section className="layanan-page-hero position-relative overflow-hidden">
-        <div className="layanan-page-hero-overlay position-absolute w-100 h-100 top-0 start-0"></div>
-        <motion.div
-          className="position-absolute w-100 h-100 top-0 start-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          style={{
-            background: 'linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)'
-          }}
-        />
+    <div className="layanan-page">
+      {/* Futuristic Hero Section */}
+      <section className="hero-section position-relative overflow-hidden">
+        <div className="hero-overlay"></div>
+        <div className="particles-container">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className="particle" style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 10 + 5}px`,
+              height: `${Math.random() * 10 + 5}px`,
+              animationDelay: `${Math.random() * 5}s`
+            }}></div>
+          ))}
+        </div>
+        
         <div className="container h-100 position-relative z-index-1">
           <div className="row h-100 align-items-center">
             <div className="col-lg-8 mx-auto text-center px-4">
@@ -146,14 +153,14 @@ const Layanan = () => {
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8 }}
-                className="hero-title text-white mb-4 fw-bold display-4"
+                className="hero-title mb-4"
                 data-aos="zoom-in"
                 data-aos-delay="100"
               >
-                Temukan Mobil <span className="text-gradient">Sempurna</span> Untuk Anda
+                Temukan <span className="text-gradient">Armada Premium</span> Untuk Perjalanan Anda
               </motion.h1>
               <motion.p
-                className="hero-subtitle text-light fs-5 mb-5 mx-auto"
+                className="hero-subtitle mb-5 mx-auto"
                 style={{ maxWidth: '600px' }}
                 data-aos="fade-up"
                 data-aos-delay="300"
@@ -161,7 +168,7 @@ const Layanan = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                Pilih dari koleksi mobil premium kami yang selalu terawat dan siap menemani perjalanan Anda
+                Koleksi mobil terbaik dengan pelayanan profesional untuk setiap kebutuhan perjalanan Anda
               </motion.p>
               <motion.div
                 data-aos="fade-up"
@@ -170,11 +177,11 @@ const Layanan = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 <button
-                  className="btn btn-primary btn-lg rounded-pill px-4 py-3 hero-cta d-inline-flex align-items-center"
+                  className="btn btn-primary btn-lg rounded-pill px-4 py-3 hero-cta"
                   onClick={() => document.getElementById("layanan-section").scrollIntoView({ behavior: 'smooth' })}
                 >
-                  <i className="fas fa-car me-3 fs-5"></i>
-                  <span className="fw-medium">Lihat Armada</span>
+                  <i className="fas fa-car me-3"></i>
+                  <span>Jelajahi Armada</span>
                 </button>
               </motion.div>
             </div>
@@ -182,399 +189,362 @@ const Layanan = () => {
         </div>
       </section>
 
-      {/* Search and Filter Section */}
-      <section
-        className="layanan-page-search-section py-4 sticky-top bg-white shadow-sm"
-        data-aos="fade-down"
-        data-aos-offset="0"
-        data-aos-easing="ease-in-sine"
-      >
+      {/* Floating Search and Filter Bar */}
+      <section className="search-filter-bar sticky-top" data-aos="fade-down">
         <div className="container">
-          <div className="row g-3 align-items-center">
-            <div className="col-md-6">
-              <div
-                className="layanan-page-search-box input-group border rounded-pill overflow-hidden"
-                data-aos="fade-right"
-                data-aos-delay="200"
-              >
-                <span className="input-group-text bg-white border-0">
-                  <i className="fas fa-search text-muted"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-0"
-                  placeholder="Cari mobil (nama atau deskripsi)..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button
-                    className="clear-search bg-transparent border-0 px-3"
-                    onClick={() => setSearchTerm("")}
-                  >
-                    <i className="fas fa-times text-muted"></i>
-                  </button>
-                )}
-              </div>
+          <div className="search-filter-container">
+            <div className="search-box">
+              <i className="fas fa-search"></i>
+              <input
+                type="text"
+                placeholder="Cari mobil (nama atau deskripsi)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button className="clear-search" onClick={() => setSearchTerm("")}>
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
             </div>
-            <div className="col-md-6">
-              <div
-                className="layanan-page-filter-buttons d-flex flex-wrap gap-2 justify-content-md-end"
-                data-aos="fade-left"
-                data-aos-delay="200"
-              >
-                {categories.map((cat, index) => (
-                  <motion.button
-                    key={cat.key}
-                    className={`layanan-page-filter-btn btn btn-sm rounded-pill px-3 d-flex align-items-center gap-2 ${activeFilter === cat.key ? 'active shadow' : ''}`}
-                    onClick={() => setActiveFilter(cat.key)}
-                    data-aos="zoom-in"
-                    data-aos-delay={300 + (index * 100)}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.97 }}
-                    type="button"
-                  >
-                    <i className={`fas ${cat.icon} ${activeFilter === cat.key ? 'text-primary' : 'text-muted'}`}></i>
-                    <span>{cat.label}</span>
-                  </motion.button>
-                ))}
-              </div>
+            
+            <div className="filter-buttons">
+              {categories.map((cat, index) => (
+                <motion.button
+                  key={cat.key}
+                  className={`filter-btn ${activeFilter === cat.key ? 'active' : ''}`}
+                  onClick={() => setActiveFilter(cat.key)}
+                  data-aos="zoom-in"
+                  data-aos-delay={300 + (index * 100)}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <i className={`fas ${cat.icon}`}></i>
+                  <span>{cat.label}</span>
+                </motion.button>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Main Content Section */}
-      <section id="layanan-section" className="layanan-page-main py-5 bg-light">
+      <section id="layanan-section" className="main-content py-5">
         <div className="container">
-          <div
-            className="layanan-page-section-header text-center mb-5"
-            data-aos="fade-up"
-            data-aos-offset="200"
-          >
-            <h2 className="section-title fw-bold">Armada Kami</h2>
-            <p className="section-subtitle text-muted">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
-            <div className="alert alert-info d-flex align-items-center mb-4" role="alert" style={{ fontSize: "1.05rem" }}>
-              <i className="fas fa-user-tie me-2 fs-5 text-primary"></i>
-              <span>
-                <b>Semua layanan rental sudah termasuk supir profesional.</b> <br className="d-none d-md-block" />
-                <span className="text-danger fw-semibold">Tidak melayani lepas kunci (self-drive).</span>
-              </span>
+          <div className="section-header text-center mb-5" data-aos="fade-up">
+            <h2 className="section-title">Armada Kami</h2>
+            <p className="section-subtitle">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
+            
+            <div className="info-alert" data-aos="fade-up" data-aos-delay="100">
+              <i className="fas fa-user-tie"></i>
+              <div>
+                <strong>Semua layanan rental sudah termasuk supir profesional.</strong>
+                <span className="highlight">Tidak melayani lepas kunci (self-drive).</span>
+              </div>
             </div>
           </div>
 
-          {/* Keterangan Dalam Kota & Luar Kota */}
-          <div
-            className="alert alert-info rounded-4 shadow-sm mb-4"
-            data-aos="fade-up"
-            data-aos-delay="100"
-            style={{ fontSize: "1.08rem", fontWeight: 500 }}
-          >
-            <i className="fas fa-info-circle me-2"></i>
-            <span>
-              <b>Layanan ini khusus untuk rental dalam kota (Jabodetabek).</b>
-              <br className="d-none d-md-block" />
-              Untuk <b>luar kota, drop-off bandara, atau perjalanan khusus</b>, silakan&nbsp;
-              <a
-                href="https://wa.me/6281381339149"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fw-bold text-primary"
-              >
+          {/* Additional Info */}
+          <div className="info-card" data-aos="fade-up" data-aos-delay="100">
+            <i className="fas fa-info-circle"></i>
+            <div>
+              <strong>Layanan ini khusus untuk rental dalam kota (Jabodetabek).</strong>
+              Untuk <strong>luar kota, drop-off bandara, atau perjalanan khusus</strong>, silakan{' '}
+              <a href="https://wa.me/6281381339149" target="_blank" rel="noopener noreferrer">
                 chat admin
-              </a>
-              &nbsp;untuk konsultasi & penawaran terbaik!
-            </span>
+              </a>{' '}
+              untuk konsultasi & penawaran terbaik!
+            </div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-5" data-aos="zoom-in">
-              <div className="spinner-grow text-primary" style={{ width: '3rem', height: '3rem' }} role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <p className="mt-3">Memuat data mobil...</p>
+          {/* Sorting and Filtering Controls */}
+          <div className="filter-controls" data-aos="fade-up">
+            <div className="filter-group">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                <option value="terbaru">Terbaru</option>
+                <option value="harga_asc">Harga Termurah</option>
+                <option value="harga_desc">Harga Termahal</option>
+                <option value="rating">Rating Tertinggi</option>
+              </select>
+              
+              <select value={filterTransmisi} onChange={e => setFilterTransmisi(e.target.value)}>
+                <option value="">Semua Transmisi</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Manual">Manual</option>
+              </select>
+              
+              <select value={filterKapasitas} onChange={e => setFilterKapasitas(e.target.value)}>
+                <option value="">Semua Kapasitas</option>
+                <option value="4">4 Orang</option>
+                <option value="6">6 Orang</option>
+                <option value="8">8 Orang</option>
+              </select>
+              
+              <select value={filterPromo} onChange={e => setFilterPromo(e.target.value)}>
+                <option value="">Semua Promo</option>
+                <option value="promo">Ada Promo</option>
+                <option value="no_promo">Tanpa Promo</option>
+              </select>
             </div>
-          ) : error ? (
-            <div className="text-center py-5" data-aos="zoom-in">
-              <div className="error-card bg-white p-5 rounded-4 shadow-sm">
-                <i className="fas fa-exclamation-triangle error-icon text-danger fs-1 mb-3"></i>
-                <h4 className="error-title fw-bold">Oops! Terjadi Kesalahan</h4>
-                <p className="error-message text-muted">{error}</p>
-                <button
-                  className="btn btn-outline-primary mt-3"
-                  onClick={() => window.location.reload()}
-                  data-aos="fade-up"
-                  data-aos-delay="200"
-                >
-                  <i className="fas fa-sync-alt me-2"></i>Coba Lagi
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Sorting and Additional Filtering */}
-              <div className="row g-3 align-items-center mb-3">
-                <div className="col-md-4">
-                  <select
-                    className="form-select rounded-pill"
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value)}
-                  >
-                    <option value="terbaru">Terbaru</option>
-                    <option value="harga_asc">Harga Termurah</option>
-                    <option value="harga_desc">Harga Termahal</option>
-                    <option value="rating">Rating Tertinggi</option>
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <select
-                    className="form-select rounded-pill"
-                    value={filterTransmisi}
-                    onChange={e => setFilterTransmisi(e.target.value)}
-                  >
-                    <option value="">Semua Transmisi</option>
-                    <option value="Automatic">Automatic</option>
-                    <option value="Manual">Manual</option>
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <select
-                    className="form-select rounded-pill"
-                    value={filterKapasitas}
-                    onChange={e => setFilterKapasitas(e.target.value)}
-                  >
-                    <option value="">Semua Kapasitas</option>
-                    <option value="4">4 Orang</option>
-                    <option value="6">6 Orang</option>
-                    <option value="8">8 Orang</option>
-                  </select>
-                </div>
-                <div className="col-md-4">
-                  <select
-                    className="form-select rounded-pill"
-                    value={filterPromo}
-                    onChange={e => setFilterPromo(e.target.value)}
-                  >
-                    <option value="">Semua Promo</option>
-                    <option value="promo">Ada Promo</option>
-                    <option value="no_promo">Tanpa Promo</option>
-                  </select>
-                </div>
-              </div>
+          </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="loading-state" data-aos="zoom-in">
+              <div className="spinner"></div>
+              <p>Memuat data mobil...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="error-state" data-aos="zoom-in">
+              <i className="fas fa-exclamation-triangle"></i>
+              <h4>Oops! Terjadi Kesalahan</h4>
+              <p>{error}</p>
+              <button onClick={() => window.location.reload()}>
+                <i className="fas fa-sync-alt"></i> Coba Lagi
+              </button>
+            </div>
+          )}
+
+          {/* Car Grid */}
+          {!loading && !error && (
+            <>
               {sortedAndFilteredLayanan.length > 0 ? (
-                <div className="row g-4">
+                <div className="car-grid">
                   {sortedAndFilteredLayanan.map((car, index) => (
-                    <div
-                      className="col-xl-3 col-lg-4 col-md-6 d-flex"
+                    <motion.div
+                      className="car-card d-flex flex-column h-100"
                       key={car.id}
                       data-aos="fade-up"
                       data-aos-delay={(index % 4) * 100}
-                      data-aos-offset="100"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      whileHover={{ y: -10, scale: 1.02 }}
+                      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
                     >
-                      <motion.div
-                        whileHover={{ y: -10, scale: 1.03 }}
-                        className="layanan-page-car-card w-100 d-flex flex-column bg-white rounded-4 overflow-hidden shadow-sm border-0"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <div className="layanan-page-car-image position-relative overflow-hidden">
-                          <img
-                            src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
-                            alt={car.nama}
-                            className="img-fluid w-100"
-                            style={{ height: "200px", objectFit: "cover" }}
-                          />
-                          <div className="car-badge position-absolute top-0 start-0 w-100 d-flex justify-content-between p-3">
-                            <span className={`badge rounded-pill ${car.status === "available"
-                              ? "bg-success"
-                              : car.status === "unavailable"
-                                ? "bg-warning"
-                                : "bg-secondary"
-                              }`}>
-                              {car.status === "available"
-                                ? "Tersedia"
-                                : car.status === "unavailable"
-                                  ? "Sedang Disewa"
-                                  : car.status || "Status Tidak Diketahui"}
-                            </span>
-                            {car.promo && car.promo > 0 && (
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Promo {car.promo}%</Tooltip>}
-                              >
-                                <span className="badge rounded-pill bg-danger shadow-sm">
-                                  <i className="fas fa-bolt me-1"></i> {car.promo}%
-                                </span>
-                              </OverlayTrigger>
-                            )}
-                          </div>
+                      {/* Favorite and Compare Badges */}
+                      {favoritIds.includes(car.id) && (
+                        <div className="favorite-badge">
+                          <i className="fas fa-star"></i> Favorit
                         </div>
-                        <div className="layanan-page-car-body d-flex flex-column flex-grow-1 p-4">
-                          <div className="d-flex align-items-center justify-content-between mb-2">
-                            <h3 className="fw-bold mb-0">{car.nama}</h3>
-                            <span className="badge bg-light text-dark border border-1 border-secondary ms-2">{car.kategori}</span>
-                          </div>
-                          <div className="mb-2">
-                            {car.promo && car.promo > 0 ? (
-                              <>
-                                <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
-                                  Rp {car.harga?.toLocaleString('id-ID')}
-                                </span>
-                                <span className="fw-bold text-warning fs-5">
-                                  Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}
-                                </span>
-                                <span className="text-muted ms-1">/hari</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="fw-bold fs-5">Rp {car.harga?.toLocaleString('id-ID')}</span>
-                                <span className="text-muted ms-1">/hari</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="d-flex align-items-center mb-2">
-                            {[...Array(5)].map((_, i) => (
-                              <i
-                                key={i}
-                                className={`fas fa-star${i < Math.round(car.rating || 0) ? "" : "-o"} text-warning me-1`}
-                                style={{ fontSize: "1rem" }}
-                              />
-                            ))}
-                            <span className="ms-2 text-muted small">
-                              {car.rating ? `${car.rating.toFixed(1)} (${car.jumlah_review || 0})` : "Belum ada rating"}
-                            </span>
-                          </div>
-                          <div className="mb-2">
-                            <span className="badge bg-info me-2">{car.transmisi}</span>
-                            <span className="badge bg-secondary">{car.kapasitas} Orang</span>
-                          </div>
-                          <div className="car-features mt-2 mb-3">
-                            {getFiturList(car.fitur).slice(0, 3).map((fitur, i) => (
-                              <span key={i} className="badge bg-light text-dark border border-1 border-primary me-2 mb-1">
-                                <i className="fas fa-check-circle text-success me-1"></i>{fitur}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="d-flex gap-2 mt-auto pt-2">
-                            <button
-                              className="btn btn-outline-primary w-50 rounded-pill py-2"
-                              onClick={() => navigate(`/detail/${car.id}`)}
-                            >
-                              <i className="fas fa-eye me-2"></i>Lihat Detail
-                            </button>
-                            <button
-                              className="btn btn-primary w-50 rounded-pill py-2"
-                              onClick={() => navigate(`/detail/${car.id}`)}
-                            >
-                              <i className="fas fa-calendar-check me-2"></i>Pesan
-                            </button>
-                          </div>
+                      )}
+                      <div className="compare-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={!!compareList.find(c => c.id === car.id)}
+                          onChange={() => toggleCompare(car)}
+                          title="Bandingkan mobil ini"
+                        />
+                      </div>
+
+                      {/* Car Image */}
+                      <div className="car-image-container">
+                        <img
+                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
+                          alt={car.nama}
+                          className="car-image"
+                        />
+                        {/* Status and Promo Badges */}
+                        <div className="status-badge">
+                          {car.status === "available" ? "Tersedia" : "Sedang Disewa"}
                         </div>
-                        <div className="form-check position-absolute top-0 end-0 m-2">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            checked={!!compareList.find(c => c.id === car.id)}
-                            onChange={() => toggleCompare(car)}
-                            title="Bandingkan mobil ini"
-                          />
-                        </div>
-                        {favoritIds.includes(car.id) && (
-                          <span className="badge rounded-pill bg-primary shadow-sm ms-2">
-                            <i className="fas fa-star me-1"></i> Favorit
-                          </span>
+                        {car.promo && car.promo > 0 && (
+                          <div className="promo-badge">
+                            <i className="fas fa-bolt"></i> {car.promo}% OFF
+                          </div>
                         )}
-                      </motion.div>
-                    </div>
+                      </div>
+
+                      {/* Car Info */}
+                      <div className="car-info d-flex flex-column flex-grow-1">
+                        <div className="car-header">
+                          <h3>{car.nama}</h3>
+                          <span className="category-badge">{car.kategori}</span>
+                        </div>
+                        <div className="car-features">
+                          {getFiturList(car.fitur).map((f, i) => (
+                            <span key={i} className="feature-item">
+                              {featureIcons[f] || <i className="fas fa-check"></i>}
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="car-specs">
+                          <span><i className="fas fa-cogs"></i> {car.transmisi}</span>
+                          <span><i className="fas fa-users"></i> {car.kapasitas} Orang</span>
+                          <span><i className="fas fa-star"></i> {car.rating || 'Baru'}</span>
+                        </div>
+                        <div className="car-price">
+                          {car.promo && car.promo > 0 ? (
+                            <>
+                              <span className="original-price">
+                                Rp {car.harga?.toLocaleString('id-ID')}
+                              </span>
+                              <span className="discounted-price">
+                                Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="current-price">
+                              Rp {car.harga?.toLocaleString('id-ID')}
+                            </span>
+                          )}
+                          <span className="price-label">/hari</span>
+                        </div>
+                        <div className="mt-auto">
+                          <button
+                            className="book-button"
+                            onClick={() => navigate(`/detail/${car.id}`)}
+                          >
+                            <i className="fas fa-calendar-check"></i> Pesan Sekarang
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-5" data-aos="zoom-in">
-                  <div className="no-results-card bg-white p-5 rounded-4 shadow-sm">
-                    <i className="fas fa-car-crash no-results-icon text-warning fs-1 mb-3"></i>
-                    <h4 className="no-results-title fw-bold">Tidak Ditemukan</h4>
-                    <p className="no-results-message text-muted">
-                      Tidak ada mobil yang sesuai dengan pencarian Anda. Coba kata kunci lain atau filter yang berbeda.
-                    </p>
-                    <motion.button
-                      className="btn btn-outline-secondary reset-btn mt-3"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setActiveFilter("All");
-                        setSortBy("terbaru");
-                        setFilterTransmisi("");
-                        setFilterKapasitas("");
-                        setFilterPromo("");
-                      }}
-                      data-aos="fade-up"
-                      data-aos-delay="200"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <i className="fas fa-redo me-2"></i>Reset Pencarian
-                    </motion.button>
-                  </div>
+                <div className="empty-state" data-aos="zoom-in">
+                  <i className="fas fa-car-crash"></i>
+                  <h4>Tidak Ditemukan</h4>
+                  <p>Tidak ada mobil yang sesuai dengan pencarian Anda</p>
+                  <motion.button
+                    className="reset-button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setActiveFilter("All");
+                      setSortBy("terbaru");
+                      setFilterTransmisi("");
+                      setFilterKapasitas("");
+                      setFilterPromo("");
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <i className="fas fa-redo"></i> Reset Pencarian
+                  </motion.button>
                 </div>
               )}
             </>
+          )}
+
+          {/* Compare Section */}
+          {compareList.length >= 2 && (
+            <div className="compare-bar">
+              <div className="compare-items">
+                {compareList.map(c => (
+                  <span key={c.id} className="compare-item">
+                    {c.nama}
+                    <button onClick={() => toggleCompare(c)}>
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="compare-actions">
+                <button className="compare-button" onClick={() => setShowCompareModal(true)}>
+                  Bandingkan ({compareList.length})
+                </button>
+                <button className="reset-button" onClick={() => setCompareList([])}>
+                  Reset
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </section>
 
       {/* Quick View Modal */}
       {selectedCar && (
-        <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg">
+        <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="car-modal">
           <Modal.Header closeButton>
             <Modal.Title>{selectedCar.nama}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <div className="row">
-              <div className="col-md-6">
+            <div className="modal-content">
+              <div className="modal-image">
                 <img
                   src={selectedCar.gambar ? (selectedCar.gambar.startsWith("http") ? selectedCar.gambar : BACKEND_URL + selectedCar.gambar) : "/images/default-car.jpg"}
                   alt={selectedCar.nama}
-                  className="img-fluid rounded-3 mb-3"
                 />
               </div>
-              <div className="col-md-6">
-                <h5 className="mb-3">Fitur:</h5>
-                <ul>
-                  {getFiturList(selectedCar.fitur).map((f, i) => <li key={i}>{f}</li>)}
-                </ul>
-                <div className="mb-3">
-                  <strong>Harga:</strong>{" "}
+              <div className="modal-details">
+                <div className="detail-section">
+                  <h5>Fitur Utama</h5>
+                  <div className="features-grid">
+                    {getFiturList(selectedCar.fitur).map((f, i) => (
+                      <div key={i} className="feature-item">
+                        {featureIcons[f] || <i className="fas fa-check"></i>}
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="detail-section">
+                  <h5>Spesifikasi</h5>
+                  <div className="specs-grid">
+                    <div className="spec-item">
+                      <i className="fas fa-tag"></i>
+                      <div>
+                        <span>Kategori</span>
+                        <strong>{selectedCar.kategori}</strong>
+                      </div>
+                    </div>
+                    <div className="spec-item">
+                      <i className="fas fa-cogs"></i>
+                      <div>
+                        <span>Transmisi</span>
+                        <strong>{selectedCar.transmisi}</strong>
+                      </div>
+                    </div>
+                    <div className="spec-item">
+                      <i className="fas fa-users"></i>
+                      <div>
+                        <span>Kapasitas</span>
+                        <strong>{selectedCar.kapasitas} Orang</strong>
+                      </div>
+                    </div>
+                    <div className="spec-item">
+                      <i className="fas fa-star"></i>
+                      <div>
+                        <span>Rating</span>
+                        <strong>{selectedCar.rating || 'Baru'}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="price-section">
+                  <h5>Harga Sewa</h5>
                   {selectedCar.promo && selectedCar.promo > 0 ? (
-                    <>
-                      <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                    <div className="discounted-price-container">
+                      <div className="original-price">
                         Rp {selectedCar.harga?.toLocaleString('id-ID')}
-                      </span>
-                      <span className="fw-bold text-warning">
+                      </div>
+                      <div className="discounted-price">
                         Rp {getHargaSetelahPromo(selectedCar).toLocaleString('id-ID')}
-                      </span>
-                      /hari
-                    </>
+                        <span className="discount-badge">-{selectedCar.promo}%</span>
+                      </div>
+                      <div className="price-note">Harga per hari</div>
+                    </div>
                   ) : (
-                    <>Rp {selectedCar.harga?.toLocaleString('id-ID')}/hari</>
+                    <div className="normal-price">
+                      Rp {selectedCar.harga?.toLocaleString('id-ID')}
+                      <span className="price-note">Harga per hari</span>
+                    </div>
                   )}
                 </div>
-                <div className="mb-3">
-                  <strong>Status:</strong> {selectedCar.status || "Tersedia"}
-                </div>
-                <div className="mb-3">
-                  <strong>Transmisi:</strong> {selectedCar.transmisi}
-                </div>
-                <div className="mb-3">
-                  <strong>Kapasitas:</strong> {selectedCar.kapasitas} Orang
-                </div>
+                
                 <button
-                  className="btn btn-primary rounded-pill"
+                  className="book-button"
                   onClick={() => {
                     setShowModal(false);
                     navigate(`/detail/${selectedCar.id}`);
                   }}
                 >
-                  <i className="fas fa-calendar-check me-2"></i>Pesan Sekarang
+                  <i className="fas fa-calendar-check"></i> Pesan Sekarang
                 </button>
               </div>
             </div>
@@ -582,41 +552,27 @@ const Layanan = () => {
         </Modal>
       )}
 
-      {/* Compare Section - New Feature */}
-      {compareList.length >= 2 && (
-        <div className="alert alert-primary d-flex align-items-center gap-3 my-3">
-          <span>Bandingkan:</span>
-          {compareList.map(c => (
-            <span key={c.id} className="badge bg-secondary">{c.nama}</span>
-          ))}
-          <button
-            className="btn btn-sm btn-success ms-auto"
-            onClick={() => setShowCompareModal(true)}
-          >
-            Bandingkan Mobil
-          </button>
-          <button
-            className="btn btn-sm btn-outline-danger ms-2"
-            onClick={() => setCompareList([])}
-          >
-            Reset
-          </button>
-        </div>
-      )}
-
       {/* Compare Modal */}
-      <Modal show={showCompareModal} onHide={() => setShowCompareModal(false)} size="lg" centered>
+      <Modal show={showCompareModal} onHide={() => setShowCompareModal(false)} size="lg" centered className="compare-modal">
         <Modal.Header closeButton>
           <Modal.Title>Perbandingan Mobil</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="table-responsive">
-            <table className="table table-bordered align-middle text-center">
+          <div className="comparison-table">
+            <table>
               <thead>
                 <tr>
                   <th>Fitur</th>
                   {compareList.map(car => (
-                    <th key={car.id}>{car.nama}</th>
+                    <th key={car.id}>
+                      <div className="compare-car-header">
+                        <img
+                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
+                          alt={car.nama}
+                        />
+                        <span>{car.nama}</span>
+                      </div>
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -624,13 +580,34 @@ const Layanan = () => {
                 <tr>
                   <td>Harga</td>
                   {compareList.map(car => (
-                    <td key={car.id}>Rp {getHargaSetelahPromo(car).toLocaleString("id-ID")}/hari</td>
+                    <td key={car.id}>
+                      {car.promo && car.promo > 0 ? (
+                        <>
+                          <span className="original-price">Rp {car.harga?.toLocaleString('id-ID')}</span>
+                          <span className="discounted-price">Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}</span>
+                        </>
+                      ) : (
+                        <span className="current-price">Rp {car.harga?.toLocaleString('id-ID')}</span>
+                      )}
+                    </td>
                   ))}
                 </tr>
                 <tr>
                   <td>Promo</td>
                   {compareList.map(car => (
-                    <td key={car.id}>{car.promo ? `${car.promo}%` : "-"}</td>
+                    <td key={car.id}>
+                      {car.promo ? (
+                        <span className="promo-badge">{car.promo}% OFF</span>
+                      ) : (
+                        <span className="no-promo">-</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>Kategori</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>{car.kategori}</td>
                   ))}
                 </tr>
                 <tr>
@@ -648,15 +625,34 @@ const Layanan = () => {
                 <tr>
                   <td>Rating</td>
                   {compareList.map(car => (
-                    <td key={car.id}>{car.rating ? car.rating.toFixed(1) : "-"}</td>
+                    <td key={car.id}>
+                      {car.rating ? (
+                        <div className="rating-stars">
+                          {[...Array(5)].map((_, i) => (
+                            <i
+                              key={i}
+                              className={`fas fa-star ${i < Math.floor(car.rating) ? 'filled' : ''}`}
+                            ></i>
+                          ))}
+                          <span>({car.rating.toFixed(1)})</span>
+                        </div>
+                      ) : (
+                        <span>Baru</span>
+                      )}
+                    </td>
                   ))}
                 </tr>
                 <tr>
                   <td>Fitur</td>
                   {compareList.map(car => (
                     <td key={car.id}>
-                      <ul className="list-unstyled mb-0">
-                        {getFiturList(car.fitur).map((f, i) => <li key={i}>{f}</li>)}
+                      <ul>
+                        {getFiturList(car.fitur).map((f, i) => (
+                          <li key={i}>
+                            {featureIcons[f] || <i className="fas fa-check"></i>}
+                            {f}
+                          </li>
+                        ))}
                       </ul>
                     </td>
                   ))}

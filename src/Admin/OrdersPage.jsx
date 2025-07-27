@@ -1,23 +1,28 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Table, Spinner, Alert, Badge, Dropdown, Button, Modal, Form,
-  OverlayTrigger, Tooltip, Toast, ToastContainer, InputGroup, Row, Col, Card
+  Table, Spinner, Badge, Dropdown, Button, Modal, Form,
+  Toast, ToastContainer, InputGroup, Row, Col, Card, Container,
+  ProgressBar, Nav, Tab
 } from "react-bootstrap";
 import moment from "moment";
 import {
-  FaEllipsisV, FaEye, FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown, FaFileCsv, FaFilePdf, FaCheckSquare, FaRegSquare, FaPrint, FaBell
+  FaEllipsisV, FaEye, FaEdit, FaTrashAlt, FaSort, FaSortUp, FaSortDown, 
+  FaFileCsv, FaFilePdf, FaCheckCircle, FaTimesCircle, FaClock, FaMoneyBillWave,
+  FaCalendarAlt, FaCarSide, FaUserCircle, FaPrint, FaSearch, FaDownload, 
+  FaClipboardList, FaCreditCard, FaWallet, FaClipboardCheck, FaArrowUp
 } from "react-icons/fa";
 import { CSVLink } from "react-csv";
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const API_URL = "http://localhost:3000/api";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
-const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY') : '';
-const formatCurrency = (amount) => amount ? Number(amount).toLocaleString('id-ID') : '';
+const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY') : '-';
+const formatDateTime = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : '-';
+const formatCurrency = (amount) => amount ? `Rp${Number(amount).toLocaleString('id-ID')}` : '-';
 const formatStatus = (status) => {
   switch (status?.toLowerCase()) {
     case 'pending': return 'Menunggu';
@@ -25,7 +30,7 @@ const formatStatus = (status) => {
     case 'completed': return 'Selesai';
     case 'cancelled': return 'Dibatalkan';
     case 'rejected': return 'Ditolak';
-    default: return status || '';
+    default: return status || '-';
   }
 };
 const formatPaymentStatus = (status) => {
@@ -34,18 +39,35 @@ const formatPaymentStatus = (status) => {
     case 'paid': return 'Lunas';
     case 'rejected': return 'Ditolak';
     case 'unpaid': return 'Belum Bayar';
-    default: return status || '';
+    default: return status || '-';
   }
 };
-
 const getStatusBadge = (status) => {
   switch ((status || "").toLowerCase()) {
     case "pending": return "warning";
     case "confirmed": return "info";
-    case "completed": return "primary";
+    case "completed": return "success";
     case "cancelled": return "danger";
     case "rejected": return "danger";
     default: return "secondary";
+  }
+};
+const getPaymentBadge = (status) => {
+  switch ((status || "").toLowerCase()) {
+    case "paid": return "success";
+    case "pending_verification": return "warning";
+    case "rejected": return "danger";
+    case "unpaid": return "secondary";
+    default: return "light";
+  }
+};
+
+const paymentIcon = (method) => {
+  switch (method) {
+    case "credit_card": return <FaCreditCard className="me-1 text-primary" />;
+    case "bank_transfer": return <FaClipboardList className="me-1 text-info" />;
+    case "e_wallet": return <FaWallet className="me-1 text-success" />;
+    default: return <FaMoneyBillWave className="me-1 text-secondary" />;
   }
 };
 
@@ -73,21 +95,14 @@ const OrdersPage = ({ darkMode }) => {
   const [showPaymentStatusModal, setShowPaymentStatusModal] = useState(false);
   const [paymentStatusToEdit, setPaymentStatusToEdit] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
-  const [bulkAction, setBulkAction] = useState("");
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [activeTab, setActiveTab] = useState("all");
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetchOrders();
     fetchCars();
-    // eslint-disable-next-line
   }, [token]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [toast]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -115,20 +130,11 @@ const OrdersPage = ({ darkMode }) => {
     }
   };
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNotifications(res.data || []);
-    } catch {}
-  };
-
   const showToast = (message, variant = "success") => {
     setToast({ show: true, message, variant });
     setTimeout(() => setToast({ ...toast, show: false }), 2500);
   };
-
+ 
   // Filter & Search & Date
   const filteredOrders = orders
     .filter((order) => {
@@ -277,373 +283,414 @@ const OrdersPage = ({ darkMode }) => {
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
-  const handleBulkAction = async () => {
-    if (!bulkAction || selectedIds.length === 0) return;
-    if (bulkAction === "delete") {
-      setDeleteIds(selectedIds);
-      setShowBulkModal(true);
-    } else if (bulkAction === "completed" || bulkAction === "cancelled") {
-      try {
-        await Promise.all(selectedIds.map(id =>
-          axios.put(`${API_URL}/orders/${id}`, { status: bulkAction }, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ));
-        showToast("Status pesanan berhasil diubah!");
-        setSelectedIds([]);
-        fetchOrders();
-      } catch {
-        showToast("Gagal update status pesanan!", "danger");
-      }
-    }
-  };
-  const handleBulkDelete = async () => {
-    try {
-      await Promise.all(deleteIds.map(id =>
-        axios.put(`${API_URL}/orders/${id}`, { status: "cancelled" }, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ));
-      setOrders((orders) =>
-        orders.map((o) =>
-          deleteIds.includes(o.id) ? { ...o, status: "cancelled" } : o
-        )
-      );
-      setShowBulkModal(false);
-      setSelectedIds([]);
-      showToast("Pesanan berhasil dibatalkan!");
-    } catch {
-      showToast("Gagal membatalkan pesanan!", "danger");
-    }
+
+  // Stats
+  const stats = {
+    total: orders.length,
+    pending: orders.filter(o => o.status === "pending").length,
+    confirmed: orders.filter(o => o.status === "confirmed").length,
+    completed: orders.filter(o => o.status === "completed").length,
+    cancelled: orders.filter(o => o.status === "cancelled").length,
   };
 
-  // Modal helpers
+  const statusDistribution = [
+    { status: "completed", count: stats.completed, label: "Selesai", color: "success", icon: <FaCheckCircle className="text-success me-1" /> },
+    { status: "confirmed", count: stats.confirmed, label: "Dikonfirmasi", color: "info", icon: <FaClipboardList className="text-info me-1" /> },
+    { status: "pending", count: stats.pending, label: "Pending", color: "warning", icon: <FaClock className="text-warning me-1" /> },
+    { status: "cancelled", count: stats.cancelled, label: "Dibatalkan", color: "danger", icon: <FaTimesCircle className="text-danger me-1" /> },
+  ];
+
   const handleShowDetail = async (order) => {
     setDetailLoading(true);
+    setSelectedOrder(order);
     setShowDetail(true);
-    try {
-      const res = await axios.get(`${API_URL}/orders/${order.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSelectedOrder(res.data.data || order);
-    } catch (err) {
-      setSelectedOrder(order);
-      showToast("Gagal memuat detail pesanan!", "danger");
-    } finally {
-      setDetailLoading(false);
-    }
+    setDetailLoading(false);
   };
 
-  const handleShowStatusModal = (order) => {
-    setSelectedOrder(order);
-    setStatusToEdit("");
-    setShowStatusModal(true);
-  };
-
-  const handleShowDeleteModal = (id) => {
-    setDeleteIds([id]);
-    setShowDeleteModal(true);
-  };
-
-  const handleShowPaymentStatusModal = (order) => {
-    setSelectedOrder(order);
-    setPaymentStatusToEdit("");
-    setShowPaymentStatusModal(true);
-  };
-
-  // Status update
-  const handleStatusUpdate = async () => {
-    if (!statusToEdit) return;
-    try {
-      await axios.put(
-        `${API_URL}/orders/${selectedOrder.id}`,
-        { status: statusToEdit },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      showToast("Status pesanan berhasil diupdate!");
-      setShowStatusModal(false);
-      // Update orders state langsung tanpa fetch ulang
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === selectedOrder.id ? { ...o, status: statusToEdit } : o
-        )
-      );
-    } catch (err) {
-      showToast("Gagal update status!", "danger");
-    }
-  };
-
-  // Payment Status update
-  const handlePaymentStatusUpdate = async () => {
-    if (!paymentStatusToEdit) return;
-    try {
-      await axios.put(
-        `${API_URL}/orders/${selectedOrder.id}/verify`,
-        { status: paymentStatusToEdit },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      showToast("Status pembayaran berhasil diupdate!");
-      setShowPaymentStatusModal(false);
-      // Update orders state langsung tanpa fetch ulang
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === selectedOrder.id ? { ...o, payment_status: paymentStatusToEdit } : o
-        )
-      );
-    } catch (err) {
-      showToast("Gagal update status pembayaran!", "danger");
-    }
-  };
-
-  // Delete
-  const handleDelete = async () => {
-    try {
-      await axios.delete(`${API_URL}/orders/${deleteIds[0]}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setOrders((orders) => orders.filter((o) => o.id !== deleteIds[0]));
-      setShowDeleteModal(false);
-      setSelectedIds(selectedIds.filter(id => id !== deleteIds[0]));
-      showToast("Pesanan berhasil dihapus!");
-    } catch (err) {
-      showToast("Gagal menghapus pesanan!", "danger");
-    }
-  };
-
-  // Status options sesuai backend
-  const renderStatusOptions = () => {
-    const options = [
-      { value: "pending", label: "Pending" },
-      { value: "confirmed", label: "Confirmed" },
-      { value: "completed", label: "Completed" },
-      { value: "cancelled", label: "Cancelled" }
-    ];
-    return options.map(opt => (
-      <option key={opt.value} value={opt.value}>{opt.label}</option>
-    ));
-  };
-
-  // Print Invoice
   const handlePrintInvoice = (order) => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`INVOICE PESANAN #${order.id}`, 14, 18);
-    doc.setFontSize(12);
-    doc.text(`Nama Pelanggan: ${order.user?.name || "-"}`, 14, 30);
-    doc.text(`Mobil: ${order.layanan?.nama || "-"}`, 14, 38);
-    doc.text(`Tanggal Sewa: ${formatDate(order.pickup_date)} - ${formatDate(order.return_date)}`, 14, 46);
-    doc.text(`Durasi: ${order.pickup_date && order.return_date ? moment(order.return_date).diff(moment(order.pickup_date), "days") + " hari" : "-"}`, 14, 54);
-    doc.text(`Total: Rp${Number(order.total_price || 0).toLocaleString('id-ID')}`, 14, 62);
-    doc.text(`Status: ${formatStatus(order.status)}`, 14, 70);
-    doc.text(`Status Pembayaran: ${formatPaymentStatus(order.payment_status)}`, 14, 78);
-    doc.save(`invoice-pesanan-${order.id}.pdf`);
+    showToast("Fitur cetak invoice belum tersedia.", "info");
   };
+
+  // Filter by tab
+  const filteredByTab = activeTab === "all"
+    ? pagedOrders
+    : pagedOrders.filter((order) => order.status === activeTab);
 
   return (
-    <div className={darkMode ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"}>
-      <div className="container-fluid py-4">
-        {/* Header & Export */}
-        <Row className="align-items-center mb-4 g-2">
-          <Col xs={12} md={6}>
-            <h3 className="mb-0 fw-bold">
-              <span className="me-2 text-primary">
-                <FaFileCsv />
-              </span>
-              Daftar Pesanan
-            </h3>
-          </Col>
-          <Col xs={12} md={6} className="text-md-end mt-2 mt-md-0 d-flex gap-2 justify-content-md-end">
-            {/* Export Buttons */}
-            <CSVLink
-              data={formatCSVData(sortedOrders)}
-              headers={csvHeaders}
-              filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
-              className="btn btn-outline-success"
-              separator=";"
-              enclosingCharacter={'"'}
+    <Container fluid className={`${darkMode ? "bg-dark text-light" : "bg-light"} min-vh-100 p-4`}>
+      {/* Header */}
+      <Row className="mb-4 align-items-center">
+        <Col>
+          <h2 className="fw-bold mb-1"><FaClipboardList className="me-2 text-primary" />Manajemen Pesanan</h2>
+          <div className="text-muted">Kelola dan pantau seluruh pesanan rental mobil</div>
+        </Col>
+        <Col xs="auto" className="d-flex gap-2">
+          <Dropdown>
+            <Dropdown.Toggle variant="primary" className="d-flex align-items-center">
+              <FaDownload className="me-2" /> Export
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              <Dropdown.Item as="div">
+                <CSVLink
+                  data={formatCSVData(sortedOrders)}
+                  headers={csvHeaders}
+                  filename={`daftar-pesanan-${moment().format("DDMMYYYY")}.csv`}
+                  className="text-decoration-none text-dark d-block"
+                  separator=";"
+                  enclosingCharacter={'"'}
+                >
+                  <FaFileCsv className="me-2 text-success" /> CSV
+                </CSVLink>
+              </Dropdown.Item>
+              <Dropdown.Item onClick={handleExportExcel}>
+                <FaFileCsv className="me-2 text-info" /> Excel
+              </Dropdown.Item>
+              <Dropdown.Item onClick={handleExportPDF}>
+                <FaFilePdf className="me-2 text-danger" /> PDF
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        </Col>
+      </Row>
+
+      {/* Statistik Modern */}
+<Row className="mb-4 g-4">
+  <Col xl={3} lg={6} md={6} sm={12}>
+    <Card className="stat-card-ultra border-0 h-100 overflow-hidden">
+      <Card.Body className="p-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 className="text-uppercase text-muted mb-2 fw-semibold small">Total Pesanan</h6>
+            <h2 className="mb-0 fw-bold">{stats.total}</h2>
+            <small className="text-primary fw-semibold">
+              <FaArrowUp className="me-1 text-primary" />
+              {stats.total > 0 ? ((stats.completed + stats.pending + stats.confirmed + stats.cancelled) / stats.total * 100).toFixed(1) : 0}% dari total
+            </small>
+          </div>
+          <div className="icon-shape bg-gradient-primary rounded-3 stat-icon">
+            <FaClipboardList className="text-white" style={{ fontSize: "2rem" }} />
+          </div>
+        </div>
+        <div className="progress mt-3" style={{ height: '4px' }}>
+          <div 
+            className="progress-bar bg-gradient-primary" 
+            role="progressbar" 
+            style={{ width: '100%' }} 
+            aria-valuenow={stats.total} 
+            aria-valuemin="0" 
+            aria-valuemax={stats.total}
+          ></div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+  <Col xl={3} lg={6} md={6} sm={12}>
+    <Card className="stat-card-ultra border-0 h-100 overflow-hidden">
+      <Card.Body className="p-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 className="text-uppercase text-muted mb-2 fw-semibold small">Pending</h6>
+            <h2 className="mb-0 fw-bold">{stats.pending}</h2>
+            <small className="text-warning fw-semibold">
+              <FaClock className="me-1 text-warning" /> {stats.total > 0 ? ((stats.pending / stats.total) * 100).toFixed(1) : 0}% dari total
+            </small>
+          </div>
+          <div className="icon-shape bg-gradient-warning rounded-3 stat-icon">
+            <FaClock className="text-white" style={{ fontSize: "2rem" }} />
+          </div>
+        </div>
+        <div className="progress mt-3" style={{ height: '4px' }}>
+          <div 
+            className="progress-bar bg-gradient-warning" 
+            role="progressbar" 
+            style={{ width: `${stats.total > 0 ? (stats.pending / stats.total) * 100 : 0}%` }} 
+            aria-valuenow={stats.pending} 
+            aria-valuemin="0" 
+            aria-valuemax={stats.total}
+          ></div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+  <Col xl={3} lg={6} md={6} sm={12}>
+    <Card className="stat-card-ultra border-0 h-100 overflow-hidden">
+      <Card.Body className="p-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 className="text-uppercase text-muted mb-2 fw-semibold small">Selesai</h6>
+            <h2 className="mb-0 fw-bold">{stats.completed}</h2>
+            <small className="text-success fw-semibold">
+              <FaCheckCircle className="me-1 text-success" /> {stats.total > 0 ? ((stats.completed / stats.total) * 100).toFixed(1) : 0}% sukses
+            </small>
+          </div>
+          <div className="icon-shape bg-gradient-success rounded-3 stat-icon">
+            <FaCheckCircle className="text-white" style={{ fontSize: "2rem" }} />
+          </div>
+        </div>
+        <div className="progress mt-3" style={{ height: '4px' }}>
+          <div 
+            className="progress-bar bg-gradient-success" 
+            role="progressbar" 
+            style={{ width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%` }} 
+            aria-valuenow={stats.completed} 
+            aria-valuemin="0" 
+            aria-valuemax={stats.total}
+          ></div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+  <Col xl={3} lg={6} md={6} sm={12}>
+    <Card className="stat-card-ultra border-0 h-100 overflow-hidden">
+      <Card.Body className="p-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 className="text-uppercase text-muted mb-2 fw-semibold small">Dibatalkan</h6>
+            <h2 className="mb-0 fw-bold">{stats.cancelled}</h2>
+            <small className="text-danger fw-semibold">
+              <FaTimesCircle className="me-1 text-danger" /> {stats.total > 0 ? ((stats.cancelled / stats.total) * 100).toFixed(1) : 0}% gagal
+            </small>
+          </div>
+          <div className="icon-shape bg-gradient-danger rounded-3 stat-icon">
+            <FaTimesCircle className="text-white" style={{ fontSize: "2rem" }} />
+          </div>
+        </div>
+        <div className="progress mt-3" style={{ height: '4px' }}>
+          <div 
+            className="progress-bar bg-gradient-danger" 
+            role="progressbar" 
+            style={{ width: `${stats.total > 0 ? (stats.cancelled / stats.total) * 100 : 0}%` }} 
+            aria-valuenow={stats.cancelled} 
+            aria-valuemin="0" 
+            aria-valuemax={stats.total}
+          ></div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+</Row>
+
+      {/* Status Distribution */}
+      <Card className="mb-4 shadow-sm border-0">
+        <Card.Body>
+          <h5 className="card-title mb-3">Distribusi Status Pesanan</h5>
+          <div className="d-flex flex-wrap align-items-center gap-3 mb-4">
+            {statusDistribution.map((item, index) => (
+              <div key={index} className="d-flex align-items-center gap-2">
+                <span
+                  className={`icon-status-distribution bg-${item.color}-soft`}
+                  style={{
+                    background: `var(--bs-${item.color}-bg-subtle, #f8f9fa)`,
+                    color: `var(--bs-${item.color}, #6c757d)`,
+                  }}
+                >
+                  {item.icon}
+                </span>
+                <span className="fw-semibold">{item.label}</span>
+                <span className={`badge rounded-pill bg-${item.color} ms-1`}>
+                  {item.count}
+                </span>
+              </div>
+            ))}
+          </div>
+          <ProgressBar className="mb-2" style={{ height: 14, background: "#e9ecef" }}>
+            {statusDistribution.map((item, index) => (
+              <ProgressBar
+                key={index}
+                variant={item.color}
+                now={stats.total ? (item.count / stats.total) * 100 : 0}
+                style={{
+                  fontWeight: 600,
+                  fontSize: 12,
+                  background: `var(--bs-${item.color}-bg-subtle, #f8f9fa)`,
+                }}
+              />
+            ))}
+          </ProgressBar>
+          <div className="small text-muted">
+            Total pesanan: <span className="fw-bold">{stats.total}</span>
+          </div>
+        </Card.Body>
+      </Card>
+
+      {/* Filter */}
+      <Card className="mb-4 shadow-sm border-0 sticky-top" style={{zIndex: 10, top: 0}}>
+        <Card.Body>
+          <Row className="g-2 align-items-center">
+            <Col md={3}>
+              <InputGroup>
+                <InputGroup.Text><FaSearch /></InputGroup.Text>
+                <Form.Control
+                  placeholder="Cari pelanggan, mobil, atau ID..."
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                />
+              </InputGroup>
+            </Col>
+            <Col md={2}>
+              <Form.Select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}>
+                <option value="all">Semua Status</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="rejected">Rejected</option>
+              </Form.Select>
+            </Col>
+            <Col md={2}>
+              <Form.Select value={filterCar} onChange={e => { setFilterCar(e.target.value); setPage(1); }}>
+                <option value="all">Semua Mobil</option>
+                {cars.map(car => (
+                  <option key={car.id} value={car.id}>{car.nama}</option>
+                ))}
+              </Form.Select>
+            </Col>
+            <Col md={2}>
+              <Form.Select value={filterPayment} onChange={e => { setFilterPayment(e.target.value); setPage(1); }}>
+                <option value="all">Semua Pembayaran</option>
+                <option value="credit_card">Credit Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="e_wallet">E-Wallet</option>
+              </Form.Select>
+            </Col>
+            <Col md={1}>
+              <Form.Control type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+            </Col>
+            <Col md={1}>
+              <Form.Control type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+            </Col>
+            <Col md={1}>
+              <Form.Select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>
+                {PAGE_SIZE_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt} / halaman</option>
+                ))}
+              </Form.Select>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+
+      {/* Status Tabs */}
+      <div className="status-tabs-bg rounded mb-4 px-2 py-2">
+        <Nav variant="pills" activeKey={activeTab} onSelect={setActiveTab} className="custom-status-tabs">
+          <Nav.Item>
+            <Nav.Link 
+              eventKey="all" 
+              className="d-flex align-items-center"
             >
-              <FaFileCsv className="me-2" />
-              Export CSV
-            </CSVLink>
-            
-            <Button variant="outline-danger" onClick={handleExportPDF}>
-              <FaFilePdf className="me-2" />
-              Export PDF
-            </Button>
-          </Col>
-        </Row>
+              <FaClipboardList className="me-2 text-primary" />
+              Semua
+              <Badge pill bg="secondary" className="ms-2">
+                {orders.length}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              eventKey="pending" 
+              className="d-flex align-items-center"
+            >
+              <FaClock className="me-2 text-warning" />
+              Pending
+              <Badge pill bg="warning" className="ms-2">
+                {stats.pending}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              eventKey="confirmed" 
+              className="d-flex align-items-center"
+            >
+              <FaClipboardCheck className="me-2 text-info" />
+              Dikonfirmasi
+              <Badge pill bg="primary" className="ms-2">
+                {stats.confirmed}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              eventKey="completed" 
+              className="d-flex align-items-center"
+            >
+              <FaCheckCircle className="me-2 text-success" />
+              Selesai
+              <Badge pill bg="success" className="ms-2">
+                {stats.completed}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+          <Nav.Item>
+            <Nav.Link 
+              eventKey="cancelled" 
+              className="d-flex align-items-center"
+            >
+              <FaTimesCircle className="me-2 text-danger" />
+              Dibatalkan
+              <Badge pill bg="danger" className="ms-2">
+                {stats.cancelled}
+              </Badge>
+            </Nav.Link>
+          </Nav.Item>
+        </Nav>
+      </div>
 
-        {/* Filter */}
-        <Card className={`mb-4 shadow-sm border-0 ${darkMode ? "bg-secondary" : "bg-white"}`}>
-          <Card.Body>
-            <Row className="g-2 align-items-stretch">
-              <Col xs={12} sm={6} md={3}>
-                <InputGroup>
-                  <Form.Control
-                    type="text"
-                    placeholder="Cari pelanggan, mobil, atau ID..."
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setPage(1);
-                    }}
-                  />
-                </InputGroup>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
-                <Form.Select
-                  value={filterStatus}
-                  onChange={(e) => {
-                    setFilterStatus(e.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="all">Semua Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="rejected">Rejected</option>
-                </Form.Select>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
-                <Form.Select
-                  value={filterCar}
-                  onChange={(e) => {
-                    setFilterCar(e.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="all">Semua Mobil</option>
-                  {cars.map(car => (
-                    <option key={car.id} value={car.id}>{car.nama}</option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col xs={6} sm={3} md={2}>
-                <Form.Select
-                  value={filterPayment}
-                  onChange={(e) => {
-                    setFilterPayment(e.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="all">Semua Pembayaran</option>
-                  <option value="credit_card">Credit Card</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="e_wallet">E-Wallet</option>
-                </Form.Select>
-              </Col>
-              <Col xs={6} sm={3} md={1}>
-                <Form.Control
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Dari tanggal"
-                />
-              </Col>
-              <Col xs={6} sm={3} md={1}>
-                <Form.Control
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Sampai tanggal"
-                />
-              </Col>
-              <Col xs={6} sm={3} md={1}>
-                <Form.Select
-                  value={pageSize}
-                  onChange={e => {
-                    setPageSize(Number(e.target.value));
-                    setPage(1);
-                  }}
-                >
-                  {PAGE_SIZE_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt} / halaman</option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col xs={12} md={2} className="text-md-end mt-2 mt-md-0">
-                <Form.Select
-                  value={bulkAction}
-                  onChange={e => setBulkAction(e.target.value)}
-                  disabled={selectedIds.length === 0}
-                >
-                  <option value="">Bulk Action</option>
-                  <option value="completed">Set Selesai</option>
-                  <option value="cancelled">Set Dibatalkan</option>
-                  <option value="delete">Hapus</option>
-                </Form.Select>
-                <Button
-                  variant="primary"
-                  className="ms-2"
-                  disabled={!bulkAction || selectedIds.length === 0}
-                  onClick={handleBulkAction}
-                >
-                  Terapkan
-                </Button>
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
-
-        {/* Table */}
-        <Card className="shadow-sm border-0 mb-4">
-          <Card.Body className="p-0">
-            <div className="table-responsive" style={{ maxHeight: 600 }}>
-              <Table
-                striped
-                bordered
-                hover
-                className={`align-middle mb-0 ${darkMode ? "table-dark" : ""}`}
-                style={{ minWidth: 1100 }}
-              >
-                <thead className={darkMode ? "table-secondary" : "table-light"} style={{ position: "sticky", top: 0, zIndex: 1 }}>
+      {/* Table */}
+      <Card className="shadow-sm border-0 mb-4">
+        <Card.Body className="p-0">
+          <div className="table-responsive">
+            <Table hover className={`align-middle mb-0 ${darkMode ? "table-dark" : ""}`} style={{ minWidth: 1100 }}>
+              <thead className={darkMode ? "bg-dark" : "bg-light"}>
+                <tr>
+                  <th>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedIds.length === filteredByTab.length && filteredByTab.length > 0}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("id")}>
+                    ID {getSortIcon("id")}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("user")}>
+                    Pelanggan {getSortIcon("user")}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("layanan")}>
+                    Mobil {getSortIcon("layanan")}
+                  </th>
+                  <th>Tanggal Sewa</th>
+                  <th>Durasi</th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("total_price")}>
+                    Total {getSortIcon("total_price")}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("status")}>
+                    Status {getSortIcon("status")}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("payment_status")}>
+                    Pembayaran {getSortIcon("payment_status")}
+                  </th>
+                  <th style={{ cursor: "pointer" }} onClick={() => handleSort("createdAt")}>
+                    Dibuat {getSortIcon("createdAt")}
+                  </th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
                   <tr>
-                    <th>
-                      <Button
-                        variant="link"
-                        className="p-0"
-                        onClick={() => handleSelectAll(selectedIds.length !== pagedOrders.length)}
-                        title={selectedIds.length === pagedOrders.length ? "Unselect All" : "Select All"}
-                      >
-                        {selectedIds.length === pagedOrders.length ? <FaCheckSquare /> : <FaRegSquare />}
-                      </Button>
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("id")}>
-                      ID {getSortIcon("id")}
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("user")}>
-                      Pelanggan {getSortIcon("user")}
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("layanan")}>
-                      Mobil {getSortIcon("layanan")}
-                    </th>
-                    <th>Tanggal Sewa</th>
-                    <th>Durasi (hari)</th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("total_price")}>
-                      Total {getSortIcon("total_price")}
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("status")}>
-                      Status {getSortIcon("status")}
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("payment_status")}>
-                      Pembayaran {getSortIcon("payment_status")}
-                    </th>
-                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("createdAt")}>
-                      Dibuat {getSortIcon("createdAt")}
-                    </th>
-                    <th>Aksi</th>
+                    <td colSpan="11" className="text-center py-5">
+                      <Spinner animation="border" variant="primary" />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {pagedOrders.map((order) => (
+                ) : filteredByTab.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" className="text-center py-5">
+                      <div className="text-muted">Tidak ada data pesanan</div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredByTab.map((order) => (
                     <tr key={order.id}>
                       <td>
                         <Form.Check
@@ -653,35 +700,47 @@ const OrdersPage = ({ darkMode }) => {
                         />
                       </td>
                       <td>
-                        <Badge bg="secondary" className="fw-bold rounded-pill px-3 py-2 fs-6">
+                        <Badge bg="secondary" className="fw-bold rounded-pill px-3 py-2">
                           #{order.id}
                         </Badge>
                       </td>
                       <td>
-                        <span className="fw-semibold">{order.user?.name || "-"}</span>
+                        <div className="d-flex align-items-center">
+                          <FaUserCircle className="text-primary fs-5 me-2" />
+                          <span className="fw-semibold">{order.user?.name || "-"}</span>
+                        </div>
                       </td>
-                      <td>{order.layanan?.nama || "-"}</td>
                       <td>
-                        {order.pickup_date
-                          ? moment(order.pickup_date).format("D MMM YYYY")
-                          : "-"}
-                        {" - "}
-                        {order.return_date
-                          ? moment(order.return_date).format("D MMM YYYY")
-                          : "-"}
+                        <div className="d-flex align-items-center">
+                          <FaCarSide className="text-info fs-5 me-2" />
+                          {order.layanan?.nama || "-"}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <FaCalendarAlt className="text-success fs-5 me-2" />
+                          <div>
+                            <div>{formatDate(order.pickup_date)}</div>
+                            <div className="text-muted small">sampai</div>
+                            <div>{formatDate(order.return_date)}</div>
+                          </div>
+                        </div>
                       </td>
                       <td>
                         {order.pickup_date && order.return_date
                           ? moment(order.return_date).diff(
                               moment(order.pickup_date),
                               "days"
-                            )
+                            ) + " hari"
                           : "-"}
                       </td>
                       <td>
-                        <span className="fw-bold text-success">
-                          Rp{Number(order.total_price || 0).toLocaleString('id-ID')}
-                        </span>
+                        <div className="d-flex align-items-center">
+                          <FaMoneyBillWave className="text-success fs-5 me-2" />
+                          <span className="fw-bold text-success">
+                            {formatCurrency(order.total_price)}
+                          </span>
+                        </div>
                       </td>
                       <td>
                         <Badge pill bg={getStatusBadge(order.status)} className="px-3 py-2">
@@ -691,22 +750,18 @@ const OrdersPage = ({ darkMode }) => {
                       <td>
                         <Badge
                           pill
-                          bg={
-                            order.payment_status === "paid"
-                              ? "success"
-                              : order.payment_status === "pending_verification"
-                              ? "warning"
-                              : order.payment_status === "rejected"
-                              ? "danger"
-                              : "secondary"
-                          }
+                          bg={getPaymentBadge(order.payment_status)}
                           className="px-3 py-2"
                         >
                           {formatPaymentStatus(order.payment_status)}
                         </Badge>
+                        <div className="small mt-1">
+                          {paymentIcon(order.payment_method)}
+                          <span className="align-middle">{order.payment_method?.replace("_", " ") || "-"}</span>
+                        </div>
                       </td>
                       <td>
-                        {moment(order.createdAt || order.created_at).format("D MMM YYYY HH:mm")}
+                        {formatDateTime(order.createdAt || order.created_at)}
                       </td>
                       <td>
                         <Dropdown>
@@ -719,316 +774,558 @@ const OrdersPage = ({ darkMode }) => {
                             <FaEllipsisV />
                           </Dropdown.Toggle>
                           <Dropdown.Menu>
-                            <OverlayTrigger
-                              placement="left"
-                              overlay={<Tooltip>Lihat Detail</Tooltip>}
+                            <Dropdown.Item onClick={() => handleShowDetail(order)}>
+                              <FaEye className="me-2 text-primary" /> Detail
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => { setShowStatusModal(true); setSelectedOrder(order); }}>
+                              <FaEdit className="me-2 text-warning" /> Edit Status
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => { setShowPaymentStatusModal(true); setSelectedOrder(order); }}>
+                              <FaEdit className="me-2 text-info" /> Edit Pembayaran
+                            </Dropdown.Item>
+                            <Dropdown.Divider />
+                            <Dropdown.Item
+                              className="text-danger"
+                              onClick={() => { setShowDeleteModal(true); setDeleteIds([order.id]); }}
                             >
-                              <Dropdown.Item onClick={() => handleShowDetail(order)}>
-                                <FaEye className="me-2" /> Detail
-                              </Dropdown.Item>
-                            </OverlayTrigger>
-                            <OverlayTrigger
-                              placement="left"
-                              overlay={<Tooltip>Edit Status</Tooltip>}
-                            >
-                              <Dropdown.Item onClick={() => handleShowStatusModal(order)}>
-                                <FaEdit className="me-2" /> Edit Status
-                              </Dropdown.Item>
-                            </OverlayTrigger>
-                            <OverlayTrigger
-                              placement="left"
-                              overlay={<Tooltip>Edit Status Pembayaran</Tooltip>}
-                            >
-                              <Dropdown.Item onClick={() => handleShowPaymentStatusModal(order)}>
-                                <FaEdit className="me-2" /> Edit Status Pembayaran
-                              </Dropdown.Item>
-                            </OverlayTrigger>
-                            <OverlayTrigger
-                              placement="left"
-                              overlay={<Tooltip>Batalkan Pesanan</Tooltip>}
-                            >
-                              <Dropdown.Item
-                                className="text-danger"
-                                onClick={() => handleShowDeleteModal(order.id)}
-                              >
-                                <FaTrash className="me-2" /> Batalkan
-                              </Dropdown.Item>
-                            </OverlayTrigger>
-                            <OverlayTrigger
-                              placement="left"
-                              overlay={<Tooltip>Cetak Invoice</Tooltip>}
-                            >
-                              <Dropdown.Item onClick={() => handlePrintInvoice(order)}>
-                                <FaPrint className="me-2" /> Cetak Invoice
-                              </Dropdown.Item>
-                            </OverlayTrigger>
+                              <FaTrashAlt className="me-2" /> Batalkan
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => handlePrintInvoice(order)}>
+                              <FaPrint className="me-2 text-secondary" /> Cetak Invoice
+                            </Dropdown.Item>
                           </Dropdown.Menu>
                         </Dropdown>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          </Card.Body>
-        </Card>
-
-        {/* Pagination & Info */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
-          <div>
-            Menampilkan {pagedOrders.length} dari {sortedOrders.length} pesanan
+                  ))
+                )}
+              </tbody>
+            </Table>
           </div>
-          <div>
-            <Button
-              variant="outline-primary"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="me-2"
-            >
-              &lt;
-            </Button>
-            Halaman {page} / {totalPages}
-            <Button
-              variant="outline-primary"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="ms-2"
-            >
-              &gt;
-            </Button>
-          </div>
-        </div>
+        </Card.Body>
+      </Card>
 
-        {/* Toast Notification */}
-        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-          <Toast
-            show={toast.show}
-            onClose={() => setToast({ ...toast, show: false })}
-            bg={toast.variant}
-            delay={2500}
-            autohide
+      {/* Pagination */}
+      <Row className="align-items-center">
+        <Col>
+          <div className="text-muted">
+            Menampilkan {filteredByTab.length} dari {sortedOrders.length} pesanan
+          </div>
+        </Col>
+        <Col xs="auto">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="me-2"
           >
-            <Toast.Body className="text-white">{toast.message}</Toast.Body>
-          </Toast>
-        </ToastContainer>
+            Sebelumnya
+          </Button>
+          <span className="mx-2">
+            Halaman {page} dari {totalPages}
+          </span>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            disabled={page === totalPages || totalPages === 0}
+            onClick={() => setPage((p) => p + 1)}
+            className="ms-2"
+          >
+            Selanjutnya
+          </Button>
+        </Col>
+      </Row>
 
-        {/* Detail Modal */}
-        <Modal show={showDetail} onHide={() => setShowDetail(false)} centered size="lg">
-          <Modal.Header closeButton>
-            <Modal.Title>Detail Pesanan</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            {detailLoading ? (
-              <div className="text-center py-4">
-                <Spinner />
-              </div>
-            ) : selectedOrder ? (
-              <div>
-                <Row>
-                  <Col md={6}>
-                    <p>
-                      <strong>ID:</strong>{" "}
-                      <Badge bg="secondary">#{selectedOrder.id}</Badge>
-                    </p>
-                    <p>
-                      <strong>Pelanggan:</strong> {selectedOrder.user?.name}
-                    </p>
-                    <p>
-                      <strong>Mobil:</strong> {selectedOrder.layanan?.nama}
-                    </p>
-                    <p>
-                      <strong>Tanggal Sewa:</strong>{" "}
-                      {formatDate(selectedOrder.pickup_date)} -{" "}
-                      {formatDate(selectedOrder.return_date)}
-                    </p>
-                    <p>
-                      <strong>Durasi:</strong>{" "}
-                      {selectedOrder.pickup_date && selectedOrder.return_date
-                        ? moment(selectedOrder.return_date).diff(
-                            moment(selectedOrder.pickup_date),
-                            "days"
-                          ) + " hari"
-                        : "-"}
-                    </p>
-                  </Col>
-                  <Col md={6}>
-                    <p>
-                      <strong>Total:</strong>{" "}
-                      <span className="fw-bold text-success">
-                        Rp{Number(selectedOrder.total_price || 0).toLocaleString('id-ID')}
-                      </span>
-                    </p>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      <Badge bg={getStatusBadge(selectedOrder.status)}>
-                        {formatStatus(selectedOrder.status)}
-                      </Badge>
-                    </p>
-                    <p>
-                      <strong>Status Pembayaran:</strong>{" "}
-                      <Badge
-                        bg={
-                          selectedOrder.payment_status === "paid"
-                            ? "success"
-                            : selectedOrder.payment_status === "pending_verification"
-                            ? "warning"
-                            : selectedOrder.payment_status === "rejected"
-                            ? "danger"
-                            : "secondary"
-                        }
-                      >
-                        {formatPaymentStatus(selectedOrder.payment_status)}
-                      </Badge>
-                    </p>
-                    <p>
-                      <strong>Metode Pembayaran:</strong>{" "}
-                      {selectedOrder.payment_method}
-                    </p>
-                    <p>
-                      <strong>Catatan:</strong> {selectedOrder.additional_notes || "-"}
-                    </p>
-                    {selectedOrder.payment_proof && (
-                      <div className="mb-2">
-                        <strong>Bukti Pembayaran:</strong>
-                        <br />
-                        <a
-                          href={`http://localhost:3000${selectedOrder.payment_proof}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <img
-                            src={`http://localhost:3000${selectedOrder.payment_proof}`}
-                            alt="Bukti Pembayaran"
-                            style={{
-                              maxWidth: 200,
-                              maxHeight: 200,
-                              border: "1px solid #ccc",
-                              borderRadius: 8,
-                              marginTop: 8,
-                            }}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/no-image.png";
-                            }}
-                          />
-                        </a>
-                      </div>
-                    )}
-                  </Col>
-                </Row>
-              </div>
-            ) : (
+      {/* Toast Notification */}
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
+        <Toast
+          show={toast.show}
+          onClose={() => setToast({ ...toast, show: false })}
+          bg={toast.variant}
+          delay={2500}
+          autohide
+        >
+          <Toast.Body className="text-white">{toast.message}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+
+      {/* Modal Detail */}
+      <Modal show={showDetail} onHide={() => setShowDetail(false)} centered size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Detail Pesanan #{selectedOrder?.id}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {detailLoading ? (
+            <div className="text-center py-4">
               <Spinner />
-            )}
-          </Modal.Body>
-        </Modal>
+            </div>
+          ) : selectedOrder ? (
+            <Tab.Container defaultActiveKey="info">
+              <Nav variant="tabs" className="mb-3">
+                <Nav.Item>
+                  <Nav.Link eventKey="info">Informasi Pesanan</Nav.Link>
+                </Nav.Item>
+                <Nav.Item>
+                  <Nav.Link eventKey="payment">Pembayaran</Nav.Link>
+                </Nav.Item>
+              </Nav>
+              <Tab.Content>
+                <Tab.Pane eventKey="info">
+                  <Row>
+                    <Col md={6}>
+                      <Card className="mb-3 border-0 shadow-sm">
+                        <Card.Body>
+                          <h6 className="mb-3 fw-bold">Detail Pelanggan</h6>
+                          <div className="mb-2">
+                            <small className="text-muted">Nama</small>
+                            <div>{selectedOrder.user?.name || '-'}</div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Email</small>
+                            <div>{selectedOrder.user?.email || '-'}</div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Telepon</small>
+                            <div>{selectedOrder.user?.phone || '-'}</div>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    <Col md={6}>
+                      <Card className="mb-3 border-0 shadow-sm">
+                        <Card.Body>
+                          <h6 className="mb-3 fw-bold">Detail Kendaraan</h6>
+                          <div className="mb-2">
+                            <small className="text-muted">Mobil</small>
+                            <div>{selectedOrder.layanan?.nama || '-'}</div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Harga/Hari</small>
+                            <div>{formatCurrency(selectedOrder.layanan?.harga)}</div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Tanggal Sewa</small>
+                            <div>
+                              {formatDate(selectedOrder.pickup_date)} - {formatDate(selectedOrder.return_date)}
+                            </div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Durasi</small>
+                            <div>
+                              {selectedOrder.pickup_date && selectedOrder.return_date
+                                ? moment(selectedOrder.return_date).diff(
+                                    moment(selectedOrder.pickup_date),
+                                    "days"
+                                  ) + " hari"
+                                : "-"}
+                            </div>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    <Col md={12}>
+                      <Card className="border-0 shadow-sm">
+                        <Card.Body>
+                          <h6 className="mb-3 fw-bold">Catatan Tambahan</h6>
+                          <div className="bg-light p-3 rounded">
+                            {selectedOrder.additional_notes || 'Tidak ada catatan'}
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Tab.Pane>
+                <Tab.Pane eventKey="payment">
+                  <Row>
+                    <Col md={6}>
+                      <Card className="mb-3 border-0 shadow-sm">
+                        <Card.Body>
+                          <h6 className="mb-3 fw-bold">Ringkasan Pembayaran</h6>
+                          <div className="mb-2">
+                            <small className="text-muted">Total</small>
+                            <div className="fw-bold text-success fs-5">
+                              {formatCurrency(selectedOrder.total_price)}
+                            </div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Status Pembayaran</small>
+                            <div>
+                              <Badge 
+                                bg={getPaymentBadge(selectedOrder.payment_status)} 
+                                className="px-3 py-2"
+                              >
+                                {formatPaymentStatus(selectedOrder.payment_status)}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Metode Pembayaran</small>
+                            <div>{selectedOrder.payment_method || '-'}</div>
+                          </div>
+                          <div className="mb-2">
+                            <small className="text-muted">Tanggal Pembayaran</small>
+                            <div>{formatDateTime(selectedOrder.payment_date)}</div>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    <Col md={6}>
+                      <Card className="mb-3 border-0 shadow-sm">
+                        <Card.Body>
+                          <h6 className="mb-3 fw-bold">Bukti Pembayaran</h6>
+                          {selectedOrder.payment_proof ? (
+                            <div className="text-center">
+                              <a 
+                                href={`http://localhost:3000${selectedOrder.payment_proof}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                <img
+                                  src={`http://localhost:3000${selectedOrder.payment_proof}`}
+                                  alt="Bukti Pembayaran"
+                                  className="img-fluid rounded border"
+                                  style={{ maxHeight: 200 }}
+                                  onError={e => { e.target.onerror = null; e.target.src = "/no-image.png"; }}
+                                />
+                              </a>
+                              <div className="mt-2">
+                                <Button 
+                                  variant="primary" 
+                                  size="sm"
+                                  onClick={() => window.open(`http://localhost:3000${selectedOrder.payment_proof}`, '_blank')}
+                                >
+                                  Lihat Full Size
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center text-muted py-4">
+                              Tidak ada bukti pembayaran
+                            </div>
+                          )}
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Tab.Pane>
+              </Tab.Content>
+            </Tab.Container>
+          ) : (
+            <Spinner />
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetail(false)}>
+            Tutup
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              setShowDetail(false);
+              handlePrintInvoice(selectedOrder);
+            }}
+          >
+            Cetak Invoice
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-        {/* Edit Status Modal */}
-        <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Edit Status Pesanan</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Group>
-                <Form.Label>Status</Form.Label>
-                <Form.Select
-                  value={statusToEdit}
-                  onChange={(e) => setStatusToEdit(e.target.value)}
-                >
-                  <option value="">-- Pilih Status --</option>
-                  {renderStatusOptions()}
-                </Form.Select>
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowStatusModal(false)}>
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleStatusUpdate}
-              disabled={!statusToEdit}
-            >
-              Simpan
-            </Button>
-          </Modal.Footer>
-        </Modal>
+      {/* Edit Status Modal */}
+      <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Status Pesanan</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Status</Form.Label>
+              <Form.Select
+                value={statusToEdit}
+                onChange={(e) => setStatusToEdit(e.target.value)}
+              >
+                <option value="">-- Pilih Status --</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowStatusModal(false)}>
+            Batal
+          </Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!statusToEdit) return;
+              try {
+                await axios.put(
+                  `${API_URL}/orders/${selectedOrder.id}`,
+                  { status: statusToEdit },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                showToast("Status pesanan berhasil diupdate!");
+                setShowStatusModal(false);
+                setOrders((prev) =>
+                  prev.map((o) =>
+                    o.id === selectedOrder.id ? { ...o, status: statusToEdit } : o
+                  )
+                );
+              } catch {
+                showToast("Gagal update status!", "danger");
+              }
+            }}
+            disabled={!statusToEdit}
+          >
+            Simpan
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-        {/* Edit Payment Status Modal */}
-        <Modal show={showPaymentStatusModal} onHide={() => setShowPaymentStatusModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Edit Status Pembayaran</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Group>
-                <Form.Label>Status Pembayaran</Form.Label>
-                <Form.Select
-                  value={paymentStatusToEdit}
-                  onChange={(e) => setPaymentStatusToEdit(e.target.value)}
-                >
-                  <option value="">-- Pilih Status Pembayaran --</option>
-                  <option value="paid">Lunas</option>
-                  <option value="rejected">Ditolak</option>
-                </Form.Select>
-              </Form.Group>
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowPaymentStatusModal(false)}>
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handlePaymentStatusUpdate}
-              disabled={!paymentStatusToEdit}
-            >
-              Simpan
-            </Button>
-          </Modal.Footer>
-        </Modal>
+      {/* Edit Payment Status Modal */}
+      <Modal show={showPaymentStatusModal} onHide={() => setShowPaymentStatusModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Status Pembayaran</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group>
+              <Form.Label>Status Pembayaran</Form.Label>
+              <Form.Select
+                value={paymentStatusToEdit}
+                onChange={(e) => setPaymentStatusToEdit(e.target.value)}
+              >
+                <option value="">-- Pilih Status Pembayaran --</option>
+                <option value="paid">Lunas</option>
+                <option value="rejected">Ditolak</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPaymentStatusModal(false)}>
+            Batal
+          </Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!paymentStatusToEdit) return;
+              try {
+                await axios.put(
+                  `${API_URL}/orders/${selectedOrder.id}/verify`,
+                  { status: paymentStatusToEdit },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                showToast("Status pembayaran berhasil diupdate!");
+                setShowPaymentStatusModal(false);
+                setOrders((prev) =>
+                  prev.map((o) =>
+                    o.id === selectedOrder.id ? { ...o, payment_status: paymentStatusToEdit } : o
+                  )
+                );
+              } catch {
+                showToast("Gagal update status pembayaran!", "danger");
+              }
+            }}
+            disabled={!paymentStatusToEdit}
+          >
+            Simpan
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-        {/* Delete Modal */}
-        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Konfirmasi Hapus</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Apakah Anda yakin ingin menghapus pesanan ini?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-              Batal
-            </Button>
-            <Button variant="danger" onClick={handleDelete}>
-              Hapus
-            </Button>
-          </Modal.Footer>
-        </Modal>
+      {/* Delete Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Konfirmasi Hapus</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Apakah Anda yakin ingin membatalkan pesanan ini? Aksi ini tidak dapat dibatalkan.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Batal
+          </Button>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              try {
+                await axios.delete(`${API_URL}/orders/${deleteIds[0]}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                setOrders((orders) => orders.filter((o) => o.id !== deleteIds[0]));
+                setShowDeleteModal(false);
+                setSelectedIds(selectedIds.filter(id => id !== deleteIds[0]));
+                showToast("Pesanan berhasil dibatalkan!");
+              } catch {
+                showToast("Gagal membatalkan pesanan!", "danger");
+              }
+            }}
+          >
+            Batalkan Pesanan
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
-        {/* Bulk Delete Modal */}
-        <Modal show={showBulkModal} onHide={() => setShowBulkModal(false)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Konfirmasi Hapus</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Apakah Anda yakin ingin menghapus {deleteIds.length} pesanan terpilih?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowBulkModal(false)}>
-              Batal
-            </Button>
-            <Button variant="danger" onClick={handleBulkDelete}>
-              Hapus
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </div>
-    </div>
+      <style>
+      {`
+        .stat-card-modern {
+          background: #f8fafd;
+          border-radius: 1rem;
+          transition: box-shadow 0.2s, transform 0.2s;
+          box-shadow: 0 2px 8px rgba(78,115,223,0.06);
+        }
+        .stat-card-modern:hover {
+          box-shadow: 0 6px 24px rgba(78,115,223,0.13);
+          transform: translateY(-2px) scale(1.02);
+        }
+        .stat-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          font-size: 2rem;
+        }
+        .bg-gradient-primary {
+          background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        }
+        .bg-gradient-warning {
+          background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+        }
+        .bg-gradient-success {
+          background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        }
+        .bg-gradient-danger {
+          background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+        }
+        .icon-circle {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .bg-gradient-primary {
+          background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        }
+        .bg-gradient-warning {
+          background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+        }
+        .bg-gradient-success {
+          background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        }
+        .bg-gradient-danger {
+          background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+        }
+        .stat-card {
+          transition: box-shadow 0.2s;
+        }
+        .stat-card:hover {
+          box-shadow: 0 4px 24px rgba(78,115,223,0.12);
+        }
+        .status-tabs-bg {
+          background: #f4f6fa;
+          /* Ganti warna sesuai selera, misal #f8f9fa, #f4f6fa, dsb */
+          border-radius: 0.75rem;
+        }
+        .custom-status-tabs .nav-link {
+          color: #495057 !important;
+          font-weight: 500;
+          border-radius: 0.5rem !important;
+          margin-right: 4px;
+          transition: background 0.2s, color 0.2s;
+        }
+        .custom-status-tabs .nav-link.active {
+          background: #e9ecef !important;
+          color: #212529 !important;
+          font-weight: bold;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .icon-status-distribution {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          font-size: 1.25rem;
+          background: #f8f9fa;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .bg-success-soft { background: #e6f4ea !important; color: #198754 !important; }
+        .bg-info-soft { background: #e7f3fa !important; color: #0dcaf0 !important; }
+        .bg-warning-soft { background: #fff8e1 !important; color: #ffc107 !important; }
+        .bg-danger-soft { background: #fdeaea !important; color: #dc3545 !important; }
+         .stat-card-ultra {
+    background: #ffffff;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .stat-card-ultra:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  .stat-card-ultra::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, rgba(78,115,223,0.1) 0%, rgba(78,115,223,0.3) 100%);
+  }
+  
+  .stat-card-ultra:nth-child(1)::before {
+    background: linear-gradient(90deg, rgba(78,115,223,0.1) 0%, rgba(78,115,223,0.8) 100%);
+  }
+  
+  .stat-card-ultra:nth-child(2)::before {
+    background: linear-gradient(90deg, rgba(255,193,7,0.1) 0%, rgba(255,193,7,0.8) 100%);
+  }
+  
+  .stat-card-ultra:nth-child(3)::before {
+    background: linear-gradient(90deg, rgba(28,200,138,0.1) 0%, rgba(28,200,138,0.8) 100%);
+  }
+  
+  .stat-card-ultra:nth-child(4)::before {
+    background: linear-gradient(90deg, rgba(231,74,59,0.1) 0%, rgba(231,74,59,0.8) 100%);
+  }
+  
+  .icon-shape {
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card-ultra:hover .icon-shape {
+    transform: scale(1.1);
+  }
+  
+  @media (max-width: 768px) {
+    .stat-card-ultra {
+      margin-bottom: 16px;
+    }
+  }
+      `}
+      </style>
+    </Container>
   );
 };
 

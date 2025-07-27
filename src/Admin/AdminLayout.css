@@ -1,21 +1,123 @@
-.admin-root {
+.admin-layout {
   min-height: 100vh;
-  background: #f4f6fa;
-  transition: background 0.2s;
+  display: flex;
+  background: #f8f9fa;
+  position: relative;
+  overflow-x: hidden;
 }
-.admin-root.dark {
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  margin-left: 260px;
+  transition: margin-left 0.3s;
+  background: #f8f9fa;
+}
+
+.main-content.collapsed {
+  margin-left: 70px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+    transition: transform 0.3s ease;
+  }
+  .main-content.shifted {
+    transform: translateX(260px);
+  }
+}
+
+.content-wrapper {
+  padding-top: 70px;
+  min-height: 100vh;
+  background: #f8f9fa;
+}
+
+/* Dark Mode */
+.dark-mode {
+  background: #1a1d23;
+  color: #fff;
+}
+
+.dark-mode .content-wrapper {
+  background: #1a1d23;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0 !important;
+    width: 100%;
+    transition: transform 0.3s ease;
+  }
+
+  .main-content.shifted {
+    transform: translateX(260px);
+  }
+}
+
+/* Bootstrap Overrides */
+.container-fluid {
+  max-width: 1800px;
+}
+
+.card {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0,0,0,.125);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.dark-mode .card {
+  background: #232733;
+  border-color: #2e3440;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.dark-mode .table {
+  color: #fff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.dark-mode ::-webkit-scrollbar-track {
+  background: #232733;
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #666;
+}
+
+.sidebar-fixed {
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.10);
+  border-right: 1px solid #232733;
   background: #181a20;
 }
-.admin-content {
-  margin-left: 220px;
-  padding: 90px 2.5vw 2vw 2.5vw;
-  transition: margin-left 0.2s;
+
+.navbar {
+  z-index: 1050;
 }
-.admin-content.collapsed {
-  margin-left: 64px;
-}
-@media (max-width: 900px) {
-  .admin-content {
-    margin-left: 64px;
+
+@media (max-width: 991.98px) {
+  .sidebar-fixed {
+    display: none !important;
   }
 }

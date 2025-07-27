@@ -5,6 +5,7 @@ const basename = path.basename(__filename);
 const sequelize = require('../config/database');
 const db = {};
 
+
 fs
   .readdirSync(__dirname)
   .filter(file => {
@@ -26,6 +27,8 @@ db.Notification = Notification;
 // Jika ingin relasi ke User:
 db.User.hasMany(Notification, { foreignKey: 'user_id' });
 Notification.belongsTo(db.User, { foreignKey: 'user_id' });
+
+
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

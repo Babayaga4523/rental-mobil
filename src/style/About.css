@@ -61,7 +61,8 @@
 .about-hero-bg-parallax {
   position: absolute;
   inset: 0;
-  background: url('') repeat center center;
+  /* background: url('') repeat center center; */ /* HAPUS atau GANTI */
+  background: none;
   opacity: 0.08;
   z-index: 0;
   pointer-events: none;
@@ -923,7 +924,8 @@ textarea.form-control {
 .about-hero-bg-parallax {
   position: absolute;
   inset: 0;
-  background: url('') repeat center center;
+  /* background: url('') repeat center center; */ /* HAPUS atau GANTI */
+  background: none;
   opacity: 0.08;
   z-index: 0;
   pointer-events: none;

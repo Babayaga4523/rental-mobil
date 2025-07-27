@@ -33,6 +33,7 @@ import {
   FaClock,
   FaExclamationTriangle,
   FaCarSide,
+  FaCreditCard,
 } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 import "../style/UserOrdersPage.css";
@@ -45,17 +46,14 @@ const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // State untuk modal bukti pembayaran
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [cancellingId, setCancellingId] = useState(null);
   const [showProof, setShowProof] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
-  const [proofType, setProofType] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [proofType, setProofType] = useState("img");
   const [showUpload, setShowUpload] = useState(false);
-  const [uploadOrderId, setUploadOrderId] = useState(null);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [cancellingId, setCancellingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -148,61 +146,6 @@ const UserOrdersPage = () => {
     return car.price_per_day;
   };
 
-  // Fungsi buka modal
-  const handleShowProof = (url) => {
-    setProofUrl(url);
-    // Cek tipe file
-    if (url.endsWith(".pdf")) setProofType("pdf");
-    else setProofType("img");
-    setShowProof(true);
-  };
-
-  // Fungsi tutup modal
-  const handleCloseProof = () => {
-    setShowProof(false);
-    setProofUrl("");
-    setProofType("");
-  };
-
-  const handleShowUpload = (orderId) => {
-    setUploadOrderId(orderId);
-    setShowUpload(true);
-    setUploadFile(null);
-  };
-  const handleCloseUpload = () => {
-    setShowUpload(false);
-    setUploadOrderId(null);
-    setUploadFile(null);
-  };
-  const handleUpload = async () => {
-    if (!uploadFile) return;
-    setUploading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("payment_proof", uploadFile);
-      await axios.put(
-        `${BACKEND_URL}/api/orders/${uploadOrderId}/payment`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      toast.success("Bukti pembayaran berhasil diupload!");
-      setShowUpload(false);
-      setUploadOrderId(null);
-      setUploadFile(null);
-      // Refresh orders
-      setLoading(true);
-      const res = await axios.get(`${BACKEND_URL}/api/orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setOrders(res.data.data || []);
-    } catch (err) {
-      toast.error("Gagal upload bukti pembayaran.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm("Yakin ingin membatalkan pesanan ini?")) return;
     try {
@@ -229,6 +172,44 @@ const UserOrdersPage = () => {
   const handleDownloadInvoice = (orderId) => {
     navigate(`/invoice/${orderId}`);
   };
+
+  const handleMidtransPayment = async (order) => {
+  try {
+    const token = localStorage.getItem("token");
+    let orderId = order.midtrans_order_id;
+    if (!orderId) {
+      orderId = `ORDER-${order.id}-${Date.now()}`;
+      // Simpan ke backend jika perlu
+    }
+    const res = await axios.post(
+      `${BACKEND_URL}/api/payment/midtrans-token`,
+      {
+        order_id: orderId,
+        gross_amount: order.total_price,
+        layanan_id: order.car?.id, // gunakan id mobil dari order
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const snapToken = res.data.token;
+    window.snap.pay(snapToken, {
+      onSuccess: function(result) {
+        toast.success("Pembayaran berhasil!");
+        window.location.reload();
+      },
+      onPending: function(result) {
+        toast.info("Pembayaran masih diproses.");
+      },
+      onError: function(result) {
+        toast.error("Pembayaran gagal.");
+      },
+      onClose: function() {
+        toast.info("Anda menutup popup pembayaran sebelum menyelesaikan transaksi.");
+      }
+    });
+  } catch (err) {
+    toast.error("Gagal memproses pembayaran.");
+  }
+};
 
   const filteredOrders = orders.filter(order => {
     if (activeFilter === "all") return true;
@@ -525,66 +506,16 @@ const UserOrdersPage = () => {
                         <div className="detail-section">
                           <h6>
                             <FaMoneyBillWave className="me-2" />
-                            Pembayaran
+                            Total Pembayaran
                           </h6>
                           <div className="detail-content">
                             <div className="price-info">
-                              <div className="price-row">
-                                <span>Harga per hari:</span>
-                                <span>
-                                  {order.car?.promo && order.car.promo > 0 ? (
-                                    <>
-                                      <span className="original-price">
-                                        {formatCurrency(order.car.price_per_day)}
-                                      </span>
-                                      <span className="discounted-price">
-                                        {formatCurrency(getHargaSetelahPromo(order.car))}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    formatCurrency(order.car?.price_per_day)
-                                  )}
-                                </span>
-                              </div>
                               <div className="price-row total">
                                 <span>Total:</span>
                                 <span className="total-price">
                                   {formatCurrency(order.total_price)}
                                 </span>
                               </div>
-                            </div>
-                            <div className="payment-proof">
-                              <span>Bukti Pembayaran:</span>
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                className="d-flex align-items-center ms-2"
-                                onClick={() => {
-                                  if (order.payment_proof) {
-                                    const ext = order.payment_proof.split(".").pop().toLowerCase();
-                                    const url = order.payment_proof.startsWith("http")
-                                      ? order.payment_proof
-                                      : `${BACKEND_URL}${order.payment_proof}`;
-                                    setProofUrl(url);
-                                    setProofType(ext === "pdf" ? "pdf" : "img");
-                                    setShowProof(true);
-                                  }
-                                }}
-                                disabled={!order.payment_proof}
-                              >
-                                <FaEye className="me-2" />
-                                Lihat Bukti
-                              </Button>
-                              {order.payment_status === "unpaid" && (
-                                <Button
-                                  variant="outline-success"
-                                  size="sm"
-                                  className="ms-2"
-                                  onClick={() => handleShowUpload(order.id)}
-                                >
-                                  Upload Bukti
-                                </Button>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -624,6 +555,17 @@ const UserOrdersPage = () => {
                           )}
                         </Button>
                       )}
+                      {order.payment_status === "unpaid" && (
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={() => handleMidtransPayment(order)}
+                          className="px-4 py-2 fw-bold rounded-pill"
+                        >
+                          <FaCreditCard className="me-2" />
+                          Bayar Sekarang
+                        </Button>
+                      )}
                     </Card.Footer>
                   </Card>
                 </Col>
@@ -631,54 +573,6 @@ const UserOrdersPage = () => {
             })}
           </Row>
         )}
-
-        {/* Modal Bukti Pembayaran */}
-        <Modal show={showProof} onHide={handleCloseProof} centered size="lg">
-          <Modal.Header closeButton>
-            <Modal.Title>Bukti Pembayaran</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="text-center">
-            {proofType === "img" ? (
-              <img
-                src={proofUrl}
-                alt="Bukti Pembayaran"
-                className="img-fluid rounded"
-                style={{ maxHeight: 400 }}
-              />
-            ) : proofType === "pdf" ? (
-              <iframe
-                src={proofUrl}
-                title="Bukti Pembayaran PDF"
-                style={{ width: "100%", height: "60vh", border: "none" }}
-              />
-            ) : (
-              <div className="text-muted">Bukti pembayaran tidak tersedia.</div>
-            )}
-          </Modal.Body>
-        </Modal>
-
-        {/* Modal Upload Bukti Pembayaran */}
-        <Modal show={showUpload} onHide={handleCloseUpload} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Upload Bukti Pembayaran</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              className="form-control mb-3"
-              onChange={e => setUploadFile(e.target.files[0])}
-              disabled={uploading}
-            />
-            <Button
-              variant="primary"
-              onClick={handleUpload}
-              disabled={!uploadFile || uploading}
-            >
-              {uploading ? <Spinner size="sm" /> : "Upload"}
-            </Button>
-          </Modal.Body>
-        </Modal>
       </Container>
     </div>
   );

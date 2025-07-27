@@ -59,86 +59,88 @@ function AppContent() {
   const toggleDarkMode = () => setDarkMode((d) => !d);
 
   return (
-    <>
+    <div className="app-root-flex">
       {!isAdminPage && <Navbar />}
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/layanan" element={<Layanan />} />
-        <Route path="/kontak" element={<Kontak />} />
-        <Route path="/search" element={<SearchResults />} />
-        <Route path="/detail/:id" element={<DetailMobil />} />
-        <Route path="/testimoni" element={<Testimoni />} />
-        <Route path="/gallery" element={<Gallery />} />
-        {/* User Order Routes */}
-        <Route path="/pesanan" element={
-          <ProtectedRoute>
-            <UserOrdersPage />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/pesanan/:orderId" element={
-          <ProtectedRoute>
-            <UserOrdersPage />
-          </ProtectedRoute>
-        } />
-
-        {/* Protected Routes */}
-        <Route path="/booking" element={
-          <ProtectedRoute>
-            <Booking />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/booking/:id" element={
-          <ProtectedRoute>
-            <Booking />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/payment" element={
-          <ProtectedRoute>
-            <Payment />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/orders/:orderId/receipt" element={
-          <ProtectedRoute>
-            <OrderReceipt />
-          </ProtectedRoute>
-        } />
-
-        {/* Admin Routes */}
-        <Route path="/admin" element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminDashboard 
-              darkMode={darkMode} 
-              toggleDarkMode={toggleDarkMode} 
-              sidebarCollapsed={sidebarCollapsed}
-              setSidebarCollapsed={setSidebarCollapsed}
-            />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="orders" />} />
-          <Route path="orders" element={<OrdersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-          <Route path="cars" element={<CarsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-          <Route path="users" element={<UsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-          <Route path="report" element={
-            <AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <div className="app-content-flex">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/layanan" element={<Layanan />} />
+          <Route path="/kontak" element={<Kontak />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/detail/:id" element={<DetailMobil />} />
+          <Route path="/testimoni" element={<Testimoni />} />
+          <Route path="/gallery" element={<Gallery />} />
+          {/* User Order Routes */}
+          <Route path="/pesanan" element={
+            <ProtectedRoute>
+              <UserOrdersPage />
+            </ProtectedRoute>
           } />
-           <Route path="testimoni" element={< TestimoniReplyPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
-        </Route>
+          
+          <Route path="/pesanan/:orderId" element={
+            <ProtectedRoute>
+              <UserOrdersPage />
+            </ProtectedRoute>
+          } />
 
-        {/* Error Routes */}
-        <Route path="/not-found" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/not-found" replace />} />
-        <Route path="/profile" element={<Profile />} />
-      </Routes>
-      
+          {/* Protected Routes */}
+          <Route path="/booking" element={
+            <ProtectedRoute>
+              <Booking />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/booking/:id" element={
+            <ProtectedRoute>
+              <Booking />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/payment" element={
+            <ProtectedRoute>
+              <Payment />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/orders/:orderId/receipt" element={
+            <ProtectedRoute>
+              <OrderReceipt />
+            </ProtectedRoute>
+          } />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard 
+                darkMode={darkMode} 
+                toggleDarkMode={toggleDarkMode} 
+                sidebarCollapsed={sidebarCollapsed}
+                setSidebarCollapsed={setSidebarCollapsed}
+              />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Navigate to="orders" />} />
+            <Route path="orders" element={<OrdersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+            <Route path="cars" element={<CarsPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+            <Route path="users" element={<UsersPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+            <Route path="report" element={
+              <AdminReport darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+            } />
+             <Route path="testimoni" element={< TestimoniReplyPage darkMode={darkMode} toggleDarkMode={toggleDarkMode} />} />
+          </Route>
+
+          {/* Error Routes */}
+          <Route path="/not-found" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/not-found" replace />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </div>
+      {!isAdminPage && <Footer />}
       <ToastContainer 
         position="top-right"
         autoClose={5000}
@@ -150,9 +152,7 @@ function AppContent() {
         draggable
         pauseOnHover
       />
-      
-      {!isAdminPage && <Footer />}
-    </>
+    </div>
   );
 }
 

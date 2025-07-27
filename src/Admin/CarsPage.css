@@ -1,0 +1,326 @@
+/* Base Styles */
+.cars-page {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.cars-page.dark-mode {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Glass Morphism Effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  border-radius: 16px;
+}
+
+.dark-glass {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Neumorphism Cards */
+.neumorphism-card {
+  border: none;
+  border-radius: 16px;
+  background: #f8fafc;
+  box-shadow:  8px 8px 16px #e2e8f0, 
+              -8px -8px 16px #ffffff;
+}
+
+.dark-mode .neumorphism-card {
+  background: #0f172a;
+  box-shadow:  8px 8px 16px #0a101f, 
+              -8px -8px 16px #141e35;
+}
+
+/* Gradient Text */
+.text-gradient {
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Buttons */
+.add-car-btn {
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.add-car-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+}
+
+.export-btn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+/* Table Styles */
+.futuristic-table {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+.dark-mode .futuristic-table {
+  background: #1e293b;
+}
+
+.futuristic-table thead {
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.dark-mode .futuristic-table thead {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+}
+
+.futuristic-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  padding: 1rem 1.5rem;
+}
+
+.sortable-header {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortable-header:hover {
+  color: #3b82f6;
+}
+
+.table-row-hover:hover {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+.dark-mode .table-row-hover:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Vehicle Image */
+.vehicle-image {
+  width: 80px;
+  height: 50px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.vehicle-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.promo-ribbon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #f59e0b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-bottom-left-radius: 8px;
+}
+
+/* Badges */
+.id-badge {
+  font-size: 0.7rem;
+  padding: 0.35rem 0.7rem;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.dark-mode .id-badge {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.category-badge {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+/* Price Display */
+.price-display {
+  display: flex;
+  flex-direction: column;
+}
+
+.current-price {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.original-price {
+  font-size: 0.8rem;
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+/* Status Badges */
+.status-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rental-count {
+  font-size: 0.7rem;
+  color: #f59e0b;
+}
+
+/* Action Dropdown */
+.action-dropdown {
+  background: rgba(226, 232, 240, 0.5);
+  border: none;
+  padding: 0.35rem 0.7rem;
+}
+
+.dropdown-menu-futuristic {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+}
+
+.dark-mode .dropdown-menu-futuristic {
+  background: #1e293b;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* Pagination */
+.futuristic-pagination .page-item .page-link {
+  border: none;
+  border-radius: 12px !important;
+  margin: 0 3px;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.futuristic-pagination .page-item.active .page-link {
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Modal Styles */
+.futuristic-modal .modal-content {
+  border: none;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.futuristic-modal .modal-header {
+  border-bottom: none;
+  padding: 1.5rem;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.dark-mode .futuristic-modal .modal-header {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+}
+
+.modal-title-gradient {
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+
+/* Vehicle Image Large */
+.vehicle-image-large-container {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.vehicle-image-large {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+.vehicle-status-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.promo-badge-large {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: #f59e0b;
+  color: white;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+}
+
+/* Toast Notifications */
+.toast-notification {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.toast-success {
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+}
+
+.toast-danger {
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+}
+
+.toast-icon {
+  margin-right: 12px;
+  font-size: 1.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .glass-card, .neumorphism-card, .futuristic-table {
+    border-radius: 12px;
+  }
+  
+  .vehicle-image {
+    width: 60px;
+    height: 40px;
+  }
+}

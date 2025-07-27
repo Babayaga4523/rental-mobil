@@ -19,5 +19,15 @@ async function sendWhatsappFonnte(to, message) {
     return null;
   }
 }
-
+// Contoh Fonnte (https://docs.fonnte.com/)
+exports.sendWhatsappFonnte = async (phone, message) => {
+  const token = process.env.FONNTE_TOKEN;
+  if (!token) throw new Error("Fonnte token belum diatur di .env");
+  await axios.post("https://api.fonnte.com/send", {
+    target: phone,
+    message
+  }, {
+    headers: { Authorization: token }
+  });
+};
 module.exports = { sendWhatsappFonnte };

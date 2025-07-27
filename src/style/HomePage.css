@@ -5,15 +5,21 @@
 
 /* Root & Layout */
 .home-page-root {
-  font-family: 'Poppins', Arial, sans-serif;
-  background: #f8fafc;
-  color: #222;
-  overflow-x: hidden;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(120deg, #0f2027, #203a43, #2c5364, #00eaff, #4f46e5);
+  background-size: 400% 400%;
+  animation: gradientMove 12s ease-in-out infinite;
+  color: #222 !important; /* warna dasar font utama, agar kontras di background */
+}
+@keyframes gradientMove {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
 }
 
 /* Text Gradient */
 .text-gradient {
-  background: linear-gradient(90deg, #d4af37, #f1c40f);
+  background: linear-gradient(90deg, #00eaff, #4f46e5);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -90,6 +96,7 @@
   line-height: 1.2;
   letter-spacing: 1px;
   margin-bottom: 1.2rem;
+  color: #1e3c72 !important; /* biru branding untuk judul */
 }
 .home-page-hero-title .text-gradient {
   background: linear-gradient(90deg, #ffd700 0%, #ffb300 100%);
@@ -101,6 +108,7 @@
   font-size: 1.25rem;
   opacity: 0.95;
   margin-bottom: 2rem;
+  color: #444 !important; /* abu-abu gelap untuk deskripsi */
 }
 .home-page-hero-cta .btn {
   border-radius: 30px;
@@ -165,6 +173,7 @@
 }
 .hero-features i {
   font-size: 1.2rem;
+  color: #d4af37 !important; /* gold untuk icon fitur */
 }
 
 /* Counter Section */
@@ -178,13 +187,14 @@
   box-shadow: 0 8px 32px rgba(30,60,114,0.13);
 }
 .home-page-counter-number {
-  color: #2563eb;
+  color: #2563eb !important;
   font-size: 3.5rem;
   line-height: 1;
 }
 .home-page-counter-label {
   font-size: 1.1rem;
   font-weight: 500;
+  color: #222 !important;
 }
 
 /* Feature Cards */
@@ -224,33 +234,32 @@
   margin-top: auto !important;
 }
 .home-page-car-img-container {
-  aspect-ratio: 16/9;
-  background: #f3f4f6;
-  border-radius: 1.5rem;
-  overflow: hidden;
-  position: relative;
+  height: 210px;
+  max-height: 220px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .home-page-car-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transition: transform 0.4s;
-  display: block;
-}
-.home-page-car-card:hover .home-page-car-image {
-  transform: scale(1.05);
+  object-fit: contain !important;
+  background: #fff;
+  padding: 10px;
+  border-radius: 1.2rem;
+  max-height: 200px;
 }
 .home-page-car-badge {
   background: linear-gradient(90deg, #f59e42 0%, #fbbf24 100%);
   font-size: 0.9rem;
   letter-spacing: 1px;
+  color: #fff !important;
 }
 .badge.bg-danger {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 8px rgba(255,0,0,0.08);
+  color: #fff !important;
 }
 
 /* Partner Logos */
@@ -311,6 +320,7 @@
 .home-page-testimonial-text {
   font-size: 1.1rem;
   position: relative;
+  color: #222 !important;
 }
 .home-page-author-avatar {
   width: 50px;
@@ -322,6 +332,10 @@
 }
 .home-page-testimonial-author h6 {
   font-size: 1.1rem;
+  color: #1e3c72 !important;
+}
+.home-page-testimonial-author small {
+  color: #555 !important;
 }
 
 /* FAQ Section */
@@ -331,6 +345,13 @@
 }
 .accordion-button:focus {
   box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+}
+.accordion-header,
+.accordion-button {
+  color: #1e3c72 !important;
+}
+.accordion-body {
+  color: #444 !important;
 }
 
 /* CTA Section */
@@ -437,6 +458,34 @@
   font-size: 1.1rem;
 }
 
+/* Glassmorphism Card */
+.glass-card {
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(18px) saturate(180%);
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 234, 255, 0.13), 0 2px 8px rgba(0,0,0,0.18);
+  border: 1.5px solid rgba(0,234,255,0.13);
+  color: #fff;
+}
+
+/* Button Main */
+.btn-main {
+  background: linear-gradient(90deg, #00eaff 0%, #4f46e5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px #00eaff33;
+}
+.btn-main:hover {
+  background: linear-gradient(90deg, #4f46e5 0%, #00eaff 100%);
+  box-shadow: 0 8px 24px #00eaff55;
+  transform: translateY(-2px) scale(1.03);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .home-page-hero-title { font-size: 2.2rem; }
@@ -452,4 +501,154 @@
   .section-header h2 { font-size: 1.3rem; }
   .section-header .lead { font-size: 1rem; }
   .btn-lg { padding: 0.5rem 1rem; font-size: 1rem; }
+}
+
+/* Tambahan dan perbaikan warna font agar lebih kontras dan konsisten di halaman Home */
+
+/* Root & Layout */
+.home-page-root {
+  color: #222 !important; /* warna dasar font utama, agar kontras di background */
+}
+
+/* Hero Section */
+.home-page-hero-title,
+.display-3,
+.display-5,
+h1.fw-bold,
+h2.fw-bold,
+h3.fw-bold,
+h5.fw-bold {
+  color: #1e3c72 !important; /* biru branding untuk judul */
+}
+
+.home-page-hero-subtitle,
+.lead,
+.subtitle,
+.section-header .lead {
+  color: #444 !important; /* abu-abu gelap untuk deskripsi */
+  opacity: 0.95;
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #00eaff, #4f46e5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-features i {
+  color: #d4af37 !important; /* gold untuk icon fitur */
+}
+
+.home-page-car-badge,
+.badge.bg-danger,
+.home-page-car-rating .bi-star-fill {
+  color: #fff !important;
+}
+
+.home-page-car-card h5,
+.home-page-car-card .text-dark {
+  color: #1e3c72 !important;
+}
+
+.home-page-car-card .text-muted,
+.home-page-car-card p,
+.home-page-car-card .lead {
+  color: #555 !important;
+}
+
+.home-page-counter-number {
+  color: #2563eb !important;
+}
+
+.home-page-counter-label,
+.home-page-counter-card p {
+  color: #222 !important;
+}
+
+.feature-card h3,
+.feature-card .fw-bold {
+  color: #1e3c72 !important;
+}
+
+.feature-description {
+  color: #555 !important;
+}
+
+.process-step-card h5 {
+  color: #1e3c72 !important;
+}
+
+.process-step-card .text-muted {
+  color: #555 !important;
+}
+
+.home-page-testimonial-text {
+  color: #222 !important;
+}
+
+.home-page-testimonial-author h6 {
+  color: #1e3c72 !important;
+}
+
+.home-page-testimonial-author small {
+  color: #555 !important;
+}
+
+.section-header h2,
+.section-header .fw-bold {
+  color: #1e3c72 !important;
+}
+
+.section-header .lead,
+.home-page-faq-section .lead {
+  color: #555 !important;
+}
+
+.accordion-header,
+.accordion-button {
+  color: #1e3c72 !important;
+}
+
+.accordion-body {
+  color: #444 !important;
+}
+
+.home-page-cta-section-gold h2,
+.home-page-cta-section-gold p {
+  color: #222 !important;
+}
+
+.btn-dark,
+.btn-outline-dark {
+  color: #ffd700 !important;
+}
+
+.btn-dark:hover,
+.btn-outline-dark:hover {
+  color: #222 !important;
+}
+
+.home-page-wa-float {
+  color: #fff !important;
+}
+
+/* Responsive: pastikan warna tetap kontras di mobile */
+@media (max-width: 768px) {
+  .home-page-hero-title,
+  .display-3,
+  .display-5 {
+    color: #1e3c72 !important;
+  }
+  .home-page-hero-subtitle,
+  .lead {
+    color: #444 !important;
+  }
+}
+
+/* Pastikan tidak ada warna font yang terlalu terang di background terang */
+.bg-white,
+.bg-light,
+.glass-card {
+  color: #222 !important;
 }

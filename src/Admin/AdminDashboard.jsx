@@ -3,27 +3,28 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AdminNavbar from "./AdminNavbar";
 import AdminSidebar from "./AdminSidebar";
 import axios from "axios";
-import { Card, Table, Spinner, Badge, Alert, Button, Accordion } from "react-bootstrap";
+import { Card, Table, Spinner, Badge, Alert, Button, Row, Col, OverlayTrigger, Tooltip } from "react-bootstrap";
 import {
   FiFileText, FiTruck, FiUsers, FiDollarSign,
-  FiAlertCircle, FiPlusCircle
+  FiAlertCircle, FiPlusCircle, FiTrendingUp, FiPieChart, FiUserPlus
 } from "react-icons/fi";
-import { FaChartBar } from "react-icons/fa";
+import { FaChartBar, FaCrown } from "react-icons/fa";
 import ReactECharts from "echarts-for-react";
 import moment from "moment";
 import "./AdminDashboard.css";
 
+
 const API_URL = "http://localhost:3000/api";
 
 const StatCard = ({ icon, title, value, color, loading }) => (
-  <Card className="stat-card">
-    <Card.Body>
-      <div className="stat-icon" style={{ backgroundColor: `${color}20`, color }}>
+  <Card className="stat-card shadow-sm mb-3 border-0">
+    <Card.Body className="d-flex align-items-center">
+      <div className="stat-icon me-3 d-flex align-items-center justify-content-center rounded-circle shadow" style={{ backgroundColor: `${color}20`, color, width: 54, height: 54, fontSize: 28 }}>
         {icon}
       </div>
       <div className="stat-content">
-        <h6 className="stat-title">{title}</h6>
-        <h3 className="stat-value">
+        <h6 className="stat-title mb-1">{title}</h6>
+        <h3 className="stat-value mb-0">
           {loading ? <Spinner animation="border" size="sm" /> : value}
         </h3>
       </div>
@@ -50,6 +51,7 @@ const DashboardHome = () => {
   const [userChart, setUserChart] = useState(null);
   const [notif, setNotif] = useState("");
   const [topCars, setTopCars] = useState([]);
+  const [occupancyChart, setOccupancyChart] = useState(null);
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -111,6 +113,24 @@ const DashboardHome = () => {
         // Mobil terlaris bulan ini
         prepareTopCars(orders, cars);
 
+        // Okupansi mobil
+        const occupancyData = cars.map(car => {
+          const totalOrder = orders.filter(o => o.layanan_id === car.id && o.status !== "cancelled").length;
+          return { name: car.nama, value: totalOrder };
+        });
+        setOccupancyChart({
+          tooltip: { trigger: "item" },
+          legend: { top: "5%", left: "center" },
+          series: [
+            {
+              name: "Okupansi Mobil",
+              type: "pie",
+              radius: ["40%", "70%"],
+              data: occupancyData
+            }
+          ]
+        });
+
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -119,14 +139,14 @@ const DashboardHome = () => {
     };
 
     const prepareCharts = (orders, users) => {
-      const months = moment.monthsShort();
+      const monthsArr = moment.monthsShort();
       const now = new Date();
       const year = now.getFullYear();
 
       // Orders, revenue, user per month
-      const monthlyOrders = Array(12).fill(0);
-      const monthlyRevenue = Array(12).fill(0);
-      const monthlyUsers = Array(12).fill(0);
+      const monthlyOrdersArr = Array(12).fill(0);
+      const monthlyRevenueArr = Array(12).fill(0);
+      const monthlyUsersArr = Array(12).fill(0);
 
       orders.forEach(order => {
         const created = order.createdAt || order.created_at || order.order_date;
@@ -134,9 +154,9 @@ const DashboardHome = () => {
           const date = new Date(created);
           if (date.getFullYear() === year) {
             const month = date.getMonth();
-            monthlyOrders[month] += 1;
+            monthlyOrdersArr[month] += 1;
             if (order.payment_status === "paid") {
-              monthlyRevenue[month] += Number(order.total_price) || 0;
+              monthlyRevenueArr[month] += Number(order.total_price) || 0;
             }
           }
         }
@@ -148,7 +168,7 @@ const DashboardHome = () => {
           const date = new Date(created);
           if (date.getFullYear() === year) {
             const month = date.getMonth();
-            monthlyUsers[month] += 1;
+            monthlyUsersArr[month] += 1;
           }
         }
       });
@@ -158,7 +178,7 @@ const DashboardHome = () => {
         grid: { left: 50, right: 30, bottom: 50, top: 40 },
         xAxis: {
           type: 'category',
-          data: months,
+          data: monthsArr,
           axisLabel: { rotate: 30, fontSize: 13 }
         },
         yAxis: {
@@ -170,7 +190,7 @@ const DashboardHome = () => {
           {
             name: 'Pesanan',
             type: 'line',
-            data: monthlyOrders,
+            data: monthlyOrdersArr,
             smooth: true,
             symbol: 'circle',
             symbolSize: 10,
@@ -183,10 +203,10 @@ const DashboardHome = () => {
 
       setRevenueChart({
         tooltip: { trigger: 'axis' },
-        grid: { left: 80, right: 30, bottom: 50, top: 40 },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
         xAxis: {
           type: 'category',
-          data: months,
+          data: monthsArr,
           axisLabel: { rotate: 30, fontSize: 13 }
         },
         yAxis: {
@@ -205,7 +225,7 @@ const DashboardHome = () => {
           {
             name: 'Omzet',
             type: 'line',
-            data: monthlyRevenue,
+            data: monthlyRevenueArr,
             smooth: true,
             symbol: 'circle',
             symbolSize: 10,
@@ -221,7 +241,7 @@ const DashboardHome = () => {
         grid: { left: 50, right: 30, bottom: 50, top: 40 },
         xAxis: {
           type: 'category',
-          data: months,
+          data: monthsArr,
           axisLabel: { rotate: 30, fontSize: 13 }
         },
         yAxis: {
@@ -233,7 +253,7 @@ const DashboardHome = () => {
           {
             name: 'User Baru',
             type: 'line',
-            data: monthlyUsers,
+            data: monthlyUsersArr,
             smooth: true,
             symbol: 'circle',
             symbolSize: 10,
@@ -286,14 +306,15 @@ const DashboardHome = () => {
       });
 
       const top = Object.entries(carCount)
-        .map(([id, data]) => {
+        .map(([id, data], idx) => {
           const car = cars.find(c => c.id.toString() === id.toString());
           return {
             id,
             nama: car?.nama || "-",
             gambar: car?.gambar || "/images/car-placeholder.png",
             count: data.count,
-            omzet: data.omzet
+            omzet: data.omzet,
+            rank: idx + 1
           };
         })
         .sort((a, b) => b.count - a.count)
@@ -303,6 +324,7 @@ const DashboardHome = () => {
     };
 
     fetchDashboardData();
+
   }, [token]);
 
   const getStatusBadge = (status) => {
@@ -351,7 +373,7 @@ const DashboardHome = () => {
     <div className="dashboard-home py-4 px-2 px-md-4">
       {/* Notification Alert */}
       {notif && (
-        <Alert variant="warning" className="alert-notification mb-4">
+        <Alert variant="warning" className="alert-notification mb-4 shadow-sm">
           <div className="d-flex align-items-center">
             <FiAlertCircle className="me-2" size={20} />
             <span>{notif}</span>
@@ -368,89 +390,129 @@ const DashboardHome = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="row g-4 mb-4">
-        <div className="col-6 col-md-3">
-          <StatCard
-            icon={<FiFileText size={24} />}
-            title="Total Pesanan"
-            value={stats.orders}
-            color="#6366f1"
-            loading={loading}
-          />
-        </div>
-        <div className="col-6 col-md-3">
-          <StatCard
-            icon={<FiTruck size={24} />}
-            title="Jumlah Mobil"
-            value={stats.cars}
-            color="#10b981"
-            loading={loading}
-          />
-        </div>
-        <div className="col-6 col-md-3">
-          <StatCard
-            icon={<FiUsers size={24} />}
-            title="Pengguna Terdaftar"
-            value={stats.users}
-            color="#3b82f6"
-            loading={loading}
-          />
-        </div>
-        <div className="col-6 col-md-3">
-          <StatCard
-            icon={<FiDollarSign size={24} />}
-            title="Total Pendapatan"
-            value={formatCurrency(stats.revenue)}
-            color="#f59e0b"
-            loading={loading}
-          />
-        </div>
-      </div>
+      <Row className="g-4 mb-4">
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiFileText />} title="Total Pesanan" value={stats.orders} color="#6366f1" loading={loading} />
+        </Col>
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiTruck />} title="Jumlah Mobil" value={stats.cars} color="#10b981" loading={loading} />
+        </Col>
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiUsers />} title="Pengguna Terdaftar" value={stats.users} color="#3b82f6" loading={loading} />
+        </Col>
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiDollarSign />} title="Total Pendapatan" value={formatCurrency(stats.revenue)} color="#f59e0b" loading={loading} />
+        </Col>
+      </Row>
 
       {/* Charts Row */}
-      <div className="row g-4 mb-4">
-        <div className="col-lg-4">
-          <Card className="h-100 mb-4">
-            <Card.Header>
-              <h5 className="card-title">Grafik Pesanan Bulanan</h5>
+      <Row className="g-4 mb-4">
+        <Col lg={4} md={12}>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-primary text-white fw-semibold d-flex align-items-center">
+              <FiTrendingUp className="me-2" /> Pesanan Bulanan
             </Card.Header>
-            <Card.Body>
-              {loading ? (
+            <Card.Body className="bg-light">
+              {loading || !orderChart ? (
                 <div className="text-center py-5">
                   <Spinner animation="border" variant="primary" />
                 </div>
               ) : (
-                <ReactECharts
-                  style={{ height: 220 }}
-                  option={orderChart}
-                />
+                <ReactECharts option={orderChart} style={{ height: 220 }} />
               )}
             </Card.Body>
           </Card>
-        </div>
-        <div className="col-lg-4">
-          <Card className="h-100 mb-4">
-            <Card.Header>
-              <h5 className="card-title">Grafik Pendapatan</h5>
+        </Col>
+        <Col lg={4} md={6}>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-success text-white fw-semibold d-flex align-items-center">
+              <FiDollarSign className="me-2" /> Pendapatan Bulanan
             </Card.Header>
-            <Card.Body>
-              {loading ? (
+            <Card.Body className="bg-light">
+              {loading || !revenueChart ? (
                 <div className="text-center py-5">
                   <Spinner animation="border" variant="success" />
                 </div>
               ) : (
-                <ReactECharts
-                  style={{ height: 220 }}
-                  option={revenueChart}
-                />
+                <ReactECharts option={revenueChart} style={{ height: 220 }} />
               )}
             </Card.Body>
           </Card>
-        </div>
-        <div className="col-lg-4">
-          <Card className="h-100 mb-4">
-            <Card.Header>
-              <h5 className="card-title">Grafik User Baru</h5>
+        </Col>
+        <Col lg={4} md={6}>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-warning text-dark fw-semibold d-flex align-items-center">
+              <FiUserPlus className="me-2" /> User Baru Bulanan
+            </Card.Header>
+            <Card.Body className="bg-light">
+              {loading || !userChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="warning" />
+                </div>
+              ) : (
+                <ReactECharts option={userChart} style={{ height: 220 }} />
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Top Cars & Pie Chart */}
+      <Row className="g-4 mb-4">
+        <Col lg={6} md={12}>
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-info text-white fw-semibold d-flex align-items-center">
+              <FaCrown className="me-2" /> Mobil Terlaris Bulan Ini
+            </Card.Header>
+            <Card.Body>
+              <ul className="list-group list-group-flush">
+                {topCars.length === 0 && (
+                  <li className="list-group-item text-muted">Belum ada data.</li>
+                )}
+                {topCars.map((car, idx) => (
+                  <li
+                    className="list-group-item d-flex align-items-center border-0 border-bottom py-3"
+                    key={car.id}
+                    style={{ background: idx === 0 ? "linear-gradient(90deg, #e0f7fa 0%, #fff 100%)" : "inherit" }}
+                  >
+                    <span
+                      className="badge me-3 d-flex align-items-center justify-content-center"
+                      style={{
+                        fontSize: 20,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: idx === 0 ? "#ffd700" : idx === 1 ? "#b0b0b0" : "#cd7f32",
+                        color: "#fff",
+                        boxShadow: idx === 0 ? "0 0 10px #ffd70088" : undefined
+                      }}
+                    >
+                      <FaCrown className="me-1" />
+                      {idx + 1}
+                    </span>
+                    <img
+                      src={car.gambar || "/images/car-placeholder.png"}
+                      alt={car.nama}
+                      className="me-3 rounded shadow-sm"
+                      style={{ width: 64, height: 40, objectFit: "cover", border: "2px solid #eee" }}
+                    />
+                    <div>
+                      <div className="fw-bold" style={{ fontSize: 17 }}>{car.nama}</div>
+                      <div className="small text-muted">
+                        <Badge bg="success" className="me-2">{car.count}x</Badge>
+                        Omzet: <span className="fw-semibold">{formatCurrency(car.omzet)}</span>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col lg={6} md={12}>
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-secondary text-white fw-semibold d-flex align-items-center">
+              <FiPieChart className="me-2" /> Status Pesanan Bulanan
             </Card.Header>
             <Card.Body>
               {loading ? (
@@ -460,39 +522,41 @@ const DashboardHome = () => {
               ) : (
                 <ReactECharts
                   style={{ height: 220 }}
-                  option={userChart}
+                  option={{
+                    tooltip: { trigger: 'item' },
+                    legend: { orient: 'vertical', left: 'left' },
+                    series: [
+                      {
+                        name: 'Status Pesanan',
+                        type: 'pie',
+                        radius: '70%',
+                        data: [
+                          { value: stats.pendingOrders, name: 'Pending', itemStyle: { color: "#f59e0b" } },
+                          { value: stats.paidOrders, name: 'Dibayar', itemStyle: { color: "#10b981" } },
+                          { value: stats.orders - stats.pendingOrders - stats.paidOrders, name: 'Lainnya', itemStyle: { color: "#6366f1" } }
+                        ],
+                        emphasis: {
+                          itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                          }
+                        }
+                      }
+                    ]
+                  }}
                 />
               )}
             </Card.Body>
           </Card>
-        </div>
-      </div>
+        </Col>
+      </Row>
 
-      {/* Widget Mobil Terlaris & Recent Activity */}
-      <div className="row g-4 mb-4">
-        <div className="col-12">
-          <Card className="mb-4">
-            <Card.Header>
-              <h5 className="mb-0">Mobil Terlaris Bulan Ini</h5>
-            </Card.Header>
-            <Card.Body>
-              <ul className="list-group list-group-flush">
-                {topCars.map(car => (
-                  <li className="list-group-item d-flex align-items-center">
-                    <img src={car.gambar} alt={car.nama} style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 6, marginRight: 16 }} />
-                    <div>
-                      <div className="fw-bold">{car.nama}</div>
-                      <div className="small text-muted">Disewa {car.count}x | Omzet: {formatCurrency(car.omzet)}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </Card.Body>
-          </Card>
-        </div>
-        <div className="col-12">
-          <Card className="mb-4">
-            <Card.Header className="d-flex justify-content-between align-items-center">
+      {/* Recent Orders & Users */}
+      <Row className="g-4 mb-4">
+        <Col xs={12} md={6}>
+          <Card className="mb-4 border-0 shadow-sm">
+            <Card.Header className="d-flex justify-content-between align-items-center bg-light">
               <h5 className="card-title mb-0">Pesanan Terbaru</h5>
               <Button
                 size="sm"
@@ -504,7 +568,7 @@ const DashboardHome = () => {
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table hover className="mb-0">
+                <Table hover responsive className="mb-0 align-middle">
                   <thead>
                     <tr>
                       <th>ID Pesanan</th>
@@ -515,7 +579,7 @@ const DashboardHome = () => {
                   </thead>
                   <tbody>
                     {latestOrders.map(order => (
-                      <tr key={order.id} onClick={() => navigate(`/admin/orders/${order.id}`)}>
+                      <tr key={order.id} onClick={() => navigate(`/admin/orders/${order.id}`)} style={{ cursor: "pointer" }}>
                         <td className="text-primary">#{order.id}</td>
                         <td>{order.user?.name || '-'}</td>
                         <td>{formatCurrency(order.total_price || 0)}</td>
@@ -534,10 +598,10 @@ const DashboardHome = () => {
               </div>
             </Card.Body>
           </Card>
-        </div>
-        <div className="col-12">
-          <Card className="mb-4">
-            <Card.Header className="d-flex justify-content-between align-items-center">
+        </Col>
+        <Col xs={12} md={6}>
+          <Card className="mb-4 border-0 shadow-sm">
+            <Card.Header className="d-flex justify-content-between align-items-center bg-light">
               <h5 className="card-title mb-0">Pengguna Terbaru</h5>
               <Button
                 size="sm"
@@ -549,7 +613,7 @@ const DashboardHome = () => {
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table hover className="mb-0">
+                <Table hover responsive className="mb-0 align-middle">
                   <thead>
                     <tr>
                       <th>Nama</th>
@@ -559,10 +623,10 @@ const DashboardHome = () => {
                   </thead>
                   <tbody>
                     {latestUsers.map(user => (
-                      <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)}>
+                      <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)} style={{ cursor: "pointer" }}>
                         <td>
                           <div className="d-flex align-items-center">
-                            <div className="avatar avatar-sm me-2">
+                            <div className="avatar avatar-sm me-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 32, height: 32, fontWeight: 600 }}>
                               {user.name.charAt(0).toUpperCase()}
                             </div>
                             {user.name}
@@ -577,53 +641,89 @@ const DashboardHome = () => {
               </div>
             </Card.Body>
           </Card>
-        </div>
-      </div>
+        </Col>
+      </Row>
 
-      {/* Quick Actions */}
-      <div className="row g-4 mb-2">
-        <div className="col-lg-12">
-          <Card>
-            <Card.Header>Aksi Cepat</Card.Header>
+      {/* Grafik Okupansi Mobil */}
+      <Row className="g-4 mb-4">
+        <Col lg={12}>
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-dark text-white fw-semibold d-flex align-items-center">
+              <FiPieChart className="me-2" /> Grafik Okupansi Mobil
+            </Card.Header>
             <Card.Body>
-              <div className="quick-actions">
-                <Button
-                  variant="outline-success"
-                  className="btn-action"
-                  onClick={() => navigate('/admin/cars/add')}
-                >
-                  <FiPlusCircle size={28} />
-                  <span>Tambah Mobil</span>
-                </Button>
-                <Button
-                  variant="outline-info"
-                  className="btn-action"
-                  onClick={() => navigate('/admin/orders')}
-                >
-                  <FiFileText size={28} />
-                  <span>Kelola Pesanan</span>
-                </Button>
-                <Button
-                  variant="outline-primary"
-                  className="btn-action"
-                  onClick={() => navigate('/admin/users')}
-                >
-                  <FiUsers size={28} />
-                  <span>Kelola User</span>
-                </Button>
-                <Button
-                  variant="outline-dark"
-                  className="btn-action"
-                  onClick={() => navigate('/admin/report')}
-                >
-                  <FaChartBar size={28} />
-                  <span>Laporan</span>
-                </Button>
-              </div>
+              {loading || !occupancyChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="dark" />
+                </div>
+              ) : (
+                <ReactECharts option={occupancyChart} style={{ height: 320 }} />
+              )}
             </Card.Body>
           </Card>
-        </div>
-      </div>
+        </Col>
+      </Row>
+
+      {/* Quick Actions */}
+      <Row className="g-4 mb-2">
+        <Col lg={12}>
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="fw-semibold bg-light">Aksi Cepat</Card.Header>
+            <Card.Body>
+              <Row className="g-3">
+                <Col xs={6} md={3}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Tambah Mobil</Tooltip>}>
+                    <Button
+                      variant="outline-success"
+                      className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
+                      onClick={() => navigate('/admin/cars')}
+                    >
+                      <FiPlusCircle size={32} className="mb-2" />
+                      <span className="fw-semibold">Tambah Mobil</span>
+                    </Button>
+                  </OverlayTrigger>
+                </Col>
+                <Col xs={6} md={3}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Kelola Pesanan</Tooltip>}>
+                    <Button
+                      variant="outline-info"
+                      className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
+                      onClick={() => navigate('/admin/orders')}
+                    >
+                      <FiFileText size={32} className="mb-2" />
+                      <span className="fw-semibold">Kelola Pesanan</span>
+                    </Button>
+                  </OverlayTrigger>
+                </Col>
+                <Col xs={6} md={3}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Kelola User</Tooltip>}>
+                    <Button
+                      variant="outline-primary"
+                      className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
+                      onClick={() => navigate('/admin/users')}
+                    >
+                      <FiUsers size={32} className="mb-2" />
+                      <span className="fw-semibold">Kelola User</span>
+                    </Button>
+                  </OverlayTrigger>
+                </Col>
+                <Col xs={6} md={3}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Laporan</Tooltip>}>
+                    <Button
+                      variant="outline-dark"
+                      className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
+                      onClick={() => navigate('/admin/report')}
+                    >
+                      <FaChartBar size={32} className="mb-2" />
+                      <span className="fw-semibold">Laporan</span>
+                    </Button>
+                  </OverlayTrigger>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </div>
   );
 };
@@ -662,22 +762,5 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
     </div>
   );
 };
-
-const HelpPage = () => (
-  <div className="container py-4">
-    <h4>Help & FAQ</h4>
-    <Accordion>
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>Bagaimana cara menambah mobil?</Accordion.Header>
-        <Accordion.Body>Buka menu Data Mobil, klik Tambah Mobil, isi form dan simpan.</Accordion.Body>
-      </Accordion.Item>
-      <Accordion.Item eventKey="1">
-        <Accordion.Header>Bagaimana mengelola pesanan?</Accordion.Header>
-        <Accordion.Body>Buka menu Pesanan, klik detail untuk melihat atau ubah status pesanan.</Accordion.Body>
-      </Accordion.Item>
-      {/* Tambah pertanyaan lain */}
-    </Accordion>
-  </div>
-);
 
 export default AdminDashboard;
