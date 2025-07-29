@@ -1,6 +1,15 @@
 /* ================ */
 /* GENERAL STYLES */
 /* ================ */
+:root {
+  --primary: #1e3a8a;
+  --primary-dark: #1e293b;
+  --accent: #fbbf24;
+  --accent-dark: #b45309;
+  --secondary: #64748b;
+  --background: #f8fafc;
+}
+
 .about-page {
   font-family: 'Poppins', sans-serif;
   color: #333;
@@ -39,6 +48,39 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.text-primary-custom { color: var(--primary) !important; }
+.text-accent { color: var(--accent) !important; }
+.bg-primary-custom { background: var(--primary) !important; }
+.bg-accent { background: var(--accent) !important; }
+.bg-secondary-custom { background: var(--secondary) !important; }
+.text-secondary-custom { color: var(--secondary) !important; }
+.btn-primary-custom {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(30,58,138,0.08);
+}
+.btn-primary-custom:hover, .btn-primary-custom:focus {
+  background: #233876;
+  color: #fff;
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--primary-dark);
+  border: none;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(251,191,36,0.09);
+}
+.btn-accent:hover, .btn-accent:focus {
+  background: var(--accent-dark);
+  color: #fff;
 }
 
 /* ================ */
@@ -787,6 +829,34 @@ textarea.form-control {
 .btn-submit:hover {
   transform: translateY(-3px);
   box-shadow: 0 10px 25px rgba(13, 110, 253, 0.3);
+}
+
+/* Kontak Section Responsive */
+.contact-info-card .contact-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+.contact-info-card .contact-icon {
+  min-width: 52px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+@media (max-width: 575.98px) {
+  .contact-info-card .contact-item {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.5rem;
+  }
+  .contact-info-card .contact-icon {
+    margin-bottom: 0.2rem;
+  }
 }
 
 /* ================ */

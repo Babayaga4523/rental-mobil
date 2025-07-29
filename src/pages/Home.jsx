@@ -99,7 +99,17 @@ const Home = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               >
-                {/* ...existing code... */}
+                <Link to="#cars" className="btn btn-accent btn-lg px-4">
+                  <i className="bi bi-car-front me-2"></i>Pilih Mobil
+                </Link>
+                <a
+                  href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`}
+                  className="btn btn-outline-primary-custom btn-lg px-4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <i className="bi bi-whatsapp me-2"></i>Chat Sekarang
+                </a>
               </motion.div>
               <motion.ul
                 className="list-unstyled mt-3 text-light hero-features"
@@ -270,54 +280,51 @@ const Home = () => {
           ) : (
             <div className="row g-4">
               {popularCars.slice(0, 8).map((car, idx) => (
-                <div className="col-md-6 col-lg-3" key={car.id} data-aos="fade-up" data-aos-delay={idx * 100}>
+                <div className="col-12 col-md-6 col-lg-3 d-flex" key={car.id} data-aos="fade-up" data-aos-delay={idx * 100}>
                   <motion.div
-                    className="home-page-car-card shadow-sm rounded-4 overflow-hidden border-0 h-100"
+                    className="home-page-car-card shadow-sm rounded-4 overflow-hidden border-0 h-100 d-flex flex-column w-100"
                     whileHover={{ y: -8, scale: 1.03 }}
                     transition={{ type: "spring", stiffness: 200 }}
                   >
                     <div
-  className="home-page-car-img-container position-relative rounded-4 overflow-hidden mb-3"
-  style={{
-    aspectRatio: "16/8", // lebih lebar dari 16/9
-    background: "#f3f4f6",
-    height: 210, // tambahkan tinggi agar gambar lebih besar
-    maxHeight: 220,
-    minHeight: 180,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-  <img
-    src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
-    alt={car.nama}
-    className="img-fluid home-page-car-image"
-    style={{
-      objectFit: "contain", // ubah dari cover ke contain agar tidak terpotong
-      objectPosition: "center",
-      width: "100%",
-      height: "100%",
-      maxHeight: 200,
-      transition: "transform 0.4s",
-      background: "#fff",
-      padding: 10,
-      borderRadius: "1.2rem"
-    }}
-    loading="lazy"
-  />
-  {car.promo > 0 && (
-    <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
-      <i className="bi bi-bolt-fill me-1"></i>Promo {car.promo}%
-    </span>
-  )}
-  <span className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
-    POPULER
-  </span>
-</div>
-                    <div className="p-4">
+                      className="home-page-car-img-container position-relative rounded-4 overflow-hidden mb-3"
+                      style={{
+                        aspectRatio: "16/9",
+                        background: "#f3f4f6",
+                        height: 180,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <img
+                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
+                        alt={car.nama}
+                        className="img-fluid home-page-car-image"
+                        style={{
+                          objectFit: "contain",
+                          objectPosition: "center",
+                          width: "100%",
+                          height: "100%",
+                          maxHeight: 160,
+                          background: "#fff",
+                          padding: 10,
+                          borderRadius: "1.2rem"
+                        }}
+                        loading="lazy"
+                      />
+                      {car.promo > 0 && (
+                        <span className="badge bg-danger position-absolute top-0 start-0 m-3 px-3 py-2 shadow">
+                          <i className="bi bi-bolt-fill me-1"></i>Promo {car.promo}%
+                        </span>
+                      )}
+                      <span className="home-page-car-badge bg-gold text-white fw-bold rounded-pill px-3 py-1 position-absolute top-0 end-0 m-3">
+                        POPULER
+                      </span>
+                    </div>
+                    <div className="p-3 d-flex flex-column flex-grow-1">
                       <div className="d-flex justify-content-between align-items-start mb-2">
-                        <h5 className="fw-bold mb-1">{car.nama}</h5>
+                        <h5 className="fw-bold mb-1" style={{ fontSize: "1.1rem" }}>{car.nama}</h5>
                         <div className="home-page-car-rating text-gold small d-flex align-items-center">
                           {[...Array(5)].map((_, i) => (
                             <i
@@ -331,14 +338,14 @@ const Home = () => {
                           </span>
                         </div>
                       </div>
-                      <p className="text-muted mb-3">
-                        <i className="bi bi-gear me-1"></i> {car.transmisi || 'Automatic'} •
-                        <i className="bi bi-people me-1 ms-2"></i> {car.kapasitas || '4-6'} Orang
+                      <p className="text-muted mb-2" style={{ fontSize: "0.95rem" }}>
+                        <i className="bi bi-gear me-1"></i> {car.transmisi || 'Automatic'} &nbsp;|&nbsp;
+                        <i className="bi bi-people me-1"></i> {car.kapasitas || '4-6'} Orang
                       </p>
                       <div className="mb-2">
                         {car.promo > 0 ? (
                           <>
-                            <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6 }}>
+                            <span style={{ textDecoration: "line-through", color: "#bbb", marginRight: 6, fontSize: "0.95rem" }}>
                               Rp {car.harga?.toLocaleString('id-ID')}
                             </span>
                             <span className="fw-bold text-warning fs-5">
@@ -360,22 +367,22 @@ const Home = () => {
                           </span>
                         ))}
                       </div>
-                      <div className="d-flex mt-auto justify-content-center">
-  <Link
-    to={`/detail/${car.id}`}
-    className="btn btn-outline-primary btn-lg rounded-pill fw-semibold d-flex align-items-center px-4 shadow-sm"
-    style={{
-      fontSize: "1.05rem",
-      height: 44,
-      letterSpacing: "0.5px",
-      borderWidth: 2,
-      transition: "background 0.2s, color 0.2s, box-shadow 0.2s"
-    }}
-  >
-    <i className="bi bi-info-circle me-2"></i>
-    Lihat Detail
-  </Link>
-</div>
+                      <div className="mt-auto d-flex justify-content-center">
+                        <Link
+                          to={`/detail/${car.id}`}
+                          className="btn btn-outline-primary-custom btn-sm rounded-pill fw-semibold d-flex align-items-center px-3 shadow-sm"
+                          style={{
+                            fontSize: "1rem",
+                            height: 38,
+                            letterSpacing: "0.2px",
+                            borderWidth: 2,
+                            transition: "background 0.2s, color 0.2s, box-shadow 0.2s"
+                          }}
+                        >
+                          <i className="bi bi-info-circle me-2"></i>
+                          Lihat Detail
+                        </Link>
+                      </div>
                     </div>
                   </motion.div>
                 </div>
@@ -383,7 +390,7 @@ const Home = () => {
             </div>
           )}
           <div className="text-center mt-5" data-aos="fade-up">
-            <a href="/mobil" className="btn btn-gold btn-lg px-4 rounded-pill">
+            <a href="/layanan" className="btn btn-gold btn-lg px-4 rounded-pill">
               Lihat Semua Armada <i className="bi bi-arrow-right ms-2"></i>
             </a>
           </div>
@@ -623,13 +630,13 @@ const Home = () => {
           <div className="d-flex flex-wrap justify-content-center gap-3" data-aos="fade-up" data-aos-delay="200">
             <Link
               to="#cars"
-              className="btn btn-dark btn-lg px-4 py-3 fw-bold rounded-pill"
+              className="btn btn-primary-custom btn-lg px-4 py-3 fw-bold rounded-pill"
             >
               <i className="bi bi-car-front me-2"></i>Pilih Mobil
             </Link>
             <a
               href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`}
-              className="btn btn-outline-dark btn-lg px-4 py-3 fw-bold rounded-pill"
+              className="btn btn-outline-accent btn-lg px-4 py-3 fw-bold rounded-pill"
               target="_blank"
               rel="noopener noreferrer"
             >

@@ -10,9 +10,6 @@ import {
   Col,
   Card,
   Button,
-  Modal,
-  OverlayTrigger,
-  Tooltip,
   ProgressBar,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
@@ -20,12 +17,9 @@ import {
   FaCar,
   FaCalendarAlt,
   FaMoneyBillWave,
-  FaFileAlt,
   FaInfoCircle,
-  FaEye,
   FaTimes,
   FaStar,
-  FaUser,
   FaCogs,
   FaUsers,
   FaTag,
@@ -47,13 +41,7 @@ const UserOrdersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [cancellingId, setCancellingId] = useState(null);
-  const [showProof, setShowProof] = useState(false);
-  const [proofUrl, setProofUrl] = useState("");
-  const [proofType, setProofType] = useState("img");
-  const [showUpload, setShowUpload] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null); // Tambahkan ini!
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -139,17 +127,11 @@ const UserOrdersPage = () => {
     }).format(amount);
   };
 
-  const getHargaSetelahPromo = (car) => {
-    if (car.promo && car.promo > 0) {
-      return Math.round(car.price_per_day - (car.price_per_day * car.promo / 100));
-    }
-    return car.price_per_day;
-  };
-
   const handleCancelOrder = async (orderId) => {
     if (!window.confirm("Yakin ingin membatalkan pesanan ini?")) return;
     try {
       const token = localStorage.getItem("token");
+      setCancellingId(orderId);
       await axios.put(
         `${BACKEND_URL}/api/orders/${orderId}/cancel`,
         {},
@@ -166,11 +148,9 @@ const UserOrdersPage = () => {
       );
     } catch (err) {
       toast.error("Gagal membatalkan pesanan.");
+    } finally {
+      setCancellingId(null);
     }
-  };
-
-  const handleDownloadInvoice = (orderId) => {
-    navigate(`/invoice/${orderId}`);
   };
 
   const handleMidtransPayment = async (order) => {
@@ -311,7 +291,7 @@ const UserOrdersPage = () => {
             </div>
             <div className="col-lg-5 text-center mt-5 mt-lg-0 position-relative" data-aos="fade-left">
               <img
-                src="/images/hero-car.webp"
+                src="/images/Home.png"
                 alt="Pesanan Rental Mobil"
                 className="img-fluid rounded-4 shadow-lg"
                 style={{ maxWidth: "90%", minWidth: 260 }}

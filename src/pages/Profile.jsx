@@ -52,13 +52,16 @@ const Profile = () => {
   }, [userId, token]);
 
   // Fetch notifikasi awal & polling
+  const fetchNotif = async () => {
+    setNotifLoading(true);
+    const res = await axios.get(`${BACKEND_URL}/api/notifications`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setNotif(res.data || []);
+    setNotifLoading(false);
+  };
+
   useEffect(() => {
-    const fetchNotif = async () => {
-      const res = await axios.get(`${BACKEND_URL}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNotif(res.data || []);
-    };
     fetchNotif();
     const interval = setInterval(fetchNotif, 30000);
     return () => clearInterval(interval);
@@ -141,6 +144,45 @@ const Profile = () => {
     } catch (err) {
       setPwError("Gagal mengubah password.");
     }
+  };
+
+  // Tambahkan di atas komponen Profile
+  const markNotifAsRead = async (id, token) => {
+    await axios.put(`${BACKEND_URL}/api/notifications/${id}/read`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+  const markAllNotifAsRead = async (token) => {
+    await axios.put(`${BACKEND_URL}/api/notifications/read-all`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+  const deleteNotif = async (id, token) => {
+    await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+  const deleteAllNotif = async (token) => {
+    await axios.delete(`${BACKEND_URL}/api/notifications`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+
+  const handleMarkAsRead = async (id) => {
+    await markNotifAsRead(id, token);
+    fetchNotif();
+  };
+  const handleMarkAllAsRead = async () => {
+    await markAllNotifAsRead(token);
+    fetchNotif();
+  };
+  const handleDeleteNotif = async (id) => {
+    await deleteNotif(id, token);
+    fetchNotif();
+  };
+  const handleDeleteAllNotif = async () => {
+    await deleteAllNotif(token);
+    fetchNotif();
   };
 
   if (loading)
@@ -344,6 +386,14 @@ const Profile = () => {
             <h4 className="fw-bold mb-3 text-primary">
               <FaBell className="me-2" /> Notifikasi
             </h4>
+            <div className="mb-2 d-flex gap-2">
+              <button className="btn btn-sm btn-outline-primary" onClick={handleMarkAllAsRead}>
+                Tandai semua sudah dibaca
+              </button>
+              <button className="btn btn-sm btn-outline-danger" onClick={handleDeleteAllNotif}>
+                Hapus semua
+              </button>
+            </div>
             {notifLoading ? (
               <div className="text-muted">Memuat notifikasi...</div>
             ) : notif.length === 0 ? (
@@ -351,12 +401,20 @@ const Profile = () => {
             ) : (
               <ul className="list-group list-group-flush">
                 {notif.map((n, idx) => (
-                  <li key={idx} className={`list-group-item d-flex align-items-center ${n.read ? "" : "fw-bold"}`}>
+                  <li key={n.id || idx} className={`list-group-item d-flex align-items-center ${n.read ? "" : "fw-bold"}`}>
                     <span className="me-2">
                       <FaBell className={n.read ? "text-secondary" : "text-warning"} />
                     </span>
-                    <span>{n.message}</span>
-                    <span className="ms-auto small text-muted">{new Date(n.createdAt).toLocaleString("id-ID")}</span>
+                    <span style={{ flex: 1 }}>{n.message}</span>
+                    <span className="ms-2 small text-muted">{new Date(n.createdAt).toLocaleString("id-ID")}</span>
+                    {!n.read && (
+                      <button className="btn btn-sm btn-link text-success ms-2" onClick={() => handleMarkAsRead(n.id)}>
+                        Tandai dibaca
+                      </button>
+                    )}
+                    <button className="btn btn-sm btn-link text-danger ms-2" onClick={() => handleDeleteNotif(n.id)}>
+                      Hapus
+                    </button>
                   </li>
                 ))}
               </ul>

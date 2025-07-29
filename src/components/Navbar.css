@@ -1,20 +1,26 @@
 /* Base Navbar Styles with Futuristic Gradient */
+:root {
+  --primary: #1e3a8a;
+  --primary-dark: #1e293b;
+  --accent: #fbbf24;
+  --accent-dark: #b45309;
+  --secondary: #64748b;
+  --background: #f8fafc;
+}
+
 .navbar {
-  transition: all 0.4s cubic-bezier(0.77, 0, 0.175, 1);
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(11, 16, 35, 0.98) 100%) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(0, 234, 255, 0.15);
-  z-index: 1030;
+  background: #fff !important;
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 2px 16px rgba(30,58,138,0.06);
+  padding: 0.8rem 1.5rem;
+  transition: all 0.3s;
 }
 
 .navbar-scrolled {
-  padding: 0.7rem 1.5rem;
-  background: rgba(9, 11, 26, 0.95) !important;
-  box-shadow: 0 8px 32px rgba(0, 234, 255, 0.15);
-  border-bottom: 1px solid rgba(0, 234, 255, 0.2);
+  background: #f8fafc !important;
+  box-shadow: 0 4px 24px rgba(30,58,138,0.09);
+  border-bottom: 2px solid var(--accent);
+  padding: 0.5rem 1.5rem;
 }
 
 /* Holographic Brand Logo */
@@ -64,13 +70,13 @@
 }
 
 .brand-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  background: linear-gradient(90deg, #fff 0%, #00eaff 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 1.3rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -97,16 +103,23 @@
 
 .hamburger span {
   display: block;
-  height: 2px;
-  width: 100%;
-  background: #00eaff;
+  height: 3px;
+  width: 26px;
+  background: var(--primary);
   border-radius: 2px;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 5px rgba(0, 234, 255, 0.7);
+  margin-bottom: 4px;
+  transition: all 0.3s;
+}
+
+.hamburger span:last-child { margin-bottom: 0; }
+
+.navbar-toggler {
+  border: none;
+  background: transparent !important;
 }
 
 .navbar-toggler[aria-expanded="true"] .hamburger span:nth-child(1) {
-  transform: translateY(8px) rotate(45deg);
+  transform: translateY(7px) rotate(45deg);
 }
 
 .navbar-toggler[aria-expanded="true"] .hamburger span:nth-child(2) {
@@ -114,122 +127,99 @@
 }
 
 .navbar-toggler[aria-expanded="true"] .hamburger span:nth-child(3) {
-  transform: translateY(-8px) rotate(-45deg);
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* Navigation Links with Hover Effects */
 .nav-link {
   font-weight: 600;
-  padding: 0.75rem 1.25rem !important;
-  margin: 0 0.5rem;
-  color: rgba(255, 255, 255, 0.8) !important;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  color: var(--primary-dark) !important;
+  padding: 0.7rem 1.1rem !important;
+  margin: 0 0.3rem;
   border-radius: 8px;
   letter-spacing: 0.5px;
+  position: relative;
+  transition: background 0.2s, color 0.2s;
 }
 
 .nav-link:hover, .nav-link.active {
+  background: var(--accent);
   color: #fff !important;
-  text-shadow: 0 0 10px rgba(0, 234, 255, 0.7);
 }
 
-.nav-hover-effect {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, #00eaff 0%, #4f46e5 100%);
-  border-radius: 2px;
-  box-shadow: 0 0 15px rgba(0, 234, 255, 0.5);
-}
-
-.nav-active-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #00eaff;
-  border-radius: 2px;
-  box-shadow: 0 0 15px rgba(0, 234, 255, 0.7);
+.nav-hover-effect, .nav-active-indicator {
+  display: none;
 }
 
 /* Auth Buttons with Glow Effects */
 .login-btn {
-  position: relative;
-  overflow: hidden;
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  padding: 0.47rem 1.35rem;
+  padding: 0.45rem 1.3rem;
   font-size: 1rem;
-  box-shadow: 0 0 12px #00eaff22;
-  transition: all 0.25s;
   border: none;
-  background: transparent;
-  color: #00eaff;
-  border: 1.5px solid #00eaff;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  margin-right: 0.5rem;
+  background: var(--primary);
+  color: #fff;
 }
 
 .login-btn:hover {
-  background: #00eaff;
-  color: #fff;
-  box-shadow: 0 0 18px #00eaff55;
+  background: var(--accent);
+  color: var(--primary-dark);
 }
 
 .register-btn {
-  position: relative;
-  overflow: hidden;
   border-radius: 999px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  padding: 0.47rem 1.35rem;
+  padding: 0.45rem 1.3rem;
   font-size: 1rem;
-  box-shadow: 0 0 12px #00eaff22;
-  transition: all 0.25s;
-  background: linear-gradient(90deg, #00eaff 0%, #4f46e5 100%);
-  color: #fff;
+  border: none;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  background: var(--accent);
+  color: var(--primary-dark);
 }
 
 .register-btn:hover {
-  background: linear-gradient(90deg, #4f46e5 0%, #00eaff 100%);
-  box-shadow: 0 0 24px #00eaff77;
+  background: var(--primary);
+  color: #fff;
 }
 
 .user-dropdown-btn {
-  transition: all 0.3s;
-  padding: 0.5rem 0.75rem;
+  background: #fff;
+  color: var(--primary-dark);
   border-radius: 8px;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  transition: background 0.2s, color 0.2s;
 }
 
 .user-dropdown-btn:hover {
-  background: rgba(0, 234, 255, 0.1) !important;
+  background: var(--accent);
+  color: #fff;
 }
 
 .user-avatar {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #00eaff 0%, #4f46e5 100%);
+  width: 34px;
+  height: 34px;
+  background: var(--primary);
   color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  box-shadow: 0 0 15px rgba(0, 234, 255, 0.3);
-  border: 2.5px solid #00eaff;
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
 }
 
 /* Futuristic Dropdown Menu */
 .dropdown-menu {
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1.5px solid #00eaff55;
+  background: #fff;
+  border: 1.5px solid var(--accent);
   border-radius: 12px;
-  box-shadow: 0 8px 32px 0 #00eaff33, 0 1.5px 0 #00eaff;
+  box-shadow: 0 8px 32px 0 #fbbf2433;
   padding: 0.5rem 0;
   animation: dropdownFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -240,20 +230,16 @@
 }
 
 .dropdown-item {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--primary-dark);
   padding: 0.75rem 1.5rem;
-  transition: all 0.3s;
-  position: relative;
-  overflow: hidden;
-  margin: 0.25rem 0.5rem;
   border-radius: 8px;
   font-weight: 500;
+  transition: background 0.2s, color 0.2s;
 }
 
 .dropdown-item:hover {
+  background: var(--accent);
   color: #fff;
-  background: rgba(0, 234, 255, 0.1);
-  transform: translateX(5px);
 }
 
 .dropdown-item i {
@@ -264,40 +250,34 @@
 }
 
 .dropdown-item.text-danger:hover {
-  background: rgba(231, 76, 60, 0.1);
+  background: #ef4444;
+  color: #fff;
 }
 
 .dropdown-divider {
-  border-top: 1px solid rgba(0, 234, 255, 0.15);
+  border-top: 1px solid var(--accent);
   margin: 0.5rem 0;
 }
 
 /* Mobile Menu Styles */
 @media (max-width: 992px) {
   .navbar-collapse {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: rgba(9, 11, 26, 0.98);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 1rem 1.5rem;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(0, 234, 255, 0.2);
+    background: #fff;
+    border-bottom: 2px solid var(--accent);
     border-radius: 0 0 20px 20px;
+    box-shadow: 0 15px 30px rgba(30,58,138,0.09);
+    padding: 1rem 1.5rem;
   }
 
   .nav-link {
     padding: 1rem !important;
     margin: 0.25rem 0;
-    border-radius: 8px;
   }
 
   .auth-section {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(0, 234, 255, 0.1);
+    border-top: 1px solid var(--accent);
     flex-direction: column;
     gap: 0.75rem;
   }
@@ -312,30 +292,19 @@
 /* Responsive Adjustments */
 @media (max-width: 576px) {
   .navbar {
-    padding: 0.75rem 1rem;
-  }
-
-  .brand-text {
-    font-size: 1.25rem;
-  }
-
-  .holographic-logo {
-    width: 32px;
-    height: 32px;
-  }
-
-  .holographic-logo i {
-    font-size: 1rem;
+    padding: 0.7rem 1rem;
   }
 
   .brand-logo-glow {
     width: 32px;
     height: 32px;
   }
-  .brand-photo-glow {
-    width: 24px;
-    height: 24px;
+
+  .brand-logo-img {
+    width: 32px;
+    height: 32px;
   }
+
   .brand-text {
     font-size: 1.1rem;
   }
@@ -357,6 +326,7 @@
   /* Tambahan efek neon */
   filter: drop-shadow(0 0 8px #00eaffcc);
 }
+
 .brand-logo-glow:hover {
   box-shadow: 0 0 40px 10px #00eaffcc, 0 0 0 10px #4f46e544;
   transform: scale(1.07) rotate(-2deg);
@@ -373,6 +343,7 @@
   display: flex;
   align-items: center;
 }
+
 .brand-photo-glow {
   width: 36px;
   height: 36px;
@@ -385,6 +356,7 @@
   animation: brandPhotoPulse 2.5s infinite alternate;
   filter: drop-shadow(0 0 6px #4f46e5cc);
 }
+
 .brand-photo-glow:hover {
   transform: scale(1.09) rotate(-3deg);
   box-shadow: 0 0 24px 6px #4f46e5cc, 0 0 0 6px #00eaff44;
@@ -405,7 +377,11 @@
 }
 
 .navbar-brand {
-  gap: 0.8rem !important;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 1px;
   display: flex;
   align-items: center;
+  gap: 0.7rem;
 }

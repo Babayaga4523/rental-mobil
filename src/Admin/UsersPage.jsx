@@ -145,7 +145,7 @@ const UsersPage = ({ darkMode }) => {
     }
     try {
       await axios.put(`${API_URL}/users/${selectedUser.id}`, {
-        nama: form.name,
+        nama: form.name, // harus 'nama'
         email: form.email,
         no_telp: form.no_telp,
         role: form.role,
@@ -161,6 +161,10 @@ const UsersPage = ({ darkMode }) => {
 
   // Delete User
   const handleDeleteUser = async () => {
+    if (!selectedUser?.id) {
+      showToast("User tidak valid", "danger");
+      return;
+    }
     try {
       await axios.delete(`${API_URL}/users/${selectedUser.id}`);
       setShowDelete(false);
@@ -171,13 +175,13 @@ const UsersPage = ({ darkMode }) => {
     }
   };
 
-  // Reset Password
+  // Reset Password (admin reset, tidak perlu oldPassword)
   const handleResetPassword = async () => {
     if (!resetPassword || !selectedUser) return;
     setFormError("");
     try {
       await axios.put(`${API_URL}/users/${selectedUser.id}/password`, {
-        newPassword: resetPassword
+        newPassword: resetPassword // harus 'newPassword'
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -211,8 +215,6 @@ const UsersPage = ({ darkMode }) => {
       showToast(err?.response?.data?.message || "Gagal mengirim notifikasi blast", "danger");
     }
   };
-
-  // ...existing code...
 
   // --- RENDER ---
   return (
@@ -830,6 +832,7 @@ const UserHistoryContent = ({ userId, darkMode }) => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!userId) return;
     const fetchHistory = async () => {
       setLoading(true);
       setError("");
@@ -845,7 +848,7 @@ const UserHistoryContent = ({ userId, darkMode }) => {
         setLoading(false);
       }
     };
-    if (userId) fetchHistory();
+    fetchHistory();
   }, [userId]);
 
   if (loading) return (

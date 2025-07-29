@@ -115,28 +115,29 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   // Listener notifikasi baru
   useEffect(() => {
     // Notifikasi umum
-    socket.on("new_notification", (notif) => {
-      setNotifications((prev) => [{ ...notif, id: Date.now(), read: false }, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+    socket.on("new_notification", () => {
+      // Fetch ulang dari backend agar sinkron
+      axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        setNotifications(res.data || []);
+        setUnreadCount((res.data || []).filter(n => !n.read).length);
+      });
     });
     // Notifikasi pesanan masuk
-    socket.on("new_order", (order) => {
-      const notif = {
-        id: Date.now(),
-        title: "Pesanan Baru",
-        message: `Pesanan baru dari ${order.customerName || 'Pelanggan'} untuk ${order.carName || 'mobil'}.`,
-        type: "success",
-        createdAt: new Date().toISOString(),
-        read: false
-      };
-      setNotifications((prev) => [notif, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+    socket.on("new_order", () => {
+      axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        setNotifications(res.data || []);
+        setUnreadCount((res.data || []).filter(n => !n.read).length);
+      });
     });
     return () => {
       socket.off("new_notification");
       socket.off("new_order");
     };
-  }, []);
+  }, [token]);
 
   // Logout
   const handleLogout = () => {
@@ -179,11 +180,15 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     }
   };
 
-  // Hapus semua notifikasi
+  // Hapus semua notifikasi (panggil API, lalu fetch ulang dari backend)
   const handleDeleteAllNotifications = async () => {
     try {
       await deleteAllNotifications(token);
-      setNotifications([]);
+      // Fetch ulang dari backend agar benar-benar kosong
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
       setUnreadCount(0);
     } catch (err) {
       setAlert({
@@ -194,15 +199,16 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     }
   };
 
-  // Hapus satu notifikasi
+  // Hapus satu notifikasi (panggil API, lalu fetch ulang dari backend)
   const handleDeleteNotification = async (id) => {
     try {
-      const notif = notifications.find(n => n.id === id);
       await deleteNotification(id, token);
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      if (notif && !notif.read) {
-        setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
-      }
+      // Fetch ulang dari backend agar sinkron
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
+      setUnreadCount((res.data || []).filter(n => !n.read).length);
       if (expandedNotification === id) setExpandedNotification(null);
     } catch (err) {
       setAlert({
@@ -213,24 +219,28 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
     }
   };
 
-  // Tandai satu notifikasi sebagai sudah dibaca
+  // Tandai satu notifikasi sebagai sudah dibaca (API, lalu fetch ulang)
   const handleMarkAsRead = async (id) => {
     try {
       await markAsRead(id, token);
-      setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
-      );
-      setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
+      setUnreadCount((res.data || []).filter(n => !n.read).length);
     } catch (err) {
       // error handling
     }
   };
 
-  // Tandai semua notifikasi sebagai sudah dibaca
+  // Tandai semua notifikasi sebagai sudah dibaca (API, lalu fetch ulang)
   const handleMarkAllAsRead = async () => {
     try {
       await markAllAsRead(token);
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      const res = await axios.get(`${API_URL}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data || []);
       setUnreadCount(0);
     } catch (err) {
       setAlert({
@@ -375,7 +385,6 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
             <Dropdown.Menu
               className="notification-menu"
               align="end"
-              container="body" // Tambahkan ini!
             >
               <div className="notification-header">
                 <h5>Notifications ({notifications.length})</h5>
@@ -468,8 +477,7 @@ const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
                       )}
                     </div>
                   ))
-                )}
-              </div>
+                )}              </div>
               <div className="notification-footer">
                 <button className="view-all">
                   View all notifications

@@ -138,7 +138,7 @@ async function getCarWithRating(car) {
 
 exports.createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
-  let car; // Declare car once at the top
+  let car;
   try {
     // Ambil dari req.body
     const {
@@ -344,6 +344,11 @@ exports.createOrder = async (req, res) => {
       message: `Pesanan baru #${newOrder.id} dari ${user.name}`,
       time: new Date()
     });
+
+    // Kirim reminder pembayaran jika belum bayar
+    if ((payment_status || "unpaid") !== "paid") {
+      await sendPaymentReminder(newOrder, user, car);
+    }
 
     // Kirim response
     return res.status(201).json({
@@ -988,4 +993,214 @@ exports.addToCalendar = async (req, res) => {
   const { title, start, end } = req.body;
   // Simpan ke DB jika perlu
   res.json({ success: true, message: "Booking berhasil ditambahkan ke Google Calendar (simulasi)." });
+};
+
+// Helper untuk notifikasi pembayaran
+const sendPaymentReminder = async (order, user, car) => {
+  const pickupDate = new Date(order.pickup_date).toLocaleDateString('id-ID');
+  const returnDate = new Date(order.return_date).toLocaleDateString('id-ID');
+  const totalPrice = Number(order.total_price).toLocaleString('id-ID');
+  
+  // Email reminder
+  await sendMail({
+    to: user.email,
+    subject: `🚗 Reminder Pembayaran Pesanan #${order.id}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background: #1976d2; color: #fff; padding: 24px; text-align: center;">
+          <h2 style="margin: 0; font-size: 1.5rem;">Segera Selesaikan Pembayaran Anda</h2>
+        </div>
+        
+        <div style="padding: 28px 24px;">
+          <p style="margin-bottom: 16px;">Halo <b>${user.name}</b>,</p>
+          
+          <p style="margin-bottom: 16px;">
+            Kami ingin mengingatkan Anda untuk segera menyelesaikan pembayaran pesanan rental mobil Anda.
+            Berikut detail pesanan Anda:
+          </p>
+          
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 40%; color: #555;">ID Pesanan</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><b>#${order.id}</b></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Mobil</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${car?.nama || '-'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Tanggal Sewa</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${pickupDate} - ${returnDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Total Pembayaran</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><b>Rp${totalPrice}</b></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #555;">Status</td>
+                <td style="padding: 8px 0;"><span style="color: #d32f2f; font-weight: bold;">Belum Dibayar</span></td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="http://localhost:3000/orders/${order.id}/payment" 
+               style="display: inline-block; background: #1976d2; color: #fff; text-decoration: none; 
+                      padding: 12px 24px; border-radius: 4px; font-weight: bold;">
+              Bayar Sekarang
+            </a>
+          </div>
+          
+          <p style="margin-bottom: 8px; color: #d32f2f; font-weight: bold;">
+            ⚠️ Batas waktu pembayaran: 24 jam setelah pemesanan
+          </p>
+          
+          <p style="margin-top: 24px; color: #555;">
+            Jika sudah melakukan pembayaran, silakan upload bukti pembayaran di halaman pesanan Anda.
+          </p>
+        </div>
+        
+        <div style="background: #f5f5f5; padding: 16px; text-align: center; color: #777; font-size: 0.9rem;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Rental Mobil HS. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  });
+
+  // WhatsApp reminder
+  if (user.no_telp) {
+    await sendWhatsappFonnte(
+      user.no_telp,
+      `🚗 *Reminder Pembayaran* 🚗\n\nHalo ${user.name},\n\nAnda belum menyelesaikan pembayaran untuk pesanan rental mobil:\n\n` +
+      `🔹 *ID Pesanan*: #${order.id}\n` +
+      `🔹 *Mobil*: ${car?.nama || '-'}\n` +
+      `🔹 *Tanggal Sewa*: ${pickupDate} - ${returnDate}\n` +
+      `🔹 *Total*: Rp${totalPrice}\n\n` +
+      `Segera selesaikan pembayaran dalam *24 jam* untuk menghindari pembatalan otomatis.\n\n` +
+      `🔗 *Link Pembayaran*: http://localhost:3000/orders/${order.id}/payment\n\n` +
+      `Terima kasih,\nRental Mobil HS`
+    );
+  }
+};
+
+const sendPaymentConfirmation = async (order, user, car) => {
+  const pickupDate = new Date(order.pickup_date).toLocaleDateString('id-ID');
+  const returnDate = new Date(order.return_date).toLocaleDateString('id-ID');
+  const totalPrice = Number(order.total_price).toLocaleString('id-ID');
+  
+  // Email konfirmasi
+  await sendMail({
+    to: user.email,
+    subject: `✅ Pembayaran Pesanan #${order.id} Berhasil`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+        <div style="background: #4caf50; color: #fff; padding: 24px; text-align: center;">
+          <h2 style="margin: 0; font-size: 1.5rem;">Pembayaran Berhasil Diterima</h2>
+        </div>
+        
+        <div style="padding: 28px 24px;">
+          <p style="margin-bottom: 16px;">Halo <b>${user.name}</b>,</p>
+          
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; width: 40%; color: #555;">ID Pesanan</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><b>#${order.id}</b></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Mobil</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${car?.nama || '-'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Tanggal Sewa</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${pickupDate} - ${returnDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #555;">Total Pembayaran</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><b>Rp${totalPrice}</b></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #555;">Status</td>
+                <td style="padding: 8px 0;"><span style="color: #4caf50; font-weight: bold;">Lunas</span></td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="background: #e8f5e9; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+            <h3 style="margin-top: 0; color: #2e7d32;">Langkah Selanjutnya</h3>
+            <ol style="padding-left: 20px; margin-bottom: 0;">
+              <li style="margin-bottom: 8px;">Anda akan menerima konfirmasi dari admin kami</li>
+              <li style="margin-bottom: 8px;">Pastikan kontak yang terdaftar aktif</li>
+              <li style="margin-bottom: 8px;">Simpan ID pesanan ini untuk referensi</li>
+            </ol>
+          </div>
+          
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="http://localhost:3000/orders/${order.id}" 
+               style="display: inline-block; background: #4caf50; color: #fff; text-decoration: none; 
+                      padding: 12px 24px; border-radius: 4px; font-weight: bold;">
+              Lihat Detail Pesanan
+            </a>
+          </div>
+          
+          <p style="margin-top: 24px; color: #555;">
+            Terima kasih telah mempercayai Rental Mobil HS. Kami akan menghubungi Anda untuk konfirmasi lebih lanjut.
+          </p>
+        </div>
+        
+        <div style="background: #f5f5f5; padding: 16px; text-align: center; color: #777; font-size: 0.9rem;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Rental Mobil HS. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  });
+
+  // WhatsApp konfirmasi
+  if (user.no_telp) {
+    await sendWhatsappFonnte(
+      user.no_telp,
+      `✅ *Pembayaran Diterima* ✅\n\nHalo ${user.name},\n\nPembayaran Anda untuk pesanan rental mobil telah berhasil kami terima:\n\n` +
+      `🔹 *ID Pesanan*: #${order.id}\n` +
+      `🔹 *Mobil*: ${car?.nama || '-'}\n` +
+      `🔹 *Tanggal Sewa*: ${pickupDate} - ${returnDate}\n` +
+      `🔹 *Total*: Rp${totalPrice}\n\n` +
+      `Status pesanan Anda sekarang *Terkonfirmasi*. Admin kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.\n\n` +
+      `Terima kasih telah menggunakan layanan Rental Mobil HS.`
+    );
+  }
+};
+
+// Endpoint manual reminder pembayaran
+exports.sendPaymentReminderManual = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findByPk(orderId, {
+      include: [
+        { model: User, as: 'user' },
+        { model: Layanan, as: 'layanan' }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if(order.payment_status === 'paid') {
+      return res.status(400).json({ success: false, message: "Order already paid" });
+    }
+
+    await sendPaymentReminder(order, order.user, order.layanan);
+
+    return res.json({ 
+      success: true, 
+      message: "Payment reminder sent successfully" 
+    });
+  } catch (error) {
+    console.error("Error sending payment reminder:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to send payment reminder" 
+    });
+  }
 };

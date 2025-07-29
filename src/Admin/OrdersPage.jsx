@@ -54,10 +54,10 @@ const getStatusBadge = (status) => {
 };
 const getPaymentBadge = (status) => {
   switch ((status || "").toLowerCase()) {
-    case "paid": return "success";
-    case "pending_verification": return "warning";
-    case "rejected": return "danger";
-    case "unpaid": return "secondary";
+    case "paid": return "success"; // hijau
+    case "pending_verification": return "warning"; // kuning
+    case "rejected": return "danger"; // merah
+    case "unpaid": return "secondary"; // abu-abu
     default: return "light";
   }
 };
