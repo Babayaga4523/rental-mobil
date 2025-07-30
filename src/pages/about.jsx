@@ -9,7 +9,8 @@ import {
   FaStar, FaCar, FaThumbsUp, FaHandHoldingHeart, FaShieldAlt, 
   FaClock, FaTag, FaMapMarkerAlt, FaAward, FaSmile, FaHeadset, 
   FaUserTie, FaPhoneAlt, FaEnvelope, FaFacebook, FaInstagram, 
-  FaTwitter, FaLinkedin, FaPaperPlane 
+  FaTwitter, FaLinkedin, FaPaperPlane, FaRoad, FaChartLine,
+  FaUsers, FaCalendarAlt, FaRegHandshake
 } from "react-icons/fa";
 import "../style/About.css";
 
@@ -24,9 +25,8 @@ const About = () => {
 
   useEffect(() => {
     AOS.init({
-      duration: 800,
-      once: false,
-      mirror: true,
+      duration: 1000,
+      once: true,
       easing: 'ease-in-out-quad'
     });
   }, []);
@@ -46,61 +46,411 @@ const About = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: 0 }}
       className="about-page"
     >
       {/* HERO SECTION */}
-      <section className="about-hero-section position-relative overflow-hidden">
-        <div className="about-hero-gradient-overlay"></div>
-        <div className="about-hero-bg-parallax"></div>
+      <section className="about-hero position-relative overflow-hidden">
+        <div className="hero-overlay"></div>
         <div className="container h-100 position-relative z-2">
-          <div className="row h-100 align-items-center">
+          <div className="row h-100 align-items-center py-8">
             <div className="col-lg-8 mx-auto text-center">
               <motion.div 
-                className="about-hero-tagline mb-3" 
-                data-aos="fade-down"
+                className="mb-4" 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <span className="badge bg-accent text-primary fs-6 px-4 py-2 shadow-lg border border-2 border-accent">
+                <span className="badge bg-white text-primary fs-6 px-4 py-2 shadow-sm">
                   <FaStar className="me-2" />
                   <span className="fw-bold">Premium Car Rental</span>
                 </span>
               </motion.div>
               
               <motion.h1 
-                className="about-hero-title display-3 fw-bold mb-3 text-white" 
-                data-aos="fade-up"
+                className="display-2 fw-bold mb-4 text-white" 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                Tentang <span className="text-gradient-primary">Kami</span>
+                Tentang <span className="text-gradient-blue">Rental Mobil HS</span>
               </motion.h1>
               
               <motion.p 
-                className="about-hero-subtitle lead text-light opacity-85 mb-4" 
-                data-aos="fade-up" 
-                data-aos-delay="100"
+                className="lead text-light mb-5" 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
+                style={{ maxWidth: "700px", margin: "0 auto" }}
               >
-                Menyediakan solusi transportasi <b>premium</b> sejak 2000<br className="d-none d-lg-block" />
-                dengan komitmen pada kualitas & kepuasan pelanggan
+                Menyediakan solusi transportasi premium sejak 2000 dengan komitmen pada kualitas, keamanan, dan kepuasan pelanggan
               </motion.p>
               
               <motion.div 
-                className="about-hero-cta d-flex flex-wrap justify-content-center gap-3" 
-                data-aos="fade-up" 
-                data-aos-delay="200"
+                className="d-flex flex-wrap justify-content-center gap-3" 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
                 <motion.button 
-                  className="btn btn-accent btn-lg rounded-pill px-4 py-3 shadow"
+                  className="btn btn-primary btn-lg rounded-pill px-4 py-3"
+                  onClick={() => navigate("/layanan")}
+                  whileHover={{ scale: 1.05, boxShadow: "0 10px 20px rgba(13, 110, 253, 0.25)" }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaCar className="me-2" />Lihat Armada
+                </motion.button>
+                <motion.button 
+                  className="btn btn-outline-light btn-lg rounded-pill px-4 py-3 border-2"
+                  onClick={() => document.getElementById('contact-section').scrollIntoView({ behavior: 'smooth' })}
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaPhoneAlt className="me-2" />Hubungi Kami
+                </motion.button>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="hero-shape-divider">
+          <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" className="shape-fill"></path>
+            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" className="shape-fill"></path>
+            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" className="shape-fill"></path>
+          </svg>
+        </div>
+      </section>
+
+      {/* COMPANY OVERVIEW */}
+      <section className="py-7">
+        <div className="container">
+          <div className="row align-items-center">
+            <div className="col-lg-6 mb-5 mb-lg-0">
+              <motion.div 
+                className="position-relative rounded-4 overflow-hidden shadow-lg"
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <img
+                  src="/images/tentang kami.jpg"
+                  alt="Showroom Kami"
+                  className="img-fluid w-100"
+                  style={{ height: "500px", objectFit: "cover" }}
+                />
+                <div className="position-absolute bottom-0 start-0 p-4 bg-dark bg-opacity-75 text-white w-100">
+                  <h3 className="h4 mb-0">Rental Mobil Terbai di Sukoharjo</h3>
+                </div>
+              </motion.div>
+            </div>
+            
+            <div className="col-lg-6 ps-lg-5">
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <span className="badge bg-primary bg-opacity-10 text-primary fs-6 mb-3">Tentang Kami</span>
+                <h2 className="display-5 fw-bold mb-4">Perjalanan <span className="text-gradient-blue">Rental Mobil HS</span></h2>
+                <p className="lead text-muted mb-4">
+                  Sejak tahun 2000, Rental Mobil HS telah menjadi pilihan utama untuk solusi transportasi premium di Jawa Tengah. Kami memulai dengan 3 armada dan kini telah berkembang menjadi salah satu penyedia jasa rental mobil terkemuka di wilayah ini.
+                </p>
+                
+                <div className="row g-3">
+                  {[
+                    { icon: <FaRoad className="fs-3" />, value: "23+", label: "Tahun Pengalaman" },
+                    { icon: <FaCar className="fs-3" />, value: "500+", label: "Armada" },
+                    { icon: <FaUsers className="fs-3" />, value: "15.000+", label: "Pelanggan" },
+                    { icon: <FaChartLine className="fs-3" />, value: "98%", label: "Kepuasan" }
+                  ].map((item, index) => (
+                    <div className="col-6" key={index}>
+                      <motion.div
+                        className="bg-light p-4 rounded-4 h-100"
+                        whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        viewport={{ once: true }}
+                      >
+                        <div className="text-primary mb-2">{item.icon}</div>
+                        <h3 className="fw-bold mb-1">{item.value}</h3>
+                        <p className="text-muted mb-0">{item.label}</p>
+                      </motion.div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* VALUE PROPOSITION */}
+      <section className="py-7 bg-light">
+        <div className="container">
+          <div className="text-center mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <span className="badge bg-primary bg-opacity-10 text-primary fs-6 mb-3">Keunggulan Kami</span>
+              <h2 className="display-5 fw-bold mb-3">Mengapa Memilih <span className="text-gradient-blue">Kami?</span></h2>
+              <p className="lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
+                Kami memberikan pengalaman rental mobil yang berbeda dengan fokus pada kualitas, keamanan, dan kenyamanan
+              </p>
+            </motion.div>
+          </div>
+          
+          <div className="row g-4">
+            {[
+              { 
+                icon: <FaShieldAlt className="fs-3" />,
+                title: "Keamanan Terjamin",
+                desc: "Semua armada melalui pemeriksaan rutin 150 poin dan dilengkapi asuransi komprehensif",
+                color: "primary"
+              },
+              { 
+                icon: <FaUserTie className="fs-3" />,
+                title: "Supir Profesional",
+                desc: "Supir berpengalaman dengan pengetahuan rute yang luas dan layanan ramah",
+                color: "success"
+              },
+              { 
+                icon: <FaClock className="fs-3" />,
+                title: "Tepat Waktu",
+                desc: "Komitmen ketepatan waktu dengan garansi pengantaran sesuai jadwal",
+                color: "warning"
+              },
+              { 
+                icon: <FaTag className="fs-3" />,
+                title: "Harga Transparan",
+                desc: "Tidak ada biaya tersembunyi dengan harga kompetitif dan paket lengkap",
+                color: "info"
+              },
+              { 
+                icon: <FaHeadset className="fs-3" />,
+                title: "Dukungan 24/7",
+                desc: "Tim layanan pelanggan siap membantu kapan saja selama perjalanan Anda",
+                color: "danger"
+              },
+              { 
+                icon: <FaAward className="fs-3" />,
+                title: "Reputasi Terbukti",
+                desc: "Penghargaan Best Car Rental 2023 dengan rating 4.9/5 dari pelanggan",
+                color: "purple"
+              }
+            ].map((item, index) => (
+              <div className="col-md-6 col-lg-4" key={index}>
+                <motion.div 
+                  className="h-100 p-5 bg-white rounded-4 shadow-sm"
+                  whileHover={{ y: -10, boxShadow: "0 15px 30px rgba(0,0,0,0.1)" }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className={`icon-lg bg-${item.color}-soft text-${item.color} rounded-3 mb-4`}>
+                    {item.icon}
+                  </div>
+                  <h3 className="h4 fw-bold mb-3">{item.title}</h3>
+                  <p className="text-muted mb-0">{item.desc}</p>
+                </motion.div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TIMELINE */}
+      <section className="py-7 position-relative bg-white">
+        <div className="container">
+          <div className="text-center mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <span className="badge bg-primary bg-opacity-10 text-primary fs-6 mb-3">Sejarah Kami</span>
+              <h2 className="display-5 fw-bold mb-3">Perjalanan <span className="text-gradient-blue">Kami</span></h2>
+              <p className="lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
+                Jejak langkah Rental Mobil HS dari awal berdiri hingga menjadi pilihan utama
+              </p>
+            </motion.div>
+          </div>
+          
+          <div className="timeline-wrapper">
+            <div className="timeline-line"></div>
+            
+            {[
+              { 
+                year: "2000", 
+                title: "Pendirian", 
+                desc: "Rental Mobil HS didirikan dengan 3 armada pertama di Sukoharjo",
+                icon: <FaRegHandshake />
+              },
+              { 
+                year: "2005", 
+                title: "Ekspansi Armada", 
+                desc: "Menambah armada menjadi 20 unit dan mulai melayani perusahaan",
+                icon: <FaCar />
+              },
+              { 
+                year: "2012", 
+                title: "Digitalisasi", 
+                desc: "Meluncurkan sistem pemesanan online dan ekspansi ke 5 kota",
+                icon: <FaChartLine />
+              },
+              { 
+                year: "2018", 
+                title: "Penghargaan", 
+                desc: "Mendapat penghargaan Best Car Rental Jawa Tengah",
+                icon: <FaAward />
+              },
+              { 
+                year: "2023", 
+                title: "Pencapaian", 
+                desc: "500+ armada dan menjadi salah satu rental terbesar di Jawa Tengah",
+                icon: <FaThumbsUp />
+              }
+            ].map((item, index) => (
+              <motion.div 
+                className={`timeline-item ${index % 2 === 0 ? 'left' : 'right'}`}
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="timeline-content bg-white shadow-sm rounded-4 p-4 p-lg-5">
+                  <div className="timeline-year text-primary fw-bold mb-2">{item.year}</div>
+                  <div className="timeline-icon bg-primary bg-opacity-10 text-primary rounded-3 mb-3">
+                    {item.icon}
+                  </div>
+                  <h3 className="h4 fw-bold mb-3">{item.title}</h3>
+                  <p className="text-muted mb-0">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="py-7 bg-light">
+        <div className="container">
+          <div className="text-center mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <span className="badge bg-primary bg-opacity-10 text-primary fs-6 mb-3">Testimoni</span>
+              <h2 className="display-5 fw-bold mb-3">Apa Kata <span className="text-gradient-blue">Pelanggan?</span></h2>
+              <p className="lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
+                Berikut pengalaman nyata dari pelanggan yang telah menggunakan layanan kami
+              </p>
+            </motion.div>
+          </div>
+          
+          <div className="row g-4">
+            {[
+              {
+                name: "Budi Santoso",
+                role: "Business Traveler",
+                quote: "Pelayanan sangat profesional, mobil selalu dalam kondisi prima. Sudah 5 tahun menggunakan jasa Rental Mobil HS untuk kebutuhan bisnis.",
+                rating: 5,
+                image: "/images/testi-1.jpg"
+              },
+              {
+                name: "Anita Wijaya",
+                role: "Family Vacation",
+                quote: "Supirnya sangat ramah dan sabar, mobil nyaman untuk perjalanan keluarga. Harga juga sangat kompetitif untuk kualitas yang diberikan.",
+                rating: 5,
+                image: "/images/testi-2.jpg"
+              },
+              {
+                name: "Rudi Hermawan",
+                role: "Corporate Client",
+                quote: "Kami menggunakan layanan mereka untuk kebutuhan transportasi tamu perusahaan. Selalu tepat waktu dan memberikan kesan profesional.",
+                rating: 4,
+                image: "/images/testi-3.jpg"
+              }
+            ].map((testimonial, index) => (
+              <div className="col-lg-4" key={index}>
+                <motion.div 
+                  className="h-100 p-4 bg-white rounded-4 shadow-sm"
+                  whileHover={{ y: -5, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="d-flex align-items-center mb-4">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name} 
+                      className="rounded-circle me-3" 
+                      width="60" 
+                      height="60"
+                    />
+                    <div>
+                      <h5 className="fw-bold mb-1">{testimonial.name}</h5>
+                      <p className="text-muted mb-0 small">{testimonial.role}</p>
+                    </div>
+                  </div>
+                  <p className="mb-4">"{testimonial.quote}"</p>
+                  <div className="text-warning">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <FaStar key={i} className="me-1" />
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA SECTION */}
+      <section className="py-7 bg-primary text-white position-relative overflow-hidden">
+        <div className="cta-overlay"></div>
+        <div className="container position-relative">
+          <div className="row justify-content-center">
+            <div className="col-lg-8 text-center">
+              <motion.h2 
+                className="display-5 fw-bold mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                Siap Memulai Perjalanan Anda?
+              </motion.h2>
+              <motion.p 
+                className="lead mb-5 opacity-75"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                Hubungi kami sekarang untuk mendapatkan penawaran terbaik atau kunjungi showroom kami di Sukoharjo
+              </motion.p>
+              <motion.div 
+                className="d-flex flex-wrap justify-content-center gap-3"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                viewport={{ once: true }}
+              >
+                <motion.button 
+                  className="btn btn-light btn-lg rounded-pill px-4 py-3 text-primary fw-bold"
                   onClick={() => navigate("/layanan")}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -121,477 +471,94 @@ const About = () => {
         </div>
       </section>
 
-      {/* MISSION SECTION */}
-      <section className="mission-section py-7 position-relative bg-light">
-        <div className="container position-relative">
-          <div className="section-header text-center mb-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="section-title display-5 fw-bold mb-3 text-primary">
-                <span className="text-accent">Misi Kami</span>
-              </h2>
-              <p className="section-subtitle lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
-                Memberikan pengalaman terbaik dalam setiap perjalanan Anda dengan standar layanan tertinggi
-              </p>
-            </motion.div>
-          </div>
-          
-          <div className="row g-4 justify-content-center">
-            {[
-              { 
-                icon: <FaThumbsUp className="text-white fs-3" />, 
-                title: "Kualitas Terbaik", 
-                desc: "Armada terawat dengan standar tinggi dan fasilitas lengkap untuk kenyamanan maksimal Anda.",
-                color: "primary"
-              },
-              { 
-                icon: <FaHandHoldingHeart className="text-white fs-3" />, 
-                title: "Pelayanan Prima", 
-                desc: "Tim profesional kami siap memberikan pelayanan terbaik 24/7 untuk semua kebutuhan transportasi Anda.",
-                color: "success"
-              },
-              { 
-                icon: <FaShieldAlt className="text-white fs-3" />, 
-                title: "Keamanan Utama", 
-                desc: "Prioritas keselamatan dengan armada yang melalui pemeriksaan rutin dan sistem keamanan terkini.",
-                color: "warning"
-              }
-            ].map((mission, index) => (
-              <div className="col-md-4" key={index} data-aos="fade-up" data-aos-delay={index * 100}>
-                <motion.div 
-                  whileHover={{ y: -10, boxShadow: `0 15px 30px rgba(var(--bs-${mission.color}-rgb), 0.1)` }}
-                  className="mission-card h-100 border-0 rounded-4 overflow-hidden shadow-sm bg-white"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="card-body p-5 text-center">
-                    <div className={`mission-icon bg-${mission.color} mb-4 mx-auto rounded-circle d-flex align-items-center justify-content-center`} style={{width: '80px', height: '80px'}}>
-                      {mission.icon}
-                    </div>
-                    <h3 className="h4 fw-bold mb-3">{mission.title}</h3>
-                    <p className="text-muted">{mission.desc}</p>
-                  </div>
-                </motion.div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ABOUT CONTENT SECTION */}
-      <section className="about-content py-7 position-relative">
-        <div className="container">
-          <div className="section-header text-center mb-6" data-aos="fade-up">
-            <h2 className="section-title display-5 fw-bold mb-3">
-              <span className="text-gradient-primary">Keunggulan Kami</span>
-            </h2>
-            <p className="section-subtitle lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
-              Sebagai penyedia jasa sewa mobil terkemuka, kami bangga menawarkan pengalaman berkendara premium
-            </p>
-          </div>
-          
-          <div className="row align-items-center mb-6">
-            {/* Image Section */}
-            <div className="col-lg-6 mb-5 mb-lg-0" data-aos="fade-right">
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="about-image position-relative rounded-4 overflow-hidden shadow-lg border border-4 border-white"
-                initial={{ opacity: 0, x: -50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-              >
-                <img
-                  src="/images/tentang kami 1.jpg"
-                  alt="Showroom Kami"
-                  className="img-fluid w-100 hover-zoom"
-                  style={{ minHeight: "500px", objectFit: "cover" }}
-                />
-                <motion.div 
-                  className="experience-badge bg-primary text-white shadow-lg"
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="experience-years display-3 fw-bold">23+</div>
-                  <div className="experience-text text-uppercase fs-6">Tahun Pengalaman</div>
-                </motion.div>
-              </motion.div>
-            </div>
-            
-            {/* Features Section */}
-            <div className="col-lg-6" data-aos="fade-left">
-              <div className="ps-lg-5">
-                <motion.h3 
-                  className="h2 fw-bold mb-4 position-relative"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  viewport={{ once: true }}
-                >
-                  <span className="text-gradient-primary">Mengapa</span> Memilih Kami?
-                  <span className="title-underline"></span>
-                </motion.h3>
-                
-                <motion.div 
-                  className="alert alert-info d-flex align-items-center mb-4" 
-                  role="alert" 
-                  style={{ fontSize: "1.05rem" }}
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  viewport={{ once: true }}
-                >
-                  <FaUserTie className="me-2 fs-5 text-primary" />
-                  <span>
-                    <b>Semua layanan rental sudah termasuk supir profesional.</b> <br className="d-none d-md-block" />
-                    <span className="text-danger fw-semibold">Tidak melayani lepas kunci (self-drive).</span>
-                  </span>
-                </motion.div>
-                
-                <div className="row g-4">
-                  {[
-                    { icon: <FaCar className="fs-4" />, title: "500+ Armada Berkualitas", desc: "Pilihan mobil terbaru dari merek ternama", color: "danger" },
-                    { icon: <FaClock className="fs-4" />, title: "Layanan 24/7", desc: "Dukungan pelanggan setiap saat", color: "info" },
-                    { icon: <FaTag className="fs-4" />, title: "Harga Kompetitif", desc: "Tanpa biaya tersembunyi", color: "success" },
-                    { icon: <FaShieldAlt className="fs-4" />, title: "Asuransi Lengkap", desc: "Perlindungan maksimal untuk Anda", color: "warning" },
-                    { icon: <FaMapMarkerAlt className="fs-4" />, title: "Jaringan Luas", desc: "Tersedia di 15 kota besar", color: "primary" },
-                    { icon: <FaAward className="fs-4" />, title: "Penghargaan", desc: "Best Car Rental 2023", color: "purple" }
-                  ].map((feature, index) => (
-                    <div 
-                      key={index} 
-                      className="col-md-6"
-                      data-aos="fade-up"
-                      data-aos-delay={100 * (index % 2 + 1)}
-                    >
-                      <motion.div
-                        whileHover={{ y: -5, boxShadow: `0 10px 20px rgba(var(--bs-${feature.color}-rgb), 0.1)` }}
-                        className="feature-card h-100 p-4 rounded-4 bg-white shadow-sm"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                      >
-                        <div className={`feature-icon rounded-circle bg-soft-${feature.color} text-${feature.color} mb-3 d-flex align-items-center justify-content-center`} style={{width: '60px', height: '60px'}}>
-                          {feature.icon}
-                        </div>
-                        <div>
-                          <h5 className="fw-bold mb-2">{feature.title}</h5>
-                          <p className="text-muted mb-0">{feature.desc}</p>
-                        </div>
-                      </motion.div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Commitment Section */}
-          <div className="row align-items-center mt-6 pt-5">
-            {/* Image Section */}
-            <div className="col-lg-6 order-lg-2 mb-5 mb-lg-0" data-aos="fade-left">
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="about-image position-relative rounded-4 overflow-hidden shadow-lg border border-4 border-white"
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                viewport={{ once: true }}
-              >
-                <img
-                  src="/images/tentang kami.jpg"
-                  alt="Pelayanan Kami"
-                  className="img-fluid w-100"
-                  style={{ minHeight: "500px", objectFit: "cover" }}
-                />
-                <motion.div 
-                  className="customer-badge bg-success text-white shadow-lg"
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  transition={{ delay: 0.5 }}
-                  viewport={{ once: true }}
-                >
-                  <div className="customer-count display-3 fw-bold">98%</div>
-                  <div className="customer-text text-uppercase fs-6">Kepuasan Pelanggan</div>
-                </motion.div>
-              </motion.div>
-            </div>
-            
-            {/* Commitment Text Section */}
-            <div className="col-lg-6 order-lg-1" data-aos="fade-right">
-              <div className="pe-lg-5">
-                <motion.h2 
-                  className="display-6 fw-bold mb-4"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  viewport={{ once: true }}
-                >
-                  <span className="text-gradient-primary">Komitmen Kami</span>
-                </motion.h2>
-                
-                <motion.p 
-                  className="lead mb-5"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  viewport={{ once: true }}
-                >
-                  Kami tidak hanya menyewakan mobil, tetapi memberikan pengalaman perjalanan yang istimewa dengan standar layanan premium.
-                </motion.p>
-                
-                {/* Commitment Points */}
-                <div className="commitment-points">
-                  {[
-                    { icon: <FaShieldAlt className="fs-4" />, color: "primary", title: "Keamanan Utama", desc: "Armada melalui pemeriksaan rutin 150 poin" },
-                    { icon: <FaSmile className="fs-4" />, color: "success", title: "Kepuasan Pelanggan", desc: "Rating 4.9/5 dari pelanggan" },
-                    { icon: <FaClock className="fs-4" />, color: "warning", title: "Tepat Waktu", desc: "Garansi pengantaran sesuai jadwal" },
-                    { icon: <FaHeadset className="fs-4" />, color: "info", title: "Dukungan Penuh", desc: "Asisten perjalanan 24 jam" }
-                  ].map((item, index) => (
-                    <motion.div 
-                      key={index} 
-                      className="commitment-item d-flex mb-4 bg-white p-4 rounded-4 shadow-sm"
-                      data-aos="fade-up"
-                      data-aos-delay={index * 100}
-                      whileHover={{ x: 5 }}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                    >
-                      <div className={`commitment-icon bg-${item.color}-soft text-${item.color} rounded-3 p-3 me-4 d-flex align-items-center justify-content-center`} style={{width: '60px', height: '60px'}}>
-                        {item.icon}
-                      </div>
-                      <div>
-                        <h5 className="fw-bold mb-1">{item.title}</h5>
-                        <p className="text-muted mb-0">{item.desc}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TIMELINE SECTION */}
-      <section className="about-timeline-section py-7 bg-light">
-        <div className="container">
-          <div className="text-center mb-5">
-            <motion.h2
-              className="section-title display-5 fw-bold mb-3 text-primary"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              Perjalanan <span className="text-gradient-primary">Kami</span>
-            </motion.h2>
-            <motion.p
-              className="section-subtitle lead text-muted mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              viewport={{ once: true }}
-              style={{ maxWidth: "700px" }}
-            >
-              Sejarah singkat perkembangan Rental Mobil HS
-            </motion.p>
-          </div>
-          
-          <div className="position-relative" style={{ maxWidth: 900, margin: "0 auto" }}>
-            {/* Timeline vertical line */}
-            <div
-              className="position-absolute top-0 bottom-0 start-50 translate-middle-x"
-              style={{
-                width: 6,
-                borderRadius: 3,
-                background: "linear-gradient(180deg, #0d6efd 0%, #6610f2 100%)",
-                opacity: 0.13,
-                zIndex: 0,
-              }}
-            ></div>
-
-            {[
-              { year: 2000, title: "Didirikan", desc: "Rental Mobil HS berdiri dengan 3 armada pertama." },
-              { year: 2005, title: "Ekspansi Armada", desc: "Armada bertambah menjadi 20 unit, mulai melayani perusahaan." },
-              { year: 2012, title: "Digitalisasi", desc: "Mulai menerima pemesanan online dan memperluas layanan ke 5 kota." },
-              { year: 2018, title: "Penghargaan Nasional", desc: "Mendapat penghargaan Best Car Rental Jawa Tengah." },
-              { year: 2023, title: "500+ Armada", desc: "Menjadi salah satu rental terbesar di Jawa Tengah." }
-            ].map((item, idx) => (
-              <motion.div
-                className="row align-items-center mb-5 position-relative"
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                style={{ minHeight: 120 }}
-              >
-                {/* Left (event) */}
-                <div className={`col-12 col-md-5 d-flex ${idx % 2 === 0 ? "justify-content-end" : "order-md-2 justify-content-start"}`}>
-                  <div
-                    className="timeline-content p-4"
-                    style={{
-                      minWidth: 220,
-                      maxWidth: 320,
-                      borderLeft: idx % 2 === 0 ? "6px solid #0d6efd" : undefined,
-                      borderRight: idx % 2 !== 0 ? "6px solid #0d6efd" : undefined,
-                      background: "#fff",
-                      borderRadius: 18,
-                      boxShadow: "0 2px 12px rgba(13,110,253,0.06)",
-                    }}
-                  >
-                    <h5 className="mb-1 fw-semibold">{item.title}</h5>
-                    <p className="mb-0 text-muted">{item.desc}</p>
-                  </div>
-                </div>
-
-                {/* Year dot in center line */}
-                <div className="col-12 col-md-2 d-flex justify-content-center align-items-center position-relative" style={{ zIndex: 2, minHeight: 120 }}>
-                  <motion.div
-                    className="timeline-dot"
-                    style={{
-                      background: "linear-gradient(90deg, #0d6efd 60%, #6610f2 100%)",
-                      color: "#fff",
-                      fontWeight: 700,
-                      fontSize: 22,
-                      width: 64,
-                      height: 64,
-                      border: "5px solid #fff",
-                      boxShadow: "0 4px 24px rgba(13,110,253,0.10)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "absolute",
-                      left: "50%",
-                      top: "50%",
-                      transform: "translate(-50%, -50%)",
-                      borderRadius: "50%"
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    {item.year}
-                  </motion.div>
-                </div>
-                
-                {/* Right (empty for alternating) */}
-                <div className={`col-12 col-md-5 ${idx % 2 === 0 ? "" : "order-md-1"}`}></div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CONTACT SECTION */}
-      <section id="contact-section" className="contact-section py-7 bg-white">
+      <section id="contact-section" className="py-7 bg-white">
         <div className="container">
-          <div className="section-header text-center mb-6" data-aos="fade-up">
-            <h2 className="section-title display-5 fw-bold mb-3">
-              <span className="text-gradient-primary">Hubungi Kami</span>
-            </h2>
-            <p className="section-subtitle lead text-muted mx-auto" style={{ maxWidth: "700px" }}>
-              Kami siap membantu dan menjawab semua pertanyaan Anda
-            </p>
-          </div>
           <div className="row g-5">
-            {/* INFORMASI KONTAK */}
             <div className="col-lg-5 mb-5 mb-lg-0">
-              <motion.div
-                whileHover={{ y: -5 }}
-                className="contact-info-card bg-light rounded-4 p-4 p-lg-5 h-100 shadow"
-                data-aos="fade-right"
+              <motion.div 
+                className="h-100 p-4 p-lg-5 bg-light rounded-4 shadow-sm"
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
               >
-                <h3 className="h4 fw-bold mb-4 text-primary text-center text-lg-start">Informasi Kontak</h3>
+                <h2 className="display-6 fw-bold mb-4">Informasi <span className="text-gradient-blue">Kontak</span></h2>
+                <p className="text-muted mb-5">
+                  Kami siap membantu Anda 24 jam melalui berbagai saluran komunikasi berikut:
+                </p>
+                
                 <div className="d-flex flex-column gap-4">
-                  {/* Kontak 1 */}
-                  <div className="contact-item d-flex align-items-center gap-3">
-                    <div className="contact-icon bg-primary bg-opacity-10 text-primary rounded-3 p-3 d-flex align-items-center justify-content-center">
-                      <FaMapMarkerAlt className="fs-4" />
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="icon-md bg-primary bg-opacity-10 text-primary rounded-3 flex-shrink-0">
+                      <FaMapMarkerAlt />
                     </div>
                     <div>
-                      <h5 className="fw-bold mb-1">Lokasi Kantor</h5>
+                      <h5 className="fw-bold mb-2">Alamat Kantor</h5>
                       <p className="text-muted mb-0">
-                        Jl. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo<br />Jawa Tengah 57164
+                        Jl. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo, Jawa Tengah 57164
                       </p>
                     </div>
                   </div>
-                  {/* Kontak 2 */}
-                  <div className="contact-item d-flex align-items-center gap-3">
-                    <div className="contact-icon bg-success bg-opacity-10 text-success rounded-3 p-3 d-flex align-items-center justify-content-center">
-                      <FaPhoneAlt className="fs-4" />
+                  
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="icon-md bg-success bg-opacity-10 text-success rounded-3 flex-shrink-0">
+                      <FaPhoneAlt />
                     </div>
                     <div>
-                      <h5 className="fw-bold mb-1">Telepon</h5>
+                      <h5 className="fw-bold mb-2">Telepon/WhatsApp</h5>
                       <p className="text-muted mb-0">08170455544</p>
                     </div>
                   </div>
-                  {/* Kontak 3 */}
-                  <div className="contact-item d-flex align-items-center gap-3">
-                    <div className="contact-icon bg-warning bg-opacity-10 text-warning rounded-3 p-3 d-flex align-items-center justify-content-center">
-                      <FaEnvelope className="fs-4" />
+                  
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="icon-md bg-warning bg-opacity-10 text-warning rounded-3 flex-shrink-0">
+                      <FaEnvelope />
                     </div>
                     <div>
-                      <h5 className="fw-bold mb-1">Email</h5>
+                      <h5 className="fw-bold mb-2">Email</h5>
                       <p className="text-muted mb-0">rentalhs591@gmail.com</p>
                     </div>
                   </div>
-                </div>
-                <div className="social-links mt-5 pt-3 text-center text-md-start">
-                  <h5 className="fw-bold mb-3">Ikuti Kami</h5>
-                  <div className="d-flex justify-content-center justify-content-md-start gap-3">
-                    {[
-                      { icon: <FaFacebook className="fs-4" />, name: "facebook", color: "primary" },
-                      { icon: <FaInstagram className="fs-4" />, name: "instagram", color: "danger" },
-                      { icon: <FaTwitter className="fs-4" />, name: "twitter", color: "info" },
-                      { icon: <FaLinkedin className="fs-4" />, name: "linkedin", color: "primary" }
-                    ].map((social, index) => (
-                      <motion.a
-                        key={social.name}
-                        href="#"
-                        className={`social-icon bg-${social.color}-soft text-${social.color} rounded-3 p-3`}
-                        whileHover={{
-                          y: -3,
-                          backgroundColor: `rgba(var(--bs-${social.color}-rgb), 0.2)`,
-                        }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        viewport={{ once: true }}
-                        aria-label={social.name}
-                      >
-                        {social.icon}
-                      </motion.a>
-                    ))}
+                  
+                  <div className="mt-4 pt-2">
+                    <h5 className="fw-bold mb-3">Ikuti Kami</h5>
+                    <div className="d-flex gap-3">
+                      {[
+                        { icon: <FaFacebook />, name: "Facebook", color: "primary" },
+                        { icon: <FaInstagram />, name: "Instagram", color: "danger" },
+                        { icon: <FaTwitter />, name: "Twitter", color: "info" },
+                        { icon: <FaLinkedin />, name: "LinkedIn", color: "primary" }
+                      ].map((social, index) => (
+                        <motion.a
+                          key={index}
+                          href="#"
+                          className={`icon-md bg-${social.color}-soft text-${social.color} rounded-3 d-flex align-items-center justify-content-center`}
+                          whileHover={{ y: -3, scale: 1.1 }}
+                          aria-label={social.name}
+                        >
+                          {social.icon}
+                        </motion.a>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             </div>
-            {/* FORM KONTAK */}
+            
             <div className="col-lg-7">
-              <motion.div
-                whileHover={{ y: -5 }}
-                className="contact-form-card bg-white rounded-4 p-4 p-lg-5 shadow-lg"
-                data-aos="fade-left"
+              <motion.div 
+                className="h-100 p-4 p-lg-5 bg-white rounded-4 shadow-lg"
                 initial={{ opacity: 0, x: 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
               >
-                <h3 className="h4 fw-bold mb-4 text-primary">Kirim Pesan</h3>
+                <h2 className="display-6 fw-bold mb-4">Kirim <span className="text-gradient-blue">Pesan</span></h2>
+                <p className="text-muted mb-5">
+                  Isi formulir berikut dan kami akan segera merespons pertanyaan Anda
+                </p>
+                
                 <form onSubmit={handleSubmit}>
                   <div className="row g-3 mb-4">
                     <div className="col-md-6">
@@ -623,6 +590,7 @@ const About = () => {
                       </div>
                     </div>
                   </div>
+                  
                   <div className="mb-4">
                     <div className="form-floating">
                       <input
@@ -637,6 +605,7 @@ const About = () => {
                       <label htmlFor="subject">Subjek Pesan</label>
                     </div>
                   </div>
+                  
                   <div className="mb-4">
                     <div className="form-floating">
                       <textarea
@@ -651,9 +620,10 @@ const About = () => {
                       <label htmlFor="message">Pesan Anda</label>
                     </div>
                   </div>
+                  
                   <motion.button
                     type="submit"
-                    className="btn btn-primary btn-lg w-100 py-3 rounded-pill shadow"
+                    className="btn btn-primary btn-lg w-100 py-3 rounded-pill fw-bold"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

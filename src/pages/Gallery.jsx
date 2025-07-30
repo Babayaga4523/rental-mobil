@@ -583,7 +583,8 @@ const Gallery = () => {
               </div>
               <div className="mt-3 text-center text-muted">
                 <FaMapMarkerAlt className="me-1" />
-                Jl. Contoh Raya No. 123, Jakarta Selatan, Indonesia
+                Jl. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo
+Jawa Tengah 57164
               </div>
             </Col>
           </Row>

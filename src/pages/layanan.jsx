@@ -44,7 +44,7 @@ const Layanan = () => {
   const [filterKapasitas, setFilterKapasitas] = useState("");
   const [filterPromo, setFilterPromo] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [selectedCar] = useState(null);
+  const [selectedCar, setSelectedCar] = useState(null);
   const [compareList, setCompareList] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [favoritIds, setFavoritIds] = useState([]);
@@ -84,7 +84,6 @@ const Layanan = () => {
 
   useEffect(() => {
     if (layanan.length > 0) {
-      // Ambil 3 mobil dengan jumlah_review terbanyak
       const sorted = [...layanan].sort((a, b) => (b.jumlah_review || 0) - (a.jumlah_review || 0));
       setFavoritIds(sorted.slice(0, 3).map(c => c.id));
     }
@@ -129,22 +128,17 @@ const Layanan = () => {
     });
   };
 
+  const openQuickView = (car) => {
+    setSelectedCar(car);
+    setShowModal(true);
+  };
+
   return (
     <div className="layanan-page">
-      {/* Futuristic Hero Section */}
+      {/* Premium Hero Section */}
       <section className="hero-section position-relative overflow-hidden">
-        <div className="hero-overlay"></div>
-        <div className="particles-container">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className="particle" style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 10 + 5}px`,
-              height: `${Math.random() * 10 + 5}px`,
-              animationDelay: `${Math.random() * 5}s`
-            }}></div>
-          ))}
-        </div>
+        <div className="hero-gradient-overlay"></div>
+        <div className="hero-pattern"></div>
         
         <div className="container h-100 position-relative z-index-1">
           <div className="row h-100 align-items-center">
@@ -192,7 +186,7 @@ const Layanan = () => {
       {/* Floating Search and Filter Bar */}
       <section className="search-filter-bar sticky-top" data-aos="fade-down">
         <div className="container">
-          <div className="search-filter-container">
+          <div className="search-filter-container glassmorphism">
             <div className="search-box">
               <i className="fas fa-search"></i>
               <input
@@ -235,7 +229,7 @@ const Layanan = () => {
             <h2 className="section-title">Armada Kami</h2>
             <p className="section-subtitle">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
             
-            <div className="info-alert" data-aos="fade-up" data-aos-delay="100">
+            <div className="info-alert glassmorphism" data-aos="fade-up" data-aos-delay="100">
               <i className="fas fa-user-tie"></i>
               <div>
                 <strong>Semua layanan rental sudah termasuk supir profesional.</strong>
@@ -245,7 +239,7 @@ const Layanan = () => {
           </div>
 
           {/* Additional Info */}
-          <div className="info-card" data-aos="fade-up" data-aos-delay="100">
+          <div className="info-card glassmorphism" data-aos="fade-up" data-aos-delay="100">
             <i className="fas fa-info-circle"></i>
             <div>
               <strong>Layanan ini khusus untuk rental dalam kota (Jabodetabek).</strong>
@@ -258,47 +252,62 @@ const Layanan = () => {
           </div>
 
           {/* Sorting and Filtering Controls */}
-          <div className="filter-controls" data-aos="fade-up">
+          <div className="filter-controls glassmorphism" data-aos="fade-up">
             <div className="filter-group">
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                <option value="terbaru">Terbaru</option>
-                <option value="harga_asc">Harga Termurah</option>
-                <option value="harga_desc">Harga Termahal</option>
-                <option value="rating">Rating Tertinggi</option>
-              </select>
+              <div className="select-wrapper">
+                <i className="fas fa-sort"></i>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                  <option value="terbaru">Terbaru</option>
+                  <option value="harga_asc">Harga Termurah</option>
+                  <option value="harga_desc">Harga Termahal</option>
+                  <option value="rating">Rating Tertinggi</option>
+                </select>
+              </div>
               
-              <select value={filterTransmisi} onChange={e => setFilterTransmisi(e.target.value)}>
-                <option value="">Semua Transmisi</option>
-                <option value="Automatic">Automatic</option>
-                <option value="Manual">Manual</option>
-              </select>
+              <div className="select-wrapper">
+                <i className="fas fa-cogs"></i>
+                <select value={filterTransmisi} onChange={e => setFilterTransmisi(e.target.value)}>
+                  <option value="">Semua Transmisi</option>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Manual">Manual</option>
+                </select>
+              </div>
               
-              <select value={filterKapasitas} onChange={e => setFilterKapasitas(e.target.value)}>
-                <option value="">Semua Kapasitas</option>
-                <option value="4">4 Orang</option>
-                <option value="6">6 Orang</option>
-                <option value="8">8 Orang</option>
-              </select>
+              <div className="select-wrapper">
+                <i className="fas fa-users"></i>
+                <select value={filterKapasitas} onChange={e => setFilterKapasitas(e.target.value)}>
+                  <option value="">Semua Kapasitas</option>
+                  <option value="4">4 Orang</option>
+                  <option value="6">6 Orang</option>
+                  <option value="8">8 Orang</option>
+                </select>
+              </div>
               
-              <select value={filterPromo} onChange={e => setFilterPromo(e.target.value)}>
-                <option value="">Semua Promo</option>
-                <option value="promo">Ada Promo</option>
-                <option value="no_promo">Tanpa Promo</option>
-              </select>
+              <div className="select-wrapper">
+                <i className="fas fa-percentage"></i>
+                <select value={filterPromo} onChange={e => setFilterPromo(e.target.value)}>
+                  <option value="">Semua Promo</option>
+                  <option value="promo">Ada Promo</option>
+                  <option value="no_promo">Tanpa Promo</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* Loading State */}
           {loading && (
-            <div className="loading-state" data-aos="zoom-in">
-              <div className="spinner"></div>
+            <div className="loading-state glassmorphism" data-aos="zoom-in">
+              <div className="spinner">
+                <div className="double-bounce1"></div>
+                <div className="double-bounce2"></div>
+              </div>
               <p>Memuat data mobil...</p>
             </div>
           )}
 
           {/* Error State */}
           {error && (
-            <div className="error-state" data-aos="zoom-in">
+            <div className="error-state glassmorphism" data-aos="zoom-in">
               <i className="fas fa-exclamation-triangle"></i>
               <h4>Oops! Terjadi Kesalahan</h4>
               <p>{error}</p>
@@ -315,14 +324,13 @@ const Layanan = () => {
                 <div className="car-grid">
                   {sortedAndFilteredLayanan.map((car, index) => (
                     <motion.div
-                      className="car-card d-flex flex-column h-100"
+                      className="car-card glassmorphism"
                       key={car.id}
                       data-aos="fade-up"
                       data-aos-delay={(index % 4) * 100}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       whileHover={{ y: -10, scale: 1.02 }}
-                      style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
                     >
                       {/* Favorite and Compare Badges */}
                       {favoritIds.includes(car.id) && (
@@ -333,10 +341,12 @@ const Layanan = () => {
                       <div className="compare-checkbox">
                         <input
                           type="checkbox"
+                          id={`compare-${car.id}`}
                           checked={!!compareList.find(c => c.id === car.id)}
                           onChange={() => toggleCompare(car)}
                           title="Bandingkan mobil ini"
                         />
+                        <label htmlFor={`compare-${car.id}`}></label>
                       </div>
 
                       {/* Car Image */}
@@ -345,9 +355,10 @@ const Layanan = () => {
                           src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
                           alt={car.nama}
                           className="car-image"
+                          onClick={() => openQuickView(car)}
                         />
                         {/* Status and Promo Badges */}
-                        <div className="status-badge">
+                        <div className={`status-badge ${car.status === "available" ? "available" : "rented"}`}>
                           {car.status === "available" ? "Tersedia" : "Sedang Disewa"}
                         </div>
                         {car.promo && car.promo > 0 && (
@@ -358,9 +369,9 @@ const Layanan = () => {
                       </div>
 
                       {/* Car Info */}
-                      <div className="car-info d-flex flex-column flex-grow-1">
+                      <div className="car-info">
                         <div className="car-header">
-                          <h3>{car.nama}</h3>
+                          <h3 onClick={() => openQuickView(car)}>{car.nama}</h3>
                           <span className="category-badge">{car.kategori}</span>
                         </div>
                         <div className="car-features">
@@ -393,12 +404,18 @@ const Layanan = () => {
                           )}
                           <span className="price-label">/hari</span>
                         </div>
-                        <div className="mt-auto">
+                        <div className="car-actions">
+                          <button
+                            className="quick-view-button"
+                            onClick={() => openQuickView(car)}
+                          >
+                            <i className="fas fa-eye"></i> Quick View
+                          </button>
                           <button
                             className="book-button"
                             onClick={() => navigate(`/detail/${car.id}`)}
                           >
-                            <i className="fas fa-calendar-check"></i> Pesan Sekarang
+                            <i className="fas fa-calendar-check"></i> Pesan
                           </button>
                         </div>
                       </div>
@@ -406,7 +423,7 @@ const Layanan = () => {
                   ))}
                 </div>
               ) : (
-                <div className="empty-state" data-aos="zoom-in">
+                <div className="empty-state glassmorphism" data-aos="zoom-in">
                   <i className="fas fa-car-crash"></i>
                   <h4>Tidak Ditemukan</h4>
                   <p>Tidak ada mobil yang sesuai dengan pencarian Anda</p>
@@ -431,10 +448,19 @@ const Layanan = () => {
 
           {/* Compare Section */}
           {compareList.length >= 2 && (
-            <div className="compare-bar">
+            <motion.div 
+              className="compare-bar glassmorphism"
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
               <div className="compare-items">
                 {compareList.map(c => (
                   <span key={c.id} className="compare-item">
+                    <img 
+                      src={c.gambar ? (c.gambar.startsWith("http") ? c.gambar : BACKEND_URL + c.gambar) : "/images/default-car.jpg"}
+                      alt={c.nama}
+                    />
                     {c.nama}
                     <button onClick={() => toggleCompare(c)}>
                       <i className="fas fa-times"></i>
@@ -444,41 +470,60 @@ const Layanan = () => {
               </div>
               <div className="compare-actions">
                 <button className="compare-button" onClick={() => setShowCompareModal(true)}>
-                  Bandingkan ({compareList.length})
+                  <i className="fas fa-exchange-alt"></i> Bandingkan ({compareList.length})
                 </button>
                 <button className="reset-button" onClick={() => setCompareList([])}>
-                  Reset
+                  <i className="fas fa-trash"></i> Reset
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
 
       {/* Quick View Modal */}
-      {selectedCar && (
-        <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="car-modal">
-          <Modal.Header closeButton>
-            <Modal.Title>{selectedCar.nama}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="car-modal">
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedCar?.nama}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedCar && (
             <div className="modal-content">
               <div className="modal-image">
                 <img
                   src={selectedCar.gambar ? (selectedCar.gambar.startsWith("http") ? selectedCar.gambar : BACKEND_URL + selectedCar.gambar) : "/images/default-car.jpg"}
                   alt={selectedCar.nama}
                 />
+                <div className="image-badges">
+                  <div className={`status-badge ${selectedCar.status === "available" ? "available" : "rented"}`}>
+                    {selectedCar.status === "available" ? "Tersedia" : "Sedang Disewa"}
+                  </div>
+                  {selectedCar.promo && selectedCar.promo > 0 && (
+                    <div className="promo-badge">
+                      <i className="fas fa-bolt"></i> {selectedCar.promo}% OFF
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="modal-details">
                 <div className="detail-section">
+                  <h5>Deskripsi</h5>
+                  <p className="car-description">{selectedCar.deskripsi || "Tidak ada deskripsi tersedia."}</p>
+                </div>
+                
+                <div className="detail-section">
                   <h5>Fitur Utama</h5>
                   <div className="features-grid">
-                    {getFiturList(selectedCar.fitur).map((f, i) => (
-                      <div key={i} className="feature-item">
-                        {featureIcons[f] || <i className="fas fa-check"></i>}
-                        {f}
-                      </div>
-                    ))}
+                    {selectedCar.fitur && Array.isArray(selectedCar.fitur) ? (
+                      selectedCar.fitur.map((f, i) => (
+                        <div key={i} className="feature-item">
+                          {featureIcons[f] || <i className="fas fa-check"></i>}
+                          {f}
+                        </div>
+                      ))
+                    ) : (
+                      <p>Tidak ada fitur spesifik tersedia.</p>
+                    )}
                   </div>
                 </div>
                 
@@ -537,29 +582,37 @@ const Layanan = () => {
                   )}
                 </div>
                 
-                <button
-                  className="book-button"
-                  onClick={() => {
-                    setShowModal(false);
-                    navigate(`/detail/${selectedCar.id}`);
-                  }}
-                >
-                  <i className="fas fa-calendar-check"></i> Pesan Sekarang
-                </button>
+                <div className="modal-actions">
+                  <button
+                    className="quick-book-button"
+                    onClick={() => {
+                      setShowModal(false);
+                      navigate(`/detail/${selectedCar.id}`);
+                    }}
+                  >
+                    <i className="fas fa-calendar-check"></i> Pesan Sekarang
+                  </button>
+                  <button
+                    className={`compare-toggle-button ${compareList.find(c => c.id === selectedCar.id) ? 'active' : ''}`}
+                    onClick={() => toggleCompare(selectedCar)}
+                  >
+                    <i className="fas fa-exchange-alt"></i> {compareList.find(c => c.id === selectedCar.id) ? 'Hapus dari' : 'Tambahkan ke'} Perbandingan
+                  </button>
+                </div>
               </div>
             </div>
-          </Modal.Body>
-        </Modal>
-      )}
+          )}
+        </Modal.Body>
+      </Modal>
 
       {/* Compare Modal */}
-      <Modal show={showCompareModal} onHide={() => setShowCompareModal(false)} size="lg" centered className="compare-modal">
+      <Modal show={showCompareModal} onHide={() => setShowCompareModal(false)} size="xl" centered className="compare-modal">
         <Modal.Header closeButton>
           <Modal.Title>Perbandingan Mobil</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="comparison-table">
-            <table>
+          <div className="comparison-table-container">
+            <table className="comparison-table">
               <thead>
                 <tr>
                   <th>Fitur</th>
@@ -571,13 +624,19 @@ const Layanan = () => {
                           alt={car.nama}
                         />
                         <span>{car.nama}</span>
+                        <button 
+                          className="remove-compare"
+                          onClick={() => toggleCompare(car)}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
                       </div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr className="highlight-row">
                   <td>Harga</td>
                   {compareList.map(car => (
                     <td key={car.id}>
@@ -585,9 +644,13 @@ const Layanan = () => {
                         <>
                           <span className="original-price">Rp {car.harga?.toLocaleString('id-ID')}</span>
                           <span className="discounted-price">Rp {getHargaSetelahPromo(car).toLocaleString('id-ID')}</span>
+                          <span className="price-label">/hari</span>
                         </>
                       ) : (
-                        <span className="current-price">Rp {car.harga?.toLocaleString('id-ID')}</span>
+                        <>
+                          <span className="current-price">Rp {car.harga?.toLocaleString('id-ID')}</span>
+                          <span className="price-label">/hari</span>
+                        </>
                       )}
                     </td>
                   ))}
@@ -604,10 +667,12 @@ const Layanan = () => {
                     </td>
                   ))}
                 </tr>
-                <tr>
+                <tr className="highlight-row">
                   <td>Kategori</td>
                   {compareList.map(car => (
-                    <td key={car.id}>{car.kategori}</td>
+                    <td key={car.id}>
+                      <span className="category-badge">{car.kategori}</span>
+                    </td>
                   ))}
                 </tr>
                 <tr>
@@ -616,10 +681,12 @@ const Layanan = () => {
                     <td key={car.id}>{car.transmisi}</td>
                   ))}
                 </tr>
-                <tr>
+                <tr className="highlight-row">
                   <td>Kapasitas</td>
                   {compareList.map(car => (
-                    <td key={car.id}>{car.kapasitas} Orang</td>
+                    <td key={car.id}>
+                      <i className="fas fa-users"></i> {car.kapasitas} Orang
+                    </td>
                   ))}
                 </tr>
                 <tr>
@@ -642,18 +709,48 @@ const Layanan = () => {
                     </td>
                   ))}
                 </tr>
+                <tr className="highlight-row">
+                  <td>Status</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>
+                      <span className={`status-label ${car.status === "available" ? "available" : "rented"}`}>
+                        {car.status === "available" ? "Tersedia" : "Sedang Disewa"}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
                 <tr>
                   <td>Fitur</td>
                   {compareList.map(car => (
                     <td key={car.id}>
-                      <ul>
-                        {getFiturList(car.fitur).map((f, i) => (
-                          <li key={i}>
-                            {featureIcons[f] || <i className="fas fa-check"></i>}
-                            {f}
-                          </li>
-                        ))}
+                      <ul className="feature-list">
+                        {car.fitur && Array.isArray(car.fitur) ? (
+                          car.fitur.map((f, i) => (
+                            <li key={i}>
+                              {featureIcons[f] || <i className="fas fa-check"></i>}
+                              {f}
+                            </li>
+                          ))
+                        ) : (
+                          <li>Tidak ada fitur spesifik</li>
+                        )}
                       </ul>
+                    </td>
+                  ))}
+                </tr>
+                <tr className="action-row">
+                  <td>Aksi</td>
+                  {compareList.map(car => (
+                    <td key={car.id}>
+                      <button
+                        className="book-from-compare"
+                        onClick={() => {
+                          setShowCompareModal(false);
+                          navigate(`/detail/${car.id}`);
+                        }}
+                      >
+                        <i className="fas fa-calendar-check"></i> Pesan
+                      </button>
                     </td>
                   ))}
                 </tr>
