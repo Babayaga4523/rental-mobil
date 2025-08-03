@@ -362,25 +362,25 @@ const About = () => {
           <div className="row g-4">
             {[
               {
-                name: "Budi Santoso",
+                name: "Muhammad Rizky Falih",
                 role: "Business Traveler",
                 quote: "Pelayanan sangat profesional, mobil selalu dalam kondisi prima. Sudah 5 tahun menggunakan jasa Rental Mobil HS untuk kebutuhan bisnis.",
                 rating: 5,
-                image: "/images/testi-1.jpg"
+                image: "/images/iki.jpg"
               },
               {
-                name: "Anita Wijaya",
+                name: "Akhmal Ramadhan",
                 role: "Family Vacation",
                 quote: "Supirnya sangat ramah dan sabar, mobil nyaman untuk perjalanan keluarga. Harga juga sangat kompetitif untuk kualitas yang diberikan.",
                 rating: 5,
-                image: "/images/testi-2.jpg"
+                image: "/images/male.jpg"
               },
               {
-                name: "Rudi Hermawan",
+                name: "Aji Candra Saputra",
                 role: "Corporate Client",
                 quote: "Kami menggunakan layanan mereka untuk kebutuhan transportasi tamu perusahaan. Selalu tepat waktu dan memberikan kesan profesional.",
                 rating: 4,
-                image: "/images/testi-3.jpg"
+                image: "/images/aji.jpg"
               }
             ].map((testimonial, index) => (
               <div className="col-lg-4" key={index}>
@@ -396,9 +396,7 @@ const About = () => {
                     <img 
                       src={testimonial.image} 
                       alt={testimonial.name} 
-                      className="rounded-circle me-3" 
-                      width="60" 
-                      height="60"
+                      className="testimonial-photo me-3"
                     />
                     <div>
                       <h5 className="fw-bold mb-1">{testimonial.name}</h5>
@@ -490,8 +488,8 @@ const About = () => {
                 
                 <div className="d-flex flex-column gap-4">
                   <div className="d-flex align-items-start gap-3">
-                    <div className="icon-md bg-primary bg-opacity-10 text-primary rounded-3 flex-shrink-0">
-                      <FaMapMarkerAlt />
+                    <div className="icon-md bg-primary-soft text-primary rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                      <FaMapMarkerAlt className="fs-4" />
                     </div>
                     <div>
                       <h5 className="fw-bold mb-2">Alamat Kantor</h5>
@@ -502,8 +500,8 @@ const About = () => {
                   </div>
                   
                   <div className="d-flex align-items-start gap-3">
-                    <div className="icon-md bg-success bg-opacity-10 text-success rounded-3 flex-shrink-0">
-                      <FaPhoneAlt />
+                    <div className="icon-md bg-success-soft text-success rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                      <FaPhoneAlt className="fs-4" />
                     </div>
                     <div>
                       <h5 className="fw-bold mb-2">Telepon/WhatsApp</h5>
@@ -512,34 +510,12 @@ const About = () => {
                   </div>
                   
                   <div className="d-flex align-items-start gap-3">
-                    <div className="icon-md bg-warning bg-opacity-10 text-warning rounded-3 flex-shrink-0">
-                      <FaEnvelope />
+                    <div className="icon-md bg-warning-soft text-warning rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                      <FaEnvelope className="fs-4" />
                     </div>
                     <div>
                       <h5 className="fw-bold mb-2">Email</h5>
                       <p className="text-muted mb-0">rentalhs591@gmail.com</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-2">
-                    <h5 className="fw-bold mb-3">Ikuti Kami</h5>
-                    <div className="d-flex gap-3">
-                      {[
-                        { icon: <FaFacebook />, name: "Facebook", color: "primary" },
-                        { icon: <FaInstagram />, name: "Instagram", color: "danger" },
-                        { icon: <FaTwitter />, name: "Twitter", color: "info" },
-                        { icon: <FaLinkedin />, name: "LinkedIn", color: "primary" }
-                      ].map((social, index) => (
-                        <motion.a
-                          key={index}
-                          href="#"
-                          className={`icon-md bg-${social.color}-soft text-${social.color} rounded-3 d-flex align-items-center justify-content-center`}
-                          whileHover={{ y: -3, scale: 1.1 }}
-                          aria-label={social.name}
-                        >
-                          {social.icon}
-                        </motion.a>
-                      ))}
                     </div>
                   </div>
                 </div>

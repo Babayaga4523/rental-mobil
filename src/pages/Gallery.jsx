@@ -609,26 +609,7 @@ Jawa Tengah 57164
         </Container>
       </section>
 
-      {/* CTA SECTION */}
-      <section className="py-5 bg-gold text-center">
-        <Container>
-          <h2 className="fw-bold mb-3 text-white">
-            <FaCheckCircle className="me-2" />
-            Siap Berangkat? Booking Mobil Sekarang!
-          </h2>
-          <Button
-            variant="light"
-            size="lg"
-            className="fw-bold px-5 py-3 rounded-pill"
-            href="https://wa.me/6281381339149"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FaPhoneAlt className="me-2" />
-            Chat Admin & Booking
-          </Button>
-        </Container>
-      </section>
+      
     </div>
   );
 };

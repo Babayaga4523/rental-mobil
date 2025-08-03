@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -48,13 +48,14 @@ const Layanan = () => {
   const [compareList, setCompareList] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [favoritIds, setFavoritIds] = useState([]);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
 
   const categories = [
-    { key: "All", label: "Semua", icon: "fa-th-large" },
+    { key: "All", label: "Semua", icon: "fa-grid" },
     { key: "SUV", label: "SUV", icon: "fa-car" },
     { key: "MPV", label: "MPV", icon: "fa-shuttle-van" },
-    { key: "Van", label: "Van", icon: "fa-bus" },
+    { key: "Van", label: "Van", icon: "fa-van-shuttle" },
     { key: "Bus", label: "Bus", icon: "fa-bus" },
   ];
 
@@ -80,6 +81,12 @@ const Layanan = () => {
     };
 
     fetchLayanan();
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -115,7 +122,7 @@ const Layanan = () => {
       case "rating":
         return (b.rating || 0) - (a.rating || 0);
       default:
-        return 0;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     }
   });
 
@@ -139,6 +146,18 @@ const Layanan = () => {
       <section className="hero-section position-relative overflow-hidden">
         <div className="hero-gradient-overlay"></div>
         <div className="hero-pattern"></div>
+        <div className="hero-particles">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className="particle" style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 10 + 2}px`,
+              height: `${Math.random() * 10 + 2}px`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${Math.random() * 10 + 10}s`
+            }}></div>
+          ))}
+        </div>
         
         <div className="container h-100 position-relative z-index-1">
           <div className="row h-100 align-items-center">
@@ -184,7 +203,13 @@ const Layanan = () => {
       </section>
 
       {/* Floating Search and Filter Bar */}
-      <section className="search-filter-bar sticky-top" data-aos="fade-down">
+      <motion.section 
+        className={`search-filter-bar sticky-top ${isScrolled ? 'scrolled' : ''}`}
+        data-aos="fade-down"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
         <div className="container">
           <div className="search-filter-container glassmorphism">
             <div className="search-box">
@@ -220,26 +245,52 @@ const Layanan = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Main Content Section */}
       <section id="layanan-section" className="main-content py-5">
         <div className="container">
           <div className="section-header text-center mb-5" data-aos="fade-up">
-            <h2 className="section-title">Armada Kami</h2>
-            <p className="section-subtitle">Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda</p>
+            <motion.h2 
+              className="section-title"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Armada <span className="text-gradient">Premium</span> Kami
+            </motion.h2>
+            <motion.p 
+              className="section-subtitle"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              Pilihan mobil terbaik untuk setiap kebutuhan perjalanan Anda
+            </motion.p>
             
-            <div className="info-alert glassmorphism" data-aos="fade-up" data-aos-delay="100">
+            <motion.div 
+              className="info-alert glassmorphism" 
+              data-aos="fade-up" 
+              data-aos-delay="100"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+            >
               <i className="fas fa-user-tie"></i>
               <div>
                 <strong>Semua layanan rental sudah termasuk supir profesional.</strong>
                 <span className="highlight">Tidak melayani lepas kunci (self-drive).</span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Additional Info */}
-          <div className="info-card glassmorphism" data-aos="fade-up" data-aos-delay="100">
+          <motion.div 
+            className="info-card glassmorphism" 
+            data-aos="fade-up" 
+            data-aos-delay="100"
+            initial={{ x: -20 }}
+            animate={{ x: 0 }}
+          >
             <i className="fas fa-info-circle"></i>
             <div>
               <strong>Layanan ini khusus untuk rental dalam kota (Jabodetabek).</strong>
@@ -249,10 +300,15 @@ const Layanan = () => {
               </a>{' '}
               untuk konsultasi & penawaran terbaik!
             </div>
-          </div>
+          </motion.div>
 
           {/* Sorting and Filtering Controls */}
-          <div className="filter-controls glassmorphism" data-aos="fade-up">
+          <motion.div 
+            className="filter-controls glassmorphism" 
+            data-aos="fade-up"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+          >
             <div className="filter-group">
               <div className="select-wrapper">
                 <i className="fas fa-sort"></i>
@@ -262,6 +318,7 @@ const Layanan = () => {
                   <option value="harga_desc">Harga Termahal</option>
                   <option value="rating">Rating Tertinggi</option>
                 </select>
+                <i className="fas fa-chevron-down select-arrow"></i>
               </div>
               
               <div className="select-wrapper">
@@ -271,6 +328,7 @@ const Layanan = () => {
                   <option value="Automatic">Automatic</option>
                   <option value="Manual">Manual</option>
                 </select>
+                <i className="fas fa-chevron-down select-arrow"></i>
               </div>
               
               <div className="select-wrapper">
@@ -281,6 +339,7 @@ const Layanan = () => {
                   <option value="6">6 Orang</option>
                   <option value="8">8 Orang</option>
                 </select>
+                <i className="fas fa-chevron-down select-arrow"></i>
               </div>
               
               <div className="select-wrapper">
@@ -290,31 +349,42 @@ const Layanan = () => {
                   <option value="promo">Ada Promo</option>
                   <option value="no_promo">Tanpa Promo</option>
                 </select>
+                <i className="fas fa-chevron-down select-arrow"></i>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Loading State */}
           {loading && (
-            <div className="loading-state glassmorphism" data-aos="zoom-in">
+            <motion.div 
+              className="loading-state glassmorphism" 
+              data-aos="zoom-in"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <div className="spinner">
                 <div className="double-bounce1"></div>
                 <div className="double-bounce2"></div>
               </div>
               <p>Memuat data mobil...</p>
-            </div>
+            </motion.div>
           )}
 
           {/* Error State */}
           {error && (
-            <div className="error-state glassmorphism" data-aos="zoom-in">
+            <motion.div 
+              className="error-state glassmorphism" 
+              data-aos="zoom-in"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+            >
               <i className="fas fa-exclamation-triangle"></i>
               <h4>Oops! Terjadi Kesalahan</h4>
               <p>{error}</p>
               <button onClick={() => window.location.reload()}>
                 <i className="fas fa-sync-alt"></i> Coba Lagi
               </button>
-            </div>
+            </motion.div>
           )}
 
           {/* Car Grid */}
@@ -328,9 +398,10 @@ const Layanan = () => {
                       key={car.id}
                       data-aos="fade-up"
                       data-aos-delay={(index % 4) * 100}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
                       whileHover={{ y: -10, scale: 1.02 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
                     >
                       {/* Favorite and Compare Badges */}
                       {favoritIds.includes(car.id) && (
@@ -405,25 +476,34 @@ const Layanan = () => {
                           <span className="price-label">/hari</span>
                         </div>
                         <div className="car-actions">
-                          <button
+                          <motion.button
                             className="quick-view-button"
                             onClick={() => openQuickView(car)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                           >
                             <i className="fas fa-eye"></i> Quick View
-                          </button>
-                          <button
+                          </motion.button>
+                          <motion.button
                             className="book-button"
                             onClick={() => navigate(`/detail/${car.id}`)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                           >
                             <i className="fas fa-calendar-check"></i> Pesan
-                          </button>
+                          </motion.button>
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className="empty-state glassmorphism" data-aos="zoom-in">
+                <motion.div 
+                  className="empty-state glassmorphism" 
+                  data-aos="zoom-in"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                >
                   <i className="fas fa-car-crash"></i>
                   <h4>Tidak Ditemukan</h4>
                   <p>Tidak ada mobil yang sesuai dengan pencarian Anda</p>
@@ -438,46 +518,81 @@ const Layanan = () => {
                       setFilterPromo("");
                     }}
                     whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <i className="fas fa-redo"></i> Reset Pencarian
                   </motion.button>
-                </div>
+                </motion.div>
               )}
             </>
           )}
 
           {/* Compare Section */}
-          {compareList.length >= 2 && (
-            <motion.div 
-              className="compare-bar glassmorphism"
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <div className="compare-items">
-                {compareList.map(c => (
-                  <span key={c.id} className="compare-item">
-                    <img 
-                      src={c.gambar ? (c.gambar.startsWith("http") ? c.gambar : BACKEND_URL + c.gambar) : "/images/default-car.jpg"}
-                      alt={c.nama}
-                    />
-                    {c.nama}
-                    <button onClick={() => toggleCompare(c)}>
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="compare-actions">
-                <button className="compare-button" onClick={() => setShowCompareModal(true)}>
-                  <i className="fas fa-exchange-alt"></i> Bandingkan ({compareList.length})
-                </button>
-                <button className="reset-button" onClick={() => setCompareList([])}>
-                  <i className="fas fa-trash"></i> Reset
-                </button>
-              </div>
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {compareList.length >= 2 && (
+              <motion.div 
+                className="compare-container"
+                initial={{ y: 80, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 80, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                <div className="compare-content">
+                  <div className="compare-items-wrapper">
+                    <div className="compare-items">
+                      {compareList.map(c => (
+                        <motion.div
+                          key={c.id}
+                          className="compare-item"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <div className="compare-item-image">
+                            <img 
+                              src={c.gambar ? (c.gambar.startsWith("http") ? c.gambar : BACKEND_URL + c.gambar) : "/images/default-car.jpg"}
+                              alt={c.nama}
+                              loading="lazy"
+                            />
+                            <button 
+                              className="remove-button"
+                              onClick={() => toggleCompare(c)}
+                              aria-label={`Hapus ${c.nama} dari perbandingan`}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                          <div className="compare-item-name">{c.nama}</div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="compare-actions">
+                    <motion.button
+                      className="action-button compare"
+                      onClick={() => setShowCompareModal(true)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <i className="fas fa-exchange-alt"></i>
+                      <span>Bandingkan ({compareList.length})</span>
+                    </motion.button>
+                    
+                    <motion.button
+                      className="action-button reset"
+                      onClick={() => setCompareList([])}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <i className="fas fa-trash"></i>
+                      <span>Reset</span>
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
@@ -516,10 +631,14 @@ const Layanan = () => {
                   <div className="features-grid">
                     {selectedCar.fitur && Array.isArray(selectedCar.fitur) ? (
                       selectedCar.fitur.map((f, i) => (
-                        <div key={i} className="feature-item">
+                        <motion.div 
+                          key={i} 
+                          className="feature-item"
+                          whileHover={{ scale: 1.05 }}
+                        >
                           {featureIcons[f] || <i className="fas fa-check"></i>}
                           {f}
-                        </div>
+                        </motion.div>
                       ))
                     ) : (
                       <p>Tidak ada fitur spesifik tersedia.</p>
@@ -530,34 +649,46 @@ const Layanan = () => {
                 <div className="detail-section">
                   <h5>Spesifikasi</h5>
                   <div className="specs-grid">
-                    <div className="spec-item">
+                    <motion.div 
+                      className="spec-item"
+                      whileHover={{ y: -3 }}
+                    >
                       <i className="fas fa-tag"></i>
                       <div>
                         <span>Kategori</span>
                         <strong>{selectedCar.kategori}</strong>
                       </div>
-                    </div>
-                    <div className="spec-item">
+                    </motion.div>
+                    <motion.div 
+                      className="spec-item"
+                      whileHover={{ y: -3 }}
+                    >
                       <i className="fas fa-cogs"></i>
                       <div>
                         <span>Transmisi</span>
                         <strong>{selectedCar.transmisi}</strong>
                       </div>
-                    </div>
-                    <div className="spec-item">
+                    </motion.div>
+                    <motion.div 
+                      className="spec-item"
+                      whileHover={{ y: -3 }}
+                    >
                       <i className="fas fa-users"></i>
                       <div>
                         <span>Kapasitas</span>
                         <strong>{selectedCar.kapasitas} Orang</strong>
                       </div>
-                    </div>
-                    <div className="spec-item">
+                    </motion.div>
+                    <motion.div 
+                      className="spec-item"
+                      whileHover={{ y: -3 }}
+                    >
                       <i className="fas fa-star"></i>
                       <div>
                         <span>Rating</span>
                         <strong>{selectedCar.rating || 'Baru'}</strong>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
                 
@@ -583,21 +714,25 @@ const Layanan = () => {
                 </div>
                 
                 <div className="modal-actions">
-                  <button
+                  <motion.button
                     className="quick-book-button"
                     onClick={() => {
                       setShowModal(false);
                       navigate(`/detail/${selectedCar.id}`);
                     }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <i className="fas fa-calendar-check"></i> Pesan Sekarang
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     className={`compare-toggle-button ${compareList.find(c => c.id === selectedCar.id) ? 'active' : ''}`}
                     onClick={() => toggleCompare(selectedCar)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <i className="fas fa-exchange-alt"></i> {compareList.find(c => c.id === selectedCar.id) ? 'Hapus dari' : 'Tambahkan ke'} Perbandingan
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </div>
@@ -742,15 +877,16 @@ const Layanan = () => {
                   <td>Aksi</td>
                   {compareList.map(car => (
                     <td key={car.id}>
-                      <button
+                      <motion.button
                         className="book-from-compare"
                         onClick={() => {
                           setShowCompareModal(false);
                           navigate(`/detail/${car.id}`);
                         }}
+                        whileHover={{ scale: 1.05 }}
                       >
                         <i className="fas fa-calendar-check"></i> Pesan
-                      </button>
+                      </motion.button>
                     </td>
                   ))}
                 </tr>

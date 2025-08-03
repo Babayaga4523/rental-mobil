@@ -25,7 +25,7 @@ const Footer = () => {
       <div className="container py-5">
         <div className="row g-4">
           {/* Company Info */}
-          <div className="col-md-4">
+          <div className="col-md-5">
             <div className="footer-brand">
               <h3 className="text-white mb-3">
                 <span className="logo-icon">🚗</span> Rental Mobil
@@ -36,45 +36,33 @@ const Footer = () => {
               <div className="footer-contact">
                 <p>
                   <FontAwesomeIcon icon={faMapMarkerAlt} className="me-2" />
-                  Jl. Contoh No. 123, Jakarta
+                  Jl. Watugajah Jl. Widyapura No.7, Dusun I, Singopuran, Kec. Kartasura, Kabupaten Sukoharjo, Jawa Tengah 57164
                 </p>
                 <p>
                   <FontAwesomeIcon icon={faPhone} className="me-2" />
-                  +62 812-3456-7890
+                  08170455544
                 </p>
                 <p>
                   <FontAwesomeIcon icon={faEnvelope} className="me-2" />
-                  info@rentalmobil.com
+                  rentalhs591@gmail.com
                 </p>
               </div>
             </div>
           </div>
 
           {/* Quick Links */}
-          <div className="col-md-2">
+          <div className="col-md-3">
             <h5 className="footer-title">Tautan Cepat</h5>
             <ul className="footer-links">
               <li><a href="/home">Beranda</a></li>
               <li><a href="/about">Tentang Kami</a></li>
               <li><a href="/layanan">Layanan</a></li>
               <li><a href="/testimoni">Testimoni</a></li>
-             </ul>
-          </div>
-
-          {/* Services */}
-          <div className="col-md-3">
-            <h5 className="footer-title">Layanan</h5>
-            <ul className="footer-links">
-              <li><a href="/services/daily">Sewa Harian</a></li>
-              <li><a href="/services/monthly">Sewa Bulanan</a></li>
-              <li><a href="/services/wedding">Sewa Pernikahan</a></li>
-              <li><a href="/services/airport">Antar Jemput Bandara</a></li>
-              <li><a href="/services/driver">Dengan Supir</a></li>
             </ul>
           </div>
 
           {/* Social Media */}
-          <div className="col-md-3">
+          <div className="col-md-4">
             <h5 className="footer-title">Ikuti Kami</h5>
             <div className="social-icons">
               <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
@@ -93,26 +81,9 @@ const Footer = () => {
                 <FontAwesomeIcon icon={faTiktok} />
               </a>
             </div>
-
-            <div className="newsletter mt-4">
-              <h6 className="text-white mb-3">Berlangganan Newsletter</h6>
-              <div className="input-group">
-                <input 
-                  type="email" 
-                  className="form-control" 
-                  placeholder="Email Anda" 
-                  aria-label="Email"
-                />
-                <button className="btn btn-primary" type="button">
-                  Kirim
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
-
-      
     </footer>
   );
 };
