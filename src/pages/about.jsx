@@ -75,7 +75,7 @@ const About = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                Tentang <span className="text-gradient-blue">Rental Mobil HS</span>
+                Selamat Datang di <span className="text-gold">Rental Mobil HS</span>
               </motion.h1>
               
               <motion.p 

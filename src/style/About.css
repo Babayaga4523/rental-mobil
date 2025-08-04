@@ -26,10 +26,8 @@ section {
   min-height: 700px;
   display: flex;
   align-items: center;
-  /* Tambahkan gambar showroom jika ada, fallback ke gradasi */
   background: 
-    linear-gradient(135deg, rgba(139, 179, 206, 0.92) 0%, rgba(158, 146, 177, 0.92) 100%),
-    url('') center/cover no-repeat;
+    linear-gradient(135deg, #1565c0 0%, #1e88e5 100%);
   color: white;
   position: relative;
 }
@@ -44,11 +42,18 @@ section {
   text-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
+.about-hero .text-gold {
+  color: #ffd700 !important;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
 .about-hero .text-gradient-blue {
-  background: linear-gradient(90deg, #6dd5fa 0%, #3498db 100%);
+  background: linear-gradient(90deg, #ffd700 0%, #fffbe7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-weight: bold;
 }
 
 .hero-overlay {
