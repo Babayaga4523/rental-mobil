@@ -37,7 +37,7 @@ app.use(cors({
   origin: "http://localhost:3001", // atau sesuai URL frontend
   credentials: true
 }));
-app.use('/uploads', require('express').static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('uploads'));
 
 // Import routes
 const orderRoutes = require("./routes/orderRoutes");

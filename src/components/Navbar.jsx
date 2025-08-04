@@ -38,6 +38,13 @@ const Navbar = () => {
     { name: "Testimoni", path: "/testimoni" },
   ];
 
+  const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
+  const photoUrl = user?.photo
+    ? user.photo.startsWith("/uploads/")
+      ? `http://localhost:3000${user.photo}`
+      : user.photo
+    : "/images/default-avatar.png";
+
   return (
     <nav className={`navbar navbar-expand-lg fixed-top ${scrolled ? "navbar-scrolled" : ""}`}>
       <div className="container">
@@ -112,7 +119,19 @@ const Navbar = () => {
                   aria-expanded="false"
                 >
                   <div className="user-avatar me-2">
-                    <i className="fas fa-user-circle"></i>
+                    <img
+                      src={photoUrl}
+                      alt="Foto Profil"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                        border: "2px solid #e9ecef",
+                        background: "#fff"
+                      }}
+                      onError={e => { e.target.src = "/images/default-avatar.png"; }}
+                    />
                   </div>
                   <span className="d-none d-lg-inline user-name-gradient">
                     {JSON.parse(localStorage.getItem("user"))?.name || "My Account"}

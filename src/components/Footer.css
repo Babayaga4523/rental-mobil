@@ -1,12 +1,12 @@
-/* Footer Container */
-.footer-container {
-  background-color: #343a40;
-  color: white;
+/* Footer Base Styles */
+.footer {
+  background-color: #2c3e50;
+  color: #ffffff;
   position: relative;
-  margin-top: 50px;
+  margin-top: 5rem;
 }
 
-/* Wave Effect */
+/* Wave Decoration */
 .footer-wave {
   position: absolute;
   top: -100px;
@@ -14,149 +14,194 @@
   width: 100%;
   height: 100px;
   overflow: hidden;
+  color: #2c3e50; /* Controls wave color */
 }
 
 .footer-wave svg {
   width: 100%;
   height: 100%;
+  display: block;
 }
 
 /* Footer Content */
-.footer-brand .logo-icon {
-  margin-right: 10px;
-}
-
-.footer-title {
-  color: #fff;
-  font-size: 1.2rem;
-  margin-bottom: 20px;
+.footer-content {
+  padding: 4rem 0 2rem;
   position: relative;
-  padding-bottom: 10px;
 }
 
-.footer-title::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 50px;
-  height: 2px;
-  background-color: #007bff;
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
 }
 
-.footer-description {
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 20px;
-  font-size: 0.9rem;
-  line-height: 1.6;
+/* Brand Section */
+.footer-brand {
+  max-width: 350px;
 }
 
-.footer-contact p {
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 10px;
-  font-size: 0.9rem;
+.brand-logo {
   display: flex;
   align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.footer-contact svg {
-  color: #007bff;
-  width: 16px;
+.brand-logo h3 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  color: #fff;
 }
 
-/* Footer Links */
-.footer-links {
+.car-icon {
+  font-size: 2.5rem;
+}
+
+.brand-description {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.contact-item svg {
+  color: #3498db;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+/* Links Section */
+.footer-links ul {
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.footer-links li {
-  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
 .footer-links a {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   transition: all 0.3s ease;
-  display: block;
-  font-size: 0.9rem;
+  display: inline-block;
 }
 
 .footer-links a:hover {
-  color: #007bff;
-  padding-left: 5px;
+  color: #3498db;
+  transform: translateX(5px);
 }
 
-/* Social Icons */
-.social-icons {
+/* Social Media */
+.social-links {
   display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.social-icons a {
-  color: white;
-  background-color: rgba(255, 255, 255, 0.1);
-  width: 40px;
-  height: 40px;
+.social-links a {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
-.social-icons a:hover {
-  background-color: #007bff;
+.social-links a:hover {
+  background-color: #3498db;
   transform: translateY(-3px);
 }
 
+/* Section Titles */
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+  color: #fff;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 40px;
+  height: 3px;
+  background-color: #3498db;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  padding: 1.5rem 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
 /* Responsive Design */
+@media (max-width: 992px) {
+  .footer-wave {
+    top: -70px;
+    height: 70px;
+  }
+  
+  .footer-content {
+    padding: 3rem 0 2rem;
+  }
+}
+
 @media (max-width: 768px) {
   .footer-wave {
     top: -50px;
     height: 50px;
   }
   
-  .footer-title {
-    margin-top: 20px;
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
   }
   
-  .social-icons {
-    justify-content: center;
+  .section-title::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 }
 
 @media (max-width: 576px) {
-  .footer-container {
-    text-align: center;
+  .footer-wave {
+    top: -30px;
+    height: 30px;
   }
   
-  .footer-title::after {
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  
-  .footer-contact p {
+  .brand-logo {
     justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 0.5rem;
   }
   
-  .footer-links a:hover {
-    padding-left: 0;
-  }
-}
-
-/* Additional Padding for Main Content */
-.main-content,
-.content-with-footer {
-  padding-bottom: 80px; /* Atur sesuai tinggi footer + wave */
-}
-
-@media (max-width: 768px) {
-  .main-content,
-  .content-with-footer {
-    padding-bottom: 100px;
+  .social-links {
+    justify-content: center;
   }
 }

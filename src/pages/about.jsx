@@ -34,12 +34,14 @@ const About = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const phone = "6281294743876";
-    const text = `Halo Admin Rental Mobil HS!%0A%0A` +
-      `Nama: ${form.name}%0A` +
-      `Email: ${form.email}%0A` +
-      `Subjek: ${form.subject}%0A` +
+    const text = 
+      `Halo Admin Rental Mobil HS!\n\n` +
+      `Nama: ${form.name}\n` +
+      `Email: ${form.email}\n` +
+      `Subjek: ${form.subject}\n` +
       `Pesan: ${form.message}`;
-    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
   };
 
   return (
@@ -286,7 +288,6 @@ const About = () => {
           
           <div className="timeline-wrapper">
             <div className="timeline-line"></div>
-            
             {[
               { 
                 year: "2000", 
@@ -327,13 +328,13 @@ const About = () => {
                 transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <div className="timeline-content bg-white shadow-sm rounded-4 p-4 p-lg-5">
-                  <div className="timeline-year text-primary fw-bold mb-2">{item.year}</div>
-                  <div className="timeline-icon bg-primary bg-opacity-10 text-primary rounded-3 mb-3">
-                    {item.icon}
-                  </div>
-                  <h3 className="h4 fw-bold mb-3">{item.title}</h3>
-                  <p className="text-muted mb-0">{item.desc}</p>
+                <div className="timeline-icon">
+                  {item.icon}
+                </div>
+                <div className="timeline-content">
+                  <div className="timeline-year">{item.year}</div>
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -487,6 +488,7 @@ const About = () => {
                 </p>
                 
                 <div className="d-flex flex-column gap-4">
+                  {/* Alamat */}
                   <div className="d-flex align-items-start gap-3">
                     <div className="icon-md bg-primary-soft text-primary rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
                       <FaMapMarkerAlt className="fs-4" />
@@ -498,7 +500,7 @@ const About = () => {
                       </p>
                     </div>
                   </div>
-                  
+                  {/* Telepon */}
                   <div className="d-flex align-items-start gap-3">
                     <div className="icon-md bg-success-soft text-success rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
                       <FaPhoneAlt className="fs-4" />
@@ -516,6 +518,29 @@ const About = () => {
                     <div>
                       <h5 className="fw-bold mb-2">Email</h5>
                       <p className="text-muted mb-0">rentalhs591@gmail.com</p>
+                    </div>
+                  </div>
+                  {/* Social Media */}
+                  <div className="d-flex align-items-start gap-3">
+                    <div className="icon-md bg-info-soft text-info rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center">
+                      <FaUsers className="fs-4" />
+                    </div>
+                    <div>
+                      <h5 className="fw-bold mb-2">Social Media</h5>
+                      <div className="d-flex gap-3 mt-1">
+                        <a href="https://facebook.com/" target="_blank" rel="noopener noreferrer" className="social-icon text-primary fs-4">
+                          <FaFacebook />
+                        </a>
+                        <a href="https://instagram.com/" target="_blank" rel="noopener noreferrer" className="social-icon text-danger fs-4">
+                          <FaInstagram />
+                        </a>
+                        <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" className="social-icon text-info fs-4">
+                          <FaTwitter />
+                        </a>
+                        <a href="https://linkedin.com/" target="_blank" rel="noopener noreferrer" className="social-icon text-primary fs-4">
+                          <FaLinkedin />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>

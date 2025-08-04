@@ -88,15 +88,47 @@ const UsersPage = ({ darkMode }) => {
   };
 
   // UserAvatar component dengan efek shadow dan border neon
-  const UserAvatar = ({ name, role }) => {
+  const UserAvatar = ({ name, role, photo }) => {
     const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : 'US';
     const gradient = role === 'admin'
       ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
-    return (
+    const photoUrl = photo
+      ? photo.startsWith("/uploads/")
+        ? `http://localhost:3000${photo}`
+        : photo
+      : null;
+    return photoUrl ? (
+      <img
+        src={photoUrl}
+        alt={name}
+        style={{
+          width: 40,
+          height: 40,
+          objectFit: "cover",
+          borderRadius: "50%",
+          border: "2px solid #e9ecef",
+          background: "#fff",
+          boxShadow: "0 2px 8px rgba(78,115,223,0.10)"
+        }}
+        onError={e => { e.target.src = "/images/default-avatar.png"; }}
+      />
+    ) : (
       <div
         className="users-avatar-futuristic"
-        style={{ background: gradient }}
+        style={{
+          background: gradient,
+          width: 40,
+          height: 40,
+          borderRadius: "50%",
+          color: "#fff",
+          fontWeight: "bold",
+          fontSize: "1.2em",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 8px rgba(78,115,223,0.10)"
+        }}
       >
         {initials}
       </div>
@@ -117,7 +149,7 @@ const UsersPage = ({ darkMode }) => {
   // Add User
   const handleAddUser = async () => {
     setFormError("");
-    if (!form.name || !form.email || !form.no_telp) {
+    if (!form.name || !form.email || !form.no_telp || !form.password) {
       setFormError("Semua field wajib diisi.");
       return;
     }
@@ -125,7 +157,7 @@ const UsersPage = ({ darkMode }) => {
       await axios.post(`${API_URL}/users/register`, {
         nama: form.name,
         email: form.email,
-        password: "password123",
+        password: form.password,
         no_telp: form.no_telp
       });
       setShowAdd(false);
@@ -145,7 +177,7 @@ const UsersPage = ({ darkMode }) => {
     }
     try {
       await axios.put(`${API_URL}/users/${selectedUser.id}`, {
-        nama: form.name, // harus 'nama'
+        nama: form.name,
         email: form.email,
         no_telp: form.no_telp,
         role: form.role,
@@ -181,7 +213,7 @@ const UsersPage = ({ darkMode }) => {
     setFormError("");
     try {
       await axios.put(`${API_URL}/users/${selectedUser.id}/password`, {
-        newPassword: resetPassword // harus 'newPassword'
+        newPassword: resetPassword
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -464,7 +496,7 @@ const UsersPage = ({ darkMode }) => {
                       <td className="fw-bold">#{user.id}</td>
                       <td>
                         <div className="d-flex align-items-center">
-                          <UserAvatar name={user.name} role={user.role} />
+                          <UserAvatar name={user.name} role={user.role} photo={user.photo} />
                           <div className="ms-3">
                             <div className="fw-semibold">{user.name}</div>
                             <small className="text-muted">{user.email}</small>

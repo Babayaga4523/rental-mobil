@@ -65,3 +65,14 @@
 .app-content-flex {
   flex: 1 0 auto;
 }
+
+/* Tambahkan di global CSS atau App.css */
+body, #root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content, .content-with-footer {
+  flex: 1;
+}

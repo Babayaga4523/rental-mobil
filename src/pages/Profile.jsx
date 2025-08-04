@@ -105,7 +105,7 @@ const Profile = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         photoUrl = uploadRes.data.photo;
-        setPhotoPreview(photoUrl); // update preview jika backend mengembalikan url
+        setPhotoPreview(photoUrl);
       }
       await axios.put(
         `${BACKEND_URL}/api/users/${userId}`,
@@ -118,7 +118,6 @@ const Profile = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSuccess("Profil berhasil diperbarui!");
-      // Update localStorage dengan foto terbaru
       localStorage.setItem("user", JSON.stringify({ ...user, name: user.name, photo: photoUrl }));
     } catch (err) {
       setError("Gagal memperbarui profil.");

@@ -180,6 +180,18 @@ const changePassword = async (req, res) => {
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ success: false, message: "User tidak ditemukan." });
 
+    // Jika admin reset password (tanpa oldPassword)
+    if (!oldPassword && newPassword) {
+      user.password = await bcrypt.hash(newPassword, 10);
+      await user.save();
+      return res.json({ success: true, message: "Password berhasil direset oleh admin." });
+    }
+
+    // Jika user ganti password sendiri (butuh oldPassword)
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: "Field password tidak lengkap." });
+    }
+
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(400).json({ success: false, message: "Password lama salah." });
 
