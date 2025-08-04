@@ -1,15 +1,14 @@
 const db = require('../models');
 const Notification = db.Notification;
-const User = db.User; // Pastikan model User sudah ada di db/index.js
+const User = db.User;
 const { sendMail } = require("../utils/email");
-const { sendWA, sendWhatsappFonnte } = require("../utils/whatsapp"); // Jika ada
+const { sendWA, sendWhatsappFonnte } = require("../utils/whatsapp");
 
 exports.getAll = async (req, res) => {
   try {
-    // Untuk admin: tampilkan semua notifikasi (order, payment, info, blast, dll)
     const where = req.user.role === "admin"
-      ? {} // tampilkan semua tipe notifikasi
-      : { user_id: req.user.id }; // user hanya miliknya
+      ? {}
+      : { user_id: req.user.id };
     const notifications = await Notification.findAll({
       where,
       order: [['createdAt', 'DESC']],
@@ -25,6 +24,10 @@ exports.markAsRead = async (req, res) => {
   try {
     const notif = await Notification.findByPk(req.params.id);
     if (!notif) return res.status(404).json({ message: "Notifikasi tidak ditemukan" });
+    // Hanya admin atau pemilik notifikasi yang bisa menandai
+    if (req.user.role !== "admin" && notif.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Akses ditolak" });
+    }
     notif.read = true;
     await notif.save();
     res.json({ success: true });
@@ -45,17 +48,17 @@ exports.markAllAsRead = async (req, res) => {
 
 exports.blast = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Hanya admin yang bisa blast notifikasi" });
+    }
     const { message } = req.body;
     if (!message || typeof message !== "string" || !message.trim()) {
       return res.status(400).json({ success: false, message: "Pesan tidak boleh kosong" });
     }
-
     const users = await User.findAll({ where: { status: 'active' } });
     let successCount = 0, failCount = 0;
-
     for (const user of users) {
       try {
-        // Kirim email
         if (user.email) {
           await sendMail({
             to: user.email,
@@ -63,32 +66,26 @@ exports.blast = async (req, res) => {
             html: message
           });
         }
-        // Kirim WhatsApp jika ada nomor dan fungsi
         if (user.no_telp && typeof sendWA === "function") {
           await sendWA(user.no_telp, message);
         }
-        // Simpan notifikasi ke database
         await Notification.create({ user_id: user.id, message, type: "blast" });
         successCount++;
       } catch (err) {
         failCount++;
-        console.error(`Gagal kirim ke ${user.email || user.no_telp}:`, err.message);
       }
     }
-
     res.json({
       success: true,
       message: `Notifikasi dikirim ke ${successCount} user${failCount ? `, gagal ke ${failCount} user` : ""}.`
     });
   } catch (err) {
-    console.error("Error blast notifikasi:", err);
     res.status(500).json({ success: false, message: "Terjadi kesalahan server" });
   }
 };
 
 exports.deleteAll = async (req, res) => {
   try {
-    // Jika admin, hapus semua notifikasi. Jika user, hanya notifikasi miliknya.
     const where = req.user.role === "admin" ? {} : { user_id: req.user.id };
     await Notification.destroy({ where });
     res.json({ success: true });
@@ -101,6 +98,10 @@ exports.deleteOne = async (req, res) => {
   try {
     const notif = await Notification.findByPk(req.params.id);
     if (!notif) return res.status(404).json({ message: "Notifikasi tidak ditemukan" });
+    // Hanya admin atau pemilik notifikasi yang bisa hapus
+    if (req.user.role !== "admin" && notif.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Akses ditolak" });
+    }
     await notif.destroy();
     res.json({ success: true });
   } catch (err) {
@@ -110,6 +111,9 @@ exports.deleteOne = async (req, res) => {
 
 exports.sendWhatsapp = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Hanya admin yang bisa kirim WhatsApp" });
+    }
     const { phone, message } = req.body;
     await sendWhatsappFonnte(phone, message);
     res.json({ success: true, message: "WhatsApp sent!" });
