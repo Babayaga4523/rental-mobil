@@ -41,7 +41,7 @@ const Navbar = () => {
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
   const photoUrl = user?.photo
     ? user.photo.startsWith("/uploads/")
-      ? `http://localhost:3000${user.photo}`
+      ? `${process.env.NEXT_PUBLIC_API_URL}${user.photo}`
       : user.photo
     : "/images/default-avatar.png";
 
