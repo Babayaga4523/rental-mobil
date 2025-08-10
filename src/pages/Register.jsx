@@ -21,6 +21,8 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
+  const API_URL = "https://uji-coba-production.up.railway.app/api";
+
   useEffect(() => {
     return () => {
       toast.dismiss();
@@ -115,10 +117,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      if (!base) throw new Error('NEXT_PUBLIC_API_URL not set');
-
-      const response = await fetch(`${base}/api/auth/register`, {
+      await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -128,9 +127,6 @@ const Register = () => {
           no_telp: form.no_telp,
         })
       });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Registrasi gagal");
 
       showNotification("success", "Registrasi berhasil! Mengarahkan ke login...");
       setForm({ nama: "", email: "", no_telp: "", password: "", konfirmasi: "" });
