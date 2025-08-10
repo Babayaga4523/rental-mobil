@@ -117,9 +117,13 @@ const Register = () => {
 
     try {
       if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL not set');
-      await fetch(`${API_URL}/auth/register`, {
+
+      const url = new URL('/api/auth/register', API_URL).toString();
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // credentials: "include", // aktifkan kalau auth pakai cookie
         body: JSON.stringify({
           name: form.nama,
           email: form.email,
@@ -128,9 +132,18 @@ const Register = () => {
         })
       });
 
+      if (!res.ok) {
+        let msg = `Gagal (${res.status})`;
+        try {
+          const data = await res.json();
+          msg = data?.message || data?.error || msg;
+        } catch {}
+        throw new Error(msg);
+      }
+
       showNotification("success", "Registrasi berhasil! Mengarahkan ke login...");
       setForm({ nama: "", email: "", no_telp: "", password: "", konfirmasi: "" });
-      setTimeout(() => navigate("/login"), 3000);
+      setTimeout(() => navigate("/login"), 1500);
 
     } catch (err) {
       console.error("Error:", err);
