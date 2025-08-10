@@ -6,7 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 import '../style/Register.css';
 
-const NEXT_PUBLIC_API_URL = "https://uji-coba-production.up.railway.app";
+import { API_URL } from "../utils/api";
+
 const Register = () => {
   const [form, setForm] = useState({
     nama: "",
@@ -23,15 +24,11 @@ const Register = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    return () => {
-      toast.dismiss();
-    };
+    window.scrollTo(0, 0);
   }, []);
 
   const showNotification = (type, message) => {
-    toast.dismiss();
     const options = {
-      position: "top-right",
       autoClose: type === 'error' ? 5000 : 2500,
       hideProgressBar: false,
       closeOnClick: true,
@@ -116,8 +113,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Hardcode endpoint Railway
-      const url = "https://uji-coba-production.up.railway.app/api/auth/register";
+      const url = new URL('/api/auth/register', API_URL).toString();
 
       const res = await fetch(url, {
         method: "POST",
@@ -224,51 +220,51 @@ const Register = () => {
             {errors.no_telp && <div className="error-message">{errors.no_telp}</div>}
           </div>
           <div className="form-group">
-  <label htmlFor="password" className="form-label">Password</label>
-  <div className="password-wrapper">
-    <input
-      type={showPassword ? "text" : "password"}
-      name="password"
-      id="password"
-      className={`form-control ${errors.password ? "is-invalid" : ""}`}
-      placeholder="Masukkan password"
-      value={form.password}
-      onChange={handleChange}
-    />
-    <button 
-      type="button" 
-      className="toggle-button"
-      onClick={() => setShowPassword(!showPassword)}
-    >
-      <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
-    </button>
-  </div>
-  {errors.password && <div className="error-message">{errors.password}</div>}
-</div>
+            <label htmlFor="password" className="form-label">Password</label>
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                id="password"
+                className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                placeholder="Masukkan password"
+                value={form.password}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                className="toggle-button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+              </button>
+            </div>
+            {errors.password && <div className="error-message">{errors.password}</div>}
+          </div>
 
-<div className="form-group">
-  <label htmlFor="konfirmasi" className="form-label">Konfirmasi Password</label>
-  <div className="password-wrapper">
-    <input
-      type={showKonfirmasi ? "text" : "password"}
-      name="konfirmasi"
-      id="konfirmasi"
-      className={`form-control ${errors.konfirmasi ? "is-invalid" : ""}`}
-      placeholder="Konfirmasi password"
-      value={form.konfirmasi}
-      onChange={handleChange}
-    />
-    <button 
-      type="button" 
-      className="toggle-button"
-      onClick={() => setShowKonfirmasi(!showKonfirmasi)}
-      aria-label={showKonfirmasi ? "Sembunyikan password" : "Tampilkan password"}
-    >
-      <i className={showKonfirmasi ? "bi bi-eye-slash" : "bi bi-eye"}></i>
-    </button>
-  </div>
-  {errors.konfirmasi && <div className="error-message">{errors.konfirmasi}</div>}
-</div>
+          <div className="form-group">
+            <label htmlFor="konfirmasi" className="form-label">Konfirmasi Password</label>
+            <div className="password-wrapper">
+              <input
+                type={showKonfirmasi ? "text" : "password"}
+                name="konfirmasi"
+                id="konfirmasi"
+                className={`form-control ${errors.konfirmasi ? "is-invalid" : ""}`}
+                placeholder="Konfirmasi password"
+                value={form.konfirmasi}
+                onChange={handleChange}
+              />
+              <button
+                type="button"
+                className="toggle-button"
+                onClick={() => setShowKonfirmasi(!showKonfirmasi)}
+                aria-label={showKonfirmasi ? "Sembunyikan password" : "Tampilkan password"}
+              >
+                <i className={showKonfirmasi ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+              </button>
+            </div>
+            {errors.konfirmasi && <div className="error-message">{errors.konfirmasi}</div>}
+          </div>
           <button
             type="submit"
             className="submit-button"
