@@ -1,5 +1,4 @@
-// Ambil dari env Vercel, fallback ke lokal saat dev.
-// Trim trailing slash agar tidak double slash saat concat.
+// Selalu fallback ke Railway jika env tidak ada
 export const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  process.env.NEXT_PUBLIC_API_URL || 'https://uji-coba-production.up.railway.app'
 ).replace(/\/+$/, '');

@@ -116,6 +116,7 @@ const Register = () => {
     setLoading(true);
 
     try {
+      // URL selalu benar ke Railway
       const url = new URL('/api/auth/register', API_URL).toString();
 
       const res = await fetch(url, {
