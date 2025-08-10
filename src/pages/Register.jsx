@@ -5,8 +5,8 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 import '../style/Register.css';
-import { API_URL } from "../utils/api";
 
+const NEXT_PUBLIC_API_URL = "https://uji-coba-production.up.railway.app";
 const Register = () => {
   const [form, setForm] = useState({
     nama: "",
@@ -116,8 +116,8 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // URL selalu benar ke Railway
-      const url = new URL('/api/auth/register', API_URL).toString();
+      // Hardcode endpoint Railway
+      const url = "https://uji-coba-production.up.railway.app/api/auth/register";
 
       const res = await fetch(url, {
         method: "POST",
