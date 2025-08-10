@@ -4,8 +4,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Login.css";
-
-const API_URL = "https://uji-coba-production.up.railway.app/api";
+import { API_URL } from "../utils/api";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -35,6 +34,7 @@ const Login = () => {
     }
     setIsLoading(true);
     try {
+      if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL not set');
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

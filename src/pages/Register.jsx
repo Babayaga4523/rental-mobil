@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 import '../style/Register.css';
+import { API_URL } from "../utils/api";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -20,8 +21,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-
-  const API_URL = "https://uji-coba-production.up.railway.app/api";
 
   useEffect(() => {
     return () => {
@@ -117,6 +116,7 @@ const Register = () => {
     setLoading(true);
 
     try {
+      if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL not set');
       await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
