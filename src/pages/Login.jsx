@@ -33,63 +33,66 @@ const Login = () => {
     }
     setIsLoading(true);
     try {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+    const base = process.env.NEXT_PUBLIC_API_URL;
+    if (!base) throw new Error('NEXT_PUBLIC_API_URL not set');
+
+    const response = await fetch(`${base}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Login gagal');
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('token_expiry', Date.now() + 24 * 60 * 60 * 1000);
+    toast.success('Login berhasil! Selamat datang 👋', {
+      position: 'top-right',
+      autoClose: 2500,
+      theme: 'colored',
+      icon: "✅"
+    });
+    const redirectPath = location.state?.from ||
+      (data.user.role === 'admin' ? '/admin' : '/home');
+    setTimeout(() => {
+      navigate(redirectPath, {
+        state: { user: data.user, from: location.pathname }
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login gagal');
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      localStorage.setItem('token_expiry', Date.now() + 24 * 60 * 60 * 1000);
-      toast.success('Login berhasil! Selamat datang 👋', {
+    }, 1200);
+  } catch (error) {
+    if (error.message.includes('401')) {
+      toast.error('Email atau password salah!', {
         position: 'top-right',
-        autoClose: 2500,
+        autoClose: 3500,
         theme: 'colored',
-        icon: "✅"
+        icon: "❌"
       });
-      const redirectPath = location.state?.from ||
-        (data.user.role === 'admin' ? '/admin' : '/home');
-      setTimeout(() => {
-        navigate(redirectPath, {
-          state: { user: data.user, from: location.pathname }
-        });
-      }, 1200);
-    } catch (error) {
-      if (error.message.includes('401')) {
-        toast.error('Email atau password salah!', {
-          position: 'top-right',
-          autoClose: 3500,
-          theme: 'colored',
-          icon: "❌"
-        });
-      } else if (error.message.includes('403')) {
-        toast.error('Akun belum diaktivasi.', {
-          position: 'top-right',
-          autoClose: 3500,
-          theme: 'colored',
-          icon: "⏳"
-        });
-      } else if (error.message.includes('Network Error')) {
-        toast.error('Tidak dapat terhubung ke server.', {
-          position: 'top-right',
-          autoClose: 3500,
-          theme: 'colored',
-          icon: "🌐"
-        });
-      } else {
-        toast.error(error.message || 'Terjadi kesalahan login.', {
-          position: 'top-right',
-          autoClose: 3500,
-          theme: 'colored',
-          icon: "❌"
-        });
-      }
-    } finally {
-      setIsLoading(false);
+    } else if (error.message.includes('403')) {
+      toast.error('Akun belum diaktivasi.', {
+        position: 'top-right',
+        autoClose: 3500,
+        theme: 'colored',
+        icon: "⏳"
+      });
+    } else if (error.message.includes('Network Error')) {
+      toast.error('Tidak dapat terhubung ke server.', {
+        position: 'top-right',
+        autoClose: 3500,
+        theme: 'colored',
+        icon: "🌐"
+      });
+    } else {
+      toast.error(error.message || 'Terjadi kesalahan login.', {
+        position: 'top-right',
+        autoClose: 3500,
+        theme: 'colored',
+        icon: "❌"
+      });
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="login-container"style={{ paddingTop: 100 }}>

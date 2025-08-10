@@ -115,7 +115,10 @@ const Register = () => {
     setLoading(true);
 
     try {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+      const base = process.env.NEXT_PUBLIC_API_URL;
+      if (!base) throw new Error('NEXT_PUBLIC_API_URL not set');
+
+      const response = await fetch(`${base}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
