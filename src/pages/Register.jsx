@@ -116,14 +116,11 @@ const Register = () => {
     setLoading(true);
 
     try {
-      if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL not set');
-
       const url = new URL('/api/auth/register', API_URL).toString();
 
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // credentials: "include", // aktifkan kalau auth pakai cookie
         body: JSON.stringify({
           name: form.nama,
           email: form.email,
