@@ -4,7 +4,7 @@ import { Spinner, Alert, Button } from "react-bootstrap";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPrint } from "react-icons/fa";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";

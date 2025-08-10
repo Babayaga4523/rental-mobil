@@ -15,7 +15,9 @@ import { CSVLink } from "react-csv";
 import { toast as toastify } from "react-toastify";
 import './UsersPage.css';
 
-const API_URL = "http://localhost:3000/api";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const UsersPage = ({ darkMode }) => {
   // State

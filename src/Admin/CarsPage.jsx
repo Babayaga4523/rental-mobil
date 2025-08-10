@@ -12,8 +12,8 @@ import {
 import { CSVLink } from "react-csv";
 import moment from "moment";
 
-const API_URL = "http://localhost:3000/api";
-const BACKEND_URL = "http://localhost:3000";
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const CarsPage = ({ darkMode, toggleDarkMode }) => {

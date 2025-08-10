@@ -9,7 +9,10 @@ import { Modal } from "react-bootstrap";
 import { toast } from "react-toastify";
 import "../style/LayananPage.css";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const getHargaSetelahPromo = (car) => {
   if (car.promo && car.promo > 0) {

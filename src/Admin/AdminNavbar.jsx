@@ -22,7 +22,9 @@ import {
 } from "./utils/notificationApi";
 import { socket } from "./utils/socket";
 
-const API_URL = "http://localhost:3000/api";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const [showProfile, setShowProfile] = useState(false);

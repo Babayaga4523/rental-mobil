@@ -8,7 +8,7 @@ import { format, parseISO, isValid } from "date-fns";
 import id from "date-fns/locale/id";
 import "../style/Receipt.css"; // Pastikan file ini ada
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 
 const formatDate = (dateString, formatPattern = "dd MMMM yyyy", includeTime = false) => {
   try {

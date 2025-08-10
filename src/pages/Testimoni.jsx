@@ -7,7 +7,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Testimoni.css";
 import { motion } from "framer-motion";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 
 const Testimoni = () => {
   const [testimoni, setTestimoni] = useState([]);

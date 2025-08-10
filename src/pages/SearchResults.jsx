@@ -17,7 +17,7 @@ const SearchResults = () => {
   useEffect(() => {
     const fetchLayanan = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/layanan");
+        const response = await fetch("https://uji-coba-production.up.railway.app/api/layanan");
         if (!response.ok) {
           throw new Error("Data tidak ditemukan");
         }

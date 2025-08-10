@@ -40,8 +40,8 @@ const Home = () => {
     // --- PERBAIKAN: Fetch data paralel dan setIsLoading lebih awal ---
     setIsLoading(true);
     Promise.all([
-      fetch("http://localhost:3000/api/testimoni").then(res => res.json()).catch(() => []),
-      fetch("http://localhost:3000/api/layanan?limit=3").then(res => res.json()).catch(() => ({ data: [] }))
+      fetch("https://uji-coba-production.up.railway.app/api/testimoni").then(res => res.json()).catch(() => []),
+      fetch("https://uji-coba-production.up.railway.app/api/layanan?limit=3").then(res => res.json()).catch(() => ({ data: [] }))
     ]).then(([testiData, carsData]) => {
       setTestimonials(Array.isArray(testiData.data) ? testiData.data : Array.isArray(testiData) ? testiData : []);
       setPopularCars(Array.isArray(carsData.data) ? carsData.data : Array.isArray(carsData) ? carsData : []);

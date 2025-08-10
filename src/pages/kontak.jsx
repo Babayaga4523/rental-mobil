@@ -3,7 +3,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import axios from "axios";
-
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 const ContactPage = () => {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
@@ -20,7 +22,7 @@ const ContactPage = () => {
     setStatus(""); // Reset status sebelum mengirim
 
     try {
-      const response = await axios.post("http://localhost:5000/api/contact", {
+      const response = await axios.post("https://uji-coba-production.up.railway.app/api/contact", {
         nama,
         email,
         pesan,

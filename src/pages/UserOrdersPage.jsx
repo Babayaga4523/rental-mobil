@@ -34,7 +34,7 @@ import "../style/UserOrdersPage.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 
 const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);

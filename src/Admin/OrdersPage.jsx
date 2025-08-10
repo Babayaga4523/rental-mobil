@@ -17,7 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://uji-coba-production.up.railway.app/api";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY') : '-';

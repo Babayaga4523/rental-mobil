@@ -27,7 +27,10 @@ import {
 } from "react-icons/fa";
 import { toast as toastify } from "react-toastify";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const TestimoniReplyPage = () => {
   const [testimoni, setTestimoni] = useState([]);

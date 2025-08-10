@@ -20,7 +20,9 @@ import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 import ReactECharts from "echarts-for-react";
 
-const API_URL = "http://localhost:3000/api";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const StatCard = ({ icon, title, value, color, loading, darkMode }) => (
   <Card className={`stat-card shadow-sm mb-3 ${darkMode ? "bg-dark-2 text-light" : ""}`}>

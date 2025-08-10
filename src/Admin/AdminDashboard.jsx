@@ -14,7 +14,9 @@ import moment from "moment";
 import "./AdminDashboard.css";
 
 
-const API_URL = "http://localhost:3000/api";
+// ...existing code...
+const API_URL = "https://uji-coba-production.up.railway.app/api";
+// ...existing code...
 
 const StatCard = ({ icon, title, value, color, loading }) => (
   <Card className="stat-card shadow-sm mb-3 border-0">

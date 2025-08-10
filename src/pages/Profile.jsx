@@ -5,7 +5,7 @@ import "../style/Profil.css";
 import { socket } from "../Admin/utils/socket";
 import { toast } from "react-toastify";
 
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 
 const Profile = () => {
   const [user, setUser] = useState({
