@@ -6,6 +6,7 @@ import "aos/dist/aos.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import { Modal } from "react-bootstrap";
+import { toast } from "react-toastify";
 import "../style/LayananPage.css";
 
 const BACKEND_URL = "http://localhost:3000";
@@ -96,6 +97,61 @@ const Layanan = () => {
     }
   }, [layanan]);
 
+  // Tambahkan notifikasi pada error fetch data
+  useEffect(() => {
+    if (error) {
+      toast.error(`Gagal memuat data layanan: ${error}`, {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
+    }
+  }, [error]);
+
+  // Notifikasi saat menambah/menghapus perbandingan
+  const toggleCompare = (car) => {
+    setCompareList(list => {
+      if (list.find(c => c.id === car.id)) {
+        toast.info(`Dihapus dari perbandingan: ${car.nama}`, {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+          icon: "🗑️"
+        });
+        return list.filter(c => c.id !== car.id);
+      }
+      if (list.length < 3) {
+        toast.success(`Ditambahkan ke perbandingan: ${car.nama}`, {
+          position: "top-right",
+          autoClose: 2000,
+          theme: "colored",
+          icon: "🔍"
+        });
+        return [...list, car];
+      } else {
+        toast.warn("Maksimal 3 mobil untuk dibandingkan!", {
+          position: "top-right",
+          autoClose: 2500,
+          theme: "colored",
+          icon: "⚠️"
+        });
+        return list;
+      }
+    });
+  };
+
+  // Notifikasi reset perbandingan
+  const handleResetCompare = () => {
+    setCompareList([]);
+    toast.info("Perbandingan telah direset.", {
+      position: "top-right",
+      autoClose: 2000,
+      theme: "colored",
+      icon: "ℹ️"
+    });
+  };
+
   // Filter & sort
   const filteredLayanan = layanan.filter(car => {
     const nama = car.nama ? car.nama.toLowerCase() : "";
@@ -125,15 +181,6 @@ const Layanan = () => {
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     }
   });
-
-  const toggleCompare = (car) => {
-    setCompareList(list => {
-      if (list.find(c => c.id === car.id)) {
-        return list.filter(c => c.id !== car.id);
-      }
-      return list.length < 3 ? [...list, car] : list;
-    });
-  };
 
   const openQuickView = (car) => {
     setSelectedCar(car);
@@ -581,7 +628,7 @@ const Layanan = () => {
                     
                     <motion.button
                       className="action-button reset"
-                      onClick={() => setCompareList([])}
+                      onClick={handleResetCompare}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >

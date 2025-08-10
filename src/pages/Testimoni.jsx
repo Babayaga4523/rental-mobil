@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { StarFill, Star } from "react-bootstrap-icons";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Testimoni.css";
@@ -29,7 +29,12 @@ const Testimoni = () => {
       const response = await axios.get(`${BACKEND_URL}/api/testimoni`);
       setTestimoni(response.data.data || response.data);
     } catch {
-      toast.error("Gagal memuat testimoni");
+      toast.error("Gagal memuat testimoni", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     }
   };
 
@@ -43,7 +48,12 @@ const Testimoni = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!layananId) {
-      toast.error("Pilih mobil yang ingin diberi testimoni!");
+      toast.error("Pilih mobil yang ingin diberi testimoni!", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "⚠️"
+      });
       return;
     }
     setLoading(true);
@@ -60,9 +70,19 @@ const Testimoni = () => {
       setRating(5);
       setLayananId("");
       await fetchTestimoni();
-      toast.success("Testimoni berhasil dikirim!");
+      toast.success("Testimoni berhasil dikirim!", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
     } catch {
-      toast.error("Gagal mengirim testimoni");
+      toast.error("Gagal mengirim testimoni", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     } finally {
       setLoading(false);
     }
@@ -317,7 +337,6 @@ const Testimoni = () => {
           </div>
         </div>
       </section>
-      <ToastContainer position="top-center" />
     </div>
   );
 };

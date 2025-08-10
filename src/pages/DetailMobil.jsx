@@ -59,6 +59,12 @@ const DetailMobil = () => {
       .catch((error) => {
         setError(error.message);
         setLoading(false);
+        toast.error(`Gagal memuat detail mobil: ${error.message}`, {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
       });
   }, [id]);
 
@@ -72,7 +78,15 @@ const DetailMobil = () => {
         setReviews(Array.isArray(data.data) ? data.data : []);
         setLoadingReviews(false);
       })
-      .catch(() => setLoadingReviews(false));
+      .catch(() => {
+        setLoadingReviews(false);
+        toast.error("Gagal memuat testimoni.", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+      });
   }, [car?.id]);
 
   const handleImageError = (imgElement, fallbackImage) => {
@@ -102,13 +116,24 @@ const DetailMobil = () => {
     if (!token) {
       toast.error(
         "Anda harus login terlebih dahulu untuk melakukan booking.",
-        { position: "top-right", autoClose: 2000 }
+        {
+          position: "top-right",
+          autoClose: 2500,
+          theme: "colored",
+          icon: "⚠️"
+        }
       );
       setTimeout(() => {
         navigate("/login", { state: { from: `/detail/${car.id}` } });
       }, 1200);
       return;
     }
+    toast.success("Silakan lengkapi data booking Anda.", {
+      position: "top-right",
+      autoClose: 1800,
+      theme: "colored",
+      icon: "✅"
+    });
     navigate("/booking", {
       state: {
         carId: car.id,

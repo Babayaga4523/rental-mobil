@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 import '../style/Register.css';
@@ -30,15 +30,20 @@ const Register = () => {
   const showNotification = (type, message) => {
     toast.dismiss();
     const options = {
-      position: "top-center",
-      autoClose: type === 'error' ? 5000 : 3000,
+      position: "top-right",
+      autoClose: type === 'error' ? 5000 : 2500,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
       theme: "colored",
+      icon: type === "success" ? "🎉" : type === "error" ? "❌" : "ℹ️"
     };
-    type === 'error' ? toast.error(message, options) : toast.success(message, options);
+    if (type === 'error') {
+      toast.error(message, options);
+    } else {
+      toast.success(message, options);
+    }
   };
 
   const handleChange = (e) => {
@@ -272,7 +277,6 @@ const Register = () => {
           Sudah punya akun? <a href="/login" className="auth-link">Masuk di sini</a>
         </div>
       </div>
-      <ToastContainer />
     </div>
   );
 };

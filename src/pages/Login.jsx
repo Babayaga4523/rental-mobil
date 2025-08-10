@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Login.css";
@@ -23,7 +23,12 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      toast.error('Please fill in both email and password', { position: 'top-center' });
+      toast.error('Mohon isi email dan password.', {
+        position: 'top-right',
+        autoClose: 3500,
+        theme: 'colored',
+        icon: "⚠️"
+      });
       return;
     }
     setIsLoading(true);
@@ -34,21 +39,53 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Login failed');
+      if (!response.ok) throw new Error(data.message || 'Login gagal');
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token_expiry', Date.now() + 24 * 60 * 60 * 1000);
-      toast.success('Login successful!');
+      toast.success('Login berhasil! Selamat datang 👋', {
+        position: 'top-right',
+        autoClose: 2500,
+        theme: 'colored',
+        icon: "✅"
+      });
       const redirectPath = location.state?.from ||
         (data.user.role === 'admin' ? '/admin' : '/home');
-      navigate(redirectPath, {
-        state: { user: data.user, from: location.pathname }
-      });
+      setTimeout(() => {
+        navigate(redirectPath, {
+          state: { user: data.user, from: location.pathname }
+        });
+      }, 1200);
     } catch (error) {
-      if (error.message.includes('401')) toast.error('Invalid email or password');
-      else if (error.message.includes('403')) toast.error('Account not activated');
-      else if (error.message.includes('Network Error')) toast.error('Cannot connect to server');
-      else toast.error(error.message || 'Login error occurred');
+      if (error.message.includes('401')) {
+        toast.error('Email atau password salah!', {
+          position: 'top-right',
+          autoClose: 3500,
+          theme: 'colored',
+          icon: "❌"
+        });
+      } else if (error.message.includes('403')) {
+        toast.error('Akun belum diaktivasi.', {
+          position: 'top-right',
+          autoClose: 3500,
+          theme: 'colored',
+          icon: "⏳"
+        });
+      } else if (error.message.includes('Network Error')) {
+        toast.error('Tidak dapat terhubung ke server.', {
+          position: 'top-right',
+          autoClose: 3500,
+          theme: 'colored',
+          icon: "🌐"
+        });
+      } else {
+        toast.error(error.message || 'Terjadi kesalahan login.', {
+          position: 'top-right',
+          autoClose: 3500,
+          theme: 'colored',
+          icon: "❌"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +93,6 @@ const Login = () => {
 
   return (
     <div className="login-container"style={{ paddingTop: 100 }}>
-      <ToastContainer position="top-center" autoClose={5000} />
       <div className="login-wrapper">
         <div className="login-card">
           {/* Logo & Judul */}

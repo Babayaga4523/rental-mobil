@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaUserCircle, FaEnvelope, FaPhoneAlt, FaCheckCircle, FaCamera, FaKey, FaBell, FaCarSide } from "react-icons/fa";
 import "../style/Profil.css";
 import { socket } from "../Admin/utils/socket";
+import { toast } from "react-toastify";
 
 const BACKEND_URL = "http://localhost:3000";
 
@@ -119,8 +120,20 @@ const Profile = () => {
       );
       setSuccess("Profil berhasil diperbarui!");
       localStorage.setItem("user", JSON.stringify({ ...user, name: user.name, photo: photoUrl }));
+      toast.success("Profil berhasil diperbarui!", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
     } catch (err) {
       setError("Gagal memperbarui profil.");
+      toast.error("Gagal memperbarui profil.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     }
   };
 
@@ -140,8 +153,20 @@ const Profile = () => {
       );
       setPwSuccess("Password berhasil diubah!");
       setPasswords({ oldPassword: "", newPassword: "" });
+      toast.success("Password berhasil diubah!", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
     } catch (err) {
       setPwError("Gagal mengubah password.");
+      toast.error("Gagal mengubah password.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     }
   };
 

@@ -12,6 +12,7 @@ import {
   FaUserCheck, FaUserTimes
 } from "react-icons/fa";
 import { CSVLink } from "react-csv";
+import { toast as toastify } from "react-toastify";
 import './UsersPage.css';
 
 const API_URL = "http://localhost:3000/api";
@@ -83,8 +84,28 @@ const UsersPage = ({ darkMode }) => {
   };
 
   const showToast = (message, variant = "success") => {
-    setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ show: false, message: "", variant }), 3000);
+    if (variant === "success") {
+      toastify.success(message, {
+        position: "top-right",
+        autoClose: 2500,
+        theme: darkMode ? "dark" : "colored",
+        icon: "✅"
+      });
+    } else if (variant === "danger") {
+      toastify.error(message, {
+        position: "top-right",
+        autoClose: 3500,
+        theme: darkMode ? "dark" : "colored",
+        icon: "❌"
+      });
+    } else {
+      toastify.info(message, {
+        position: "top-right",
+        autoClose: 3000,
+        theme: darkMode ? "dark" : "colored",
+        icon: "ℹ️"
+      });
+    }
   };
 
   // UserAvatar component dengan efek shadow dan border neon
@@ -830,29 +851,6 @@ const UsersPage = ({ darkMode }) => {
           <Button variant="primary" onClick={handleSendBlast}>Kirim</Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Toast Notification */}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-        <Toast
-          show={toast.show}
-          onClose={() => setToast({ ...toast, show: false })}
-          bg={toast.variant}
-          delay={3000}
-          autohide
-          className="border-0"
-        >
-          <Toast.Body className="d-flex align-items-center">
-            {toast.variant === 'success' ? (
-              <FaRegCheckCircle className="me-2 flex-shrink-0" />
-            ) : toast.variant === 'danger' ? (
-              <FaRegClock className="me-2 flex-shrink-0" />
-            ) : (
-              <FaBell className="me-2 flex-shrink-0" />
-            )}
-            {toast.message}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </Container>
   );
 };

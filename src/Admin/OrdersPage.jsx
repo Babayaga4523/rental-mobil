@@ -132,7 +132,10 @@ const OrdersPage = ({ darkMode }) => {
 
   const showToast = (message, variant = "success") => {
     setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ ...toast, show: false }), 2500);
+    if (window.__toastTimeout) clearTimeout(window.__toastTimeout);
+    window.__toastTimeout = setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 2500);
   };
  
   // Filter & Search & Date

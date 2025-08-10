@@ -7,8 +7,6 @@ import {
   Form,
   Badge,
   Spinner,
-  Toast,
-  ToastContainer,
   Row,
   Col,
   Card,
@@ -27,6 +25,7 @@ import {
   FaUser,
   FaCar
 } from "react-icons/fa";
+import { toast as toastify } from "react-toastify";
 
 const BACKEND_URL = "http://localhost:3000";
 
@@ -36,7 +35,6 @@ const TestimoniReplyPage = () => {
   const [selected, setSelected] = useState(null);
   const [reply, setReply] = useState("");
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
   const [searchTerm, setSearchTerm] = useState("");
   const [stats, setStats] = useState({ total: 0, replied: 0, pending: 0 });
 
@@ -76,9 +74,34 @@ const TestimoniReplyPage = () => {
     setReply("");
   };
 
+  const showNotification = (message, variant = "success") => {
+    if (variant === "success") {
+      toastify.success(message, {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
+    } else if (variant === "danger") {
+      toastify.error(message, {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
+    } else {
+      toastify.info(message, {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "colored",
+        icon: "ℹ️"
+      });
+    }
+  };
+
   const handleSaveReply = async () => {
     if (!reply.trim()) {
-      setToast({ show: true, message: "Balasan tidak boleh kosong.", variant: "danger" });
+      showNotification("Balasan tidak boleh kosong.", "danger");
       return;
     }
     setSaving(true);
@@ -102,10 +125,10 @@ const TestimoniReplyPage = () => {
           return item;
         })
       );
-      setToast({ show: true, message: "Balasan berhasil disimpan.", variant: "success" });
+      showNotification("Balasan berhasil disimpan.", "success");
       handleCloseReply();
     } catch {
-      setToast({ show: true, message: "Gagal menyimpan balasan.", variant: "danger" });
+      showNotification("Gagal menyimpan balasan.", "danger");
     } finally {
       setSaving(false);
     }
@@ -301,27 +324,6 @@ const TestimoniReplyPage = () => {
           </div>
         </Card.Body>
       </Card>
-
-      {/* Toast Notification */}
-      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-        <Toast
-          show={toast.show}
-          onClose={() => setToast({ ...toast, show: false })}
-          bg={toast.variant}
-          delay={3000}
-          autohide
-          className="border-0"
-        >
-          <Toast.Body className="d-flex align-items-center">
-            {toast.variant === 'success' ? (
-              <FaRegCheckCircle className="me-2 flex-shrink-0" />
-            ) : (
-              <FaRegClock className="me-2 flex-shrink-0" />
-            )}
-            {toast.message}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
 
       {/* Reply Modal */}
       <Modal show={!!selected} onHide={handleCloseReply} centered size="lg" className="modal-futuristic">

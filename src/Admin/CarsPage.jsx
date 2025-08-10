@@ -104,8 +104,14 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
   }, [token]);
 
   const showToast = (message, variant = "success") => {
-    setToast({ show: true, message, variant });
-    setTimeout(() => setToast({ ...toast, show: false }), 3000);
+    setToast({ show: false, message: "", variant }); // Reset dulu agar animasi muncul
+    setTimeout(() => {
+      setToast({ show: true, message, variant });
+      if (window.__toastTimeout) clearTimeout(window.__toastTimeout);
+      window.__toastTimeout = setTimeout(() => {
+        setToast((prev) => ({ ...prev, show: false }));
+      }, 3000);
+    }, 100);
   };
 
   const getSewaAktif = (carId) => {

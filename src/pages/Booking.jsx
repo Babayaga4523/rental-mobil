@@ -185,7 +185,12 @@ const Booking = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error("Silakan lengkapi formulir dengan benar.");
+      toast.error("Silakan lengkapi formulir dengan benar.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "⚠️"
+      });
       return;
     }
 
@@ -195,7 +200,13 @@ const Booking = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("Token autentikasi tidak ditemukan");
+        toast.error("Token autentikasi tidak ditemukan", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+        return;
       }
 
       const formDataToSend = new FormData();
@@ -208,16 +219,6 @@ const Booking = () => {
       if (formData.payment_proof) {
         formDataToSend.append('payment_proof', formData.payment_proof);
       }
-
-      console.log("Booking data:", {
-        layanan_id: Number(formData.layanan_id),
-        pickup_date: formData.pickup_date,
-        return_date: formData.return_date,
-        payment_method: formData.payment_method,
-        additional_notes: formData.additional_notes,
-        total_price: formData.total_price,
-        payment_proof: formData.payment_proof,
-      });
 
       const response = await axios.post(
         "http://localhost:3000/api/orders",
@@ -236,27 +237,38 @@ const Booking = () => {
         }
       );
 
-      // Notifikasi berhasil
-      toast.success("Pesanan berhasil dibuat! Detail pesanan akan dikirim ke email Anda.");
-      // Redirect ke halaman struk
+      toast.success("Pesanan berhasil dibuat! Detail pesanan akan dikirim ke email Anda.", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
+
       const orderId = response.data?.data?.id;
       if (!orderId) {
-        toast.error("Gagal mendapatkan ID pesanan dari server");
+        toast.error("Gagal mendapatkan ID pesanan dari server", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
         return;
       }
       const responseReceipt = await axios.get(
         `${BACKEND_URL}/api/orders/${orderId}/receipt`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Langsung redirect ke OrderReceipt jika berhasil
       if (responseReceipt.data?.data?.id) {
-        // Hapus setTimeout dan langsung navigate
         navigate(`/orders/${responseReceipt.data.data.id}/receipt`);
       } else {
-        toast.error("Gagal mendapatkan ID pesanan");
+        toast.error("Gagal mendapatkan ID pesanan", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
       }
     } catch (error) {
-      console.error("Order creation error:", error);
       let errorMessage = "Gagal membuat pesanan";
       if (error.response) {
         errorMessage =
@@ -268,7 +280,12 @@ const Booking = () => {
       } else {
         errorMessage = error.message;
       }
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     } finally {
       setIsLoading(false);
       setIsUploading(false);
@@ -399,7 +416,12 @@ const Booking = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Anda harus login terlebih dahulu.");
+        toast.error("Anda harus login terlebih dahulu.", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "⚠️"
+        });
         return;
       }
 
@@ -421,6 +443,12 @@ const Booking = () => {
       if (res.data && res.data.token) {
         window.snap.pay(res.data.token, {
           onSuccess: async function(result) {
+            toast.success("Pembayaran berhasil!", {
+              position: "top-right",
+              autoClose: 2500,
+              theme: "colored",
+              icon: "✅"
+            });
             // Ambil payment_type dari Midtrans
             const paymentMethod = result.payment_type || "midtrans";
             // Buat order di backend dengan status paid
@@ -446,6 +474,12 @@ const Booking = () => {
             }
           },
           onPending: async function(result) {
+            toast.info("Pembayaran masih diproses.", {
+              position: "top-right",
+              autoClose: 3500,
+              theme: "colored",
+              icon: "⏳"
+            });
             // Ambil payment_type dari Midtrans
             const paymentMethod = result.payment_type || "midtrans";
             // Buat order di backend dengan status pending
@@ -471,6 +505,12 @@ const Booking = () => {
             }
           },
           onError: async function(result) {
+            toast.error("Pembayaran gagal.", {
+              position: "top-right",
+              autoClose: 3500,
+              theme: "colored",
+              icon: "❌"
+            });
             // Buat order di backend dengan status failed
             const paymentMethod = result?.payment_type || "midtrans";
             const orderRes = await axios.post(
@@ -494,15 +534,29 @@ const Booking = () => {
             }
           },
           onClose: function() {
-            toast.info("Anda menutup popup pembayaran");
+            toast.info("Anda menutup popup pembayaran", {
+              position: "top-right",
+              autoClose: 3500,
+              theme: "colored",
+              icon: "ℹ️"
+            });
           }
         });
       } else {
-        toast.error("Gagal mendapatkan token pembayaran");
+        toast.error("Gagal mendapatkan token pembayaran", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
       }
     } catch (err) {
-      console.error("Payment error:", err);
-      toast.error("Gagal memulai pembayaran");
+      toast.error("Gagal memulai pembayaran", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     }
   };
 

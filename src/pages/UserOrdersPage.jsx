@@ -137,8 +137,12 @@ const UserOrdersPage = () => {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Pesanan berhasil dibatalkan.");
-      // Update status pesanan di state orders tanpa reload
+      toast.success("Pesanan berhasil dibatalkan!", {
+        position: "top-right",
+        autoClose: 2500,
+        theme: "colored",
+        icon: "✅"
+      });
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.id === orderId
@@ -147,49 +151,79 @@ const UserOrdersPage = () => {
         )
       );
     } catch (err) {
-      toast.error("Gagal membatalkan pesanan.");
+      toast.error("Gagal membatalkan pesanan.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
     } finally {
       setCancellingId(null);
     }
   };
 
   const handleMidtransPayment = async (order) => {
-  try {
-    const token = localStorage.getItem("token");
-    let orderId = order.midtrans_order_id;
-    if (!orderId) {
-      orderId = `ORDER-${order.id}-${Date.now()}`;
-      // Simpan ke backend jika perlu
-    }
-    const res = await axios.post(
-      `${BACKEND_URL}/api/payment/midtrans-token`,
-      {
-        order_id: orderId,
-        gross_amount: order.total_price,
-        layanan_id: order.car?.id, // gunakan id mobil dari order
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const snapToken = res.data.token;
-    window.snap.pay(snapToken, {
-      onSuccess: function(result) {
-        toast.success("Pembayaran berhasil!");
-        window.location.reload();
-      },
-      onPending: function(result) {
-        toast.info("Pembayaran masih diproses.");
-      },
-      onError: function(result) {
-        toast.error("Pembayaran gagal.");
-      },
-      onClose: function() {
-        toast.info("Anda menutup popup pembayaran sebelum menyelesaikan transaksi.");
+    try {
+      const token = localStorage.getItem("token");
+      let orderId = order.midtrans_order_id;
+      if (!orderId) {
+        orderId = `ORDER-${order.id}-${Date.now()}`;
+        // Simpan ke backend jika perlu
       }
-    });
-  } catch (err) {
-    toast.error("Gagal memproses pembayaran.");
-  }
-};
+      const res = await axios.post(
+        `${BACKEND_URL}/api/payment/midtrans-token`,
+        {
+          order_id: orderId,
+          gross_amount: order.total_price,
+          layanan_id: order.car?.id,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const snapToken = res.data.token;
+      window.snap.pay(snapToken, {
+        onSuccess: function(result) {
+          toast.success("Pembayaran berhasil!", {
+            position: "top-right",
+            autoClose: 2500,
+            theme: "colored",
+            icon: "✅"
+          });
+          window.location.reload();
+        },
+        onPending: function(result) {
+          toast.info("Pembayaran masih diproses.", {
+            position: "top-right",
+            autoClose: 3500,
+            theme: "colored",
+            icon: "⏳"
+          });
+        },
+        onError: function(result) {
+          toast.error("Pembayaran gagal.", {
+            position: "top-right",
+            autoClose: 3500,
+            theme: "colored",
+            icon: "❌"
+          });
+        },
+        onClose: function() {
+          toast.info("Anda menutup popup pembayaran sebelum menyelesaikan transaksi.", {
+            position: "top-right",
+            autoClose: 3500,
+            theme: "colored",
+            icon: "ℹ️"
+          });
+        }
+      });
+    } catch (err) {
+      toast.error("Gagal memproses pembayaran.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "❌"
+      });
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     if (activeFilter === "all") return true;
