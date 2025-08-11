@@ -99,11 +99,7 @@ const OrdersPage = ({ darkMode }) => {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchOrders();
-    fetchCars();
-  }, [token, fetchOrders, fetchCars]); // Tambahkan fetchOrders dan fetchCars jika tidak didefinisikan di dalam useEffect
-
+  // 1. Deklarasikan fetchOrders dan fetchCars di sini
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -129,6 +125,12 @@ const OrdersPage = ({ darkMode }) => {
       setCars([]);
     }
   };
+
+  // 2. Baru gunakan di useEffect
+  useEffect(() => {
+    fetchOrders();
+    fetchCars();
+  }, []); // atau tambahkan dependency jika perlu
 
   const showToast = (message, variant = "success") => {
     setToast({ show: true, message, variant });
