@@ -113,7 +113,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const url = new URL('/api/auth/register', API_URL).toString();
+      const url = `${API_URL}/auth/register`;
 
       const res = await fetch(url, {
         method: "POST",

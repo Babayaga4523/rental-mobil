@@ -6,8 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/Testimoni.css";
 import { motion } from "framer-motion";
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+import { API_URL } from "../utils/api";
 
 const Testimoni = () => {
   const [testimoni, setTestimoni] = useState([]);
@@ -25,24 +24,13 @@ const Testimoni = () => {
   }, []);
 
   const fetchTestimoni = async () => {
-    try {
-      const response = await axios.get(`${BACKEND_URL}/api/testimoni`);
-      setTestimoni(response.data.data || response.data);
-    } catch {
-      toast.error("Gagal memuat testimoni", {
-        position: "top-right",
-        autoClose: 3500,
-        theme: "colored",
-        icon: "❌"
-      });
-    }
+    const response = await axios.get(`${API_URL}/testimoni`);
+    setTestimoni(response.data.data || response.data);
   };
 
   const fetchLayanan = async () => {
-    try {
-      const response = await axios.get(`${BACKEND_URL}/api/layanan`);
-      setLayananList(response.data.data || response.data);
-    } catch {}
+    const response = await axios.get(`${API_URL}/layanan`);
+    setLayananList(response.data.data || response.data);
   };
 
   const handleSubmit = async (e) => {
@@ -58,7 +46,7 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      await axios.post(`${BACKEND_URL}/api/testimoni`, {
+      await axios.post(`${API_URL}/testimoni`, {
         nama,
         pesan,
         rating,

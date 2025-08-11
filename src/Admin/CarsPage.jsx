@@ -11,10 +11,12 @@ import {
 } from "react-icons/fa";
 import { CSVLink } from "react-csv";
 import moment from "moment";
+import { API_URL } from "../utils/api"; // GUNAKAN API_URL dari utils/api.js
 
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+// Fungsi base url untuk gambar/file
+const getBaseUrl = () => API_URL.replace(/\/api$/, "");
 
 const CarsPage = ({ darkMode, toggleDarkMode }) => {
   const [cars, setCars] = useState([]);
@@ -623,7 +625,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                           src={car.gambar
                             ? car.gambar.startsWith("http") 
                               ? car.gambar 
-                              : BACKEND_URL + car.gambar
+                              : getBaseUrl() + car.gambar
                             : '/no-image.png'}
                           alt={car.nama}
                           className="img-fluid h-100 w-100 object-fit-cover"
@@ -797,7 +799,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                         detailCar.gambar
                           ? detailCar.gambar.startsWith("http")
                             ? detailCar.gambar
-                            : BACKEND_URL + detailCar.gambar
+                            : getBaseUrl() + detailCar.gambar
                           : "/no-image.png"
                       }
                       alt={detailCar.nama}
@@ -1068,7 +1070,7 @@ const CarsPage = ({ darkMode, toggleDarkMode }) => {
                     {editCar?.gambar && !formImage && (
                       <div className="mt-2">
                         <img
-                          src={editCar.gambar.startsWith("http") ? editCar.gambar : BACKEND_URL + editCar.gambar}
+                          src={editCar.gambar.startsWith("http") ? editCar.gambar : getBaseUrl() + editCar.gambar}
                           alt="Preview"
                           style={{ 
                             maxWidth: 150, 

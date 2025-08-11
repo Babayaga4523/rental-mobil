@@ -19,10 +19,7 @@ import autoTable from "jspdf-autotable";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 import ReactECharts from "echarts-for-react";
-
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+import { API_URL } from "../utils/api"; // Tambahkan import ini
 
 const StatCard = ({ icon, title, value, color, loading, darkMode }) => (
   <Card className={`stat-card shadow-sm mb-3 ${darkMode ? "bg-dark-2 text-light" : ""}`}>
@@ -443,7 +440,7 @@ const AdminReport = ({ darkMode, toggleDarkMode }) => {
     try {
       const url = order.payment_proof.startsWith("http")
         ? order.payment_proof
-        : `http://localhost:3000${order.payment_proof}`;
+        : `${API_URL.replace(/\/api$/, "")}${order.payment_proof}`;
       const link = document.createElement("a");
       link.href = url;
       link.download = `bukti-pembayaran-${order.id}${url.endsWith('.pdf') ? '.pdf' : '.jpg'}`;

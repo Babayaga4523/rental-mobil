@@ -6,9 +6,8 @@ import {
 } from "react-icons/fa";
 import { format, parseISO, isValid } from "date-fns";
 import id from "date-fns/locale/id";
-import "../style/Receipt.css"; // Pastikan file ini ada
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+import "../style/Receipt.css";
+import { API_URL } from "../utils/api"; // gunakan API_URL dari utils
 
 const formatDate = (dateString, formatPattern = "dd MMMM yyyy", includeTime = false) => {
   try {
@@ -74,7 +73,7 @@ const OrderReceipt = () => {
         if (!token) throw new Error("Token tidak ditemukan");
 
         const response = await axios.get(
-          `${BACKEND_URL}/api/orders/${orderId}/receipt`,
+          `${API_URL}/orders/${orderId}/receipt`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -239,7 +238,11 @@ Jawa Tengah 57164<br />
                         type="button"
                         className="btn btn-sm btn-outline-primary"
                         onClick={() => {
-                          setProofUrl(`http://localhost:3000${order.payment_proof}`);
+                          setProofUrl(
+                            order.payment_proof?.startsWith("http")
+                              ? order.payment_proof
+                              : `${window.location.origin}${order.payment_proof}`
+                          );
                           setShowProofModal(true);
                         }}
                       >

@@ -14,10 +14,7 @@ import {
 import { CSVLink } from "react-csv";
 import { toast as toastify } from "react-toastify";
 import './UsersPage.css';
-
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+import { API_URL } from "../utils/api";
 
 const UsersPage = ({ darkMode }) => {
   // State
@@ -118,7 +115,7 @@ const UsersPage = ({ darkMode }) => {
       : 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
     const photoUrl = photo
       ? photo.startsWith("/uploads/")
-        ? `http://localhost:3000${photo}`
+        ? `${API_URL.replace(/\/api$/, "")}${photo}`
         : photo
       : null;
     return photoUrl ? (

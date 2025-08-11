@@ -4,8 +4,7 @@ import { FaUserCircle, FaEnvelope, FaPhoneAlt, FaCheckCircle, FaCamera, FaKey, F
 import "../style/Profil.css";
 import { socket } from "../Admin/utils/socket";
 import { toast } from "react-toastify";
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+import { API_URL } from "../utils/api";
 
 const Profile = () => {
   const [user, setUser] = useState({
@@ -34,7 +33,7 @@ const Profile = () => {
   useEffect(() => {
     if (userId && token) {
       axios
-        .get(`${BACKEND_URL}/api/users/${userId}`, {
+        .get(`${API_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
@@ -45,7 +44,7 @@ const Profile = () => {
         .catch(() => setLoading(false));
       // Ambil riwayat pesanan
       axios
-        .get(`${BACKEND_URL}/api/orders`, {
+        .get(`${API_URL}/orders`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => setOrders(res.data.data || []));
@@ -55,7 +54,7 @@ const Profile = () => {
   // Fetch notifikasi awal & polling
   const fetchNotif = async () => {
     setNotifLoading(true);
-    const res = await axios.get(`${BACKEND_URL}/api/notifications`, {
+    const res = await axios.get(`${API_URL}/notifications`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     setNotif(res.data || []);
@@ -101,7 +100,7 @@ const Profile = () => {
         const formData = new FormData();
         formData.append("photo", photoFile);
         const uploadRes = await axios.post(
-          `${BACKEND_URL}/api/users/${userId}/photo`,
+          `${API_URL}/users/${userId}/photo`,
           formData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -109,7 +108,7 @@ const Profile = () => {
         setPhotoPreview(photoUrl);
       }
       await axios.put(
-        `${BACKEND_URL}/api/users/${userId}`,
+        `${API_URL}/users/${userId}`,
         {
           nama: user.name,
           email: user.email,
@@ -147,7 +146,7 @@ const Profile = () => {
     setPwError("");
     try {
       await axios.put(
-        `${BACKEND_URL}/api/users/${userId}/password`,
+        `${API_URL}/users/${userId}/password`,
         passwords,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -172,22 +171,22 @@ const Profile = () => {
 
   // Tambahkan di atas komponen Profile
   const markNotifAsRead = async (id, token) => {
-    await axios.put(`${BACKEND_URL}/api/notifications/${id}/read`, {}, {
+    await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
   const markAllNotifAsRead = async (token) => {
-    await axios.put(`${BACKEND_URL}/api/notifications/read-all`, {}, {
+    await axios.put(`${API_URL}/notifications/read-all`, {}, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
   const deleteNotif = async (id, token) => {
-    await axios.delete(`${BACKEND_URL}/api/notifications/${id}`, {
+    await axios.delete(`${API_URL}/notifications/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
   const deleteAllNotif = async (token) => {
-    await axios.delete(`${BACKEND_URL}/api/notifications`, {
+    await axios.delete(`${API_URL}/notifications`, {
       headers: { Authorization: `Bearer ${token}` }
     });
   };
@@ -231,10 +230,10 @@ const Profile = () => {
                       ? photoPreview
                       // Jika preview dari backend ("/uploads/"), tambahkan BACKEND_URL
                       : photoPreview && photoPreview.startsWith("/uploads/")
-                        ? `${BACKEND_URL}${photoPreview}`
+                        ? `${API_URL.replace(/\/api$/, "")}${photoPreview}`
                         // Jika tidak ada preview, cek user.photo
                         : user.photo && user.photo.startsWith("/uploads/")
-                          ? `${BACKEND_URL}${user.photo}`
+                          ? `${API_URL.replace(/\/api$/, "")}${user.photo}`
                           : user.photo || "/images/default-avatar.png"
                   }
                   alt="Foto Profil"

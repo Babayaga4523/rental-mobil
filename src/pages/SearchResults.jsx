@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { API_URL } from "../utils/api";
 
 // Custom hook to get query parameters from URL
 const useQuery = () => {
@@ -17,7 +18,7 @@ const SearchResults = () => {
   useEffect(() => {
     const fetchLayanan = async () => {
       try {
-        const response = await fetch("https://uji-coba-production.up.railway.app/api/layanan");
+        const response = await fetch(`${API_URL}/layanan`);
         if (!response.ok) {
           throw new Error("Data tidak ditemukan");
         }

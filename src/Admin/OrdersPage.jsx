@@ -16,10 +16,10 @@ import { CSVLink } from "react-csv";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { API_URL } from "../utils/api"; // GUNAKAN API_URL dari utils/api.js
 
-const API_URL = "https://uji-coba-production.up.railway.app/api";
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
-
+const getBaseUrl = () => API_URL.replace(/\/api$/, "");
 const formatDate = (date) => date ? moment(date).format('DD/MM/YYYY') : '-';
 const formatDateTime = (date) => date ? moment(date).format('DD/MM/YYYY HH:mm') : '-';
 const formatCurrency = (amount) => amount ? `Rp${Number(amount).toLocaleString('id-ID')}` : '-';
@@ -102,7 +102,7 @@ const OrdersPage = ({ darkMode }) => {
   useEffect(() => {
     fetchOrders();
     fetchCars();
-  }, [token]);
+  }, [token, fetchOrders, fetchCars]); // Tambahkan fetchOrders dan fetchCars jika tidak didefinisikan di dalam useEffect
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -980,12 +980,20 @@ const OrdersPage = ({ darkMode }) => {
                           {selectedOrder.payment_proof ? (
                             <div className="text-center">
                               <a 
-                                href={`http://localhost:3000${selectedOrder.payment_proof}`} 
+                                href={
+                                  selectedOrder.payment_proof.startsWith("http")
+                                    ? selectedOrder.payment_proof
+                                    : `${getBaseUrl()}${selectedOrder.payment_proof}`
+                                }
                                 target="_blank" 
                                 rel="noopener noreferrer"
                               >
                                 <img
-                                  src={`http://localhost:3000${selectedOrder.payment_proof}`}
+                                  src={
+                                    selectedOrder.payment_proof.startsWith("http")
+                                      ? selectedOrder.payment_proof
+                                      : `${getBaseUrl()}${selectedOrder.payment_proof}`
+                                  }
                                   alt="Bukti Pembayaran"
                                   className="img-fluid rounded border"
                                   style={{ maxHeight: 200 }}
@@ -996,7 +1004,12 @@ const OrdersPage = ({ darkMode }) => {
                                 <Button 
                                   variant="primary" 
                                   size="sm"
-                                  onClick={() => window.open(`http://localhost:3000${selectedOrder.payment_proof}`, '_blank')}
+                                  onClick={() => window.open(
+                                    selectedOrder.payment_proof.startsWith("http")
+                                      ? selectedOrder.payment_proof
+                                      : `${getBaseUrl()}${selectedOrder.payment_proof}`,
+                                    '_blank'
+                                  )}
                                 >
                                   Lihat Full Size
                                 </Button>

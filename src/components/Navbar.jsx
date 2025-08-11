@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Navbar.css";
+import { API_URL } from "../utils/api"; // Tambahkan ini
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -41,7 +42,7 @@ const Navbar = () => {
   const user = localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : null;
   const photoUrl = user?.photo
     ? user.photo.startsWith("/uploads/")
-      ? `${process.env.NEXT_PUBLIC_API_URL}${user.photo}`
+      ? `${API_URL.replace(/\/api$/, "")}${user.photo}`
       : user.photo
     : "/images/default-avatar.png";
 

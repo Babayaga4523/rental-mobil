@@ -33,8 +33,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../style/UserOrdersPage.css";
 import AOS from "aos";
 import "aos/dist/aos.css";
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
+import { API_URL } from "../utils/api";
 
 const UserOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -56,7 +55,7 @@ const UserOrdersPage = () => {
     }
     const fetchOrders = async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/orders`, {
+        const res = await axios.get(`${API_URL}/orders`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(res.data.data || []);
@@ -133,7 +132,7 @@ const UserOrdersPage = () => {
       const token = localStorage.getItem("token");
       setCancellingId(orderId);
       await axios.put(
-        `${BACKEND_URL}/api/orders/${orderId}/cancel`,
+        `${API_URL}/orders/${orderId}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -171,7 +170,7 @@ const UserOrdersPage = () => {
         // Simpan ke backend jika perlu
       }
       const res = await axios.post(
-        `${BACKEND_URL}/api/payment/midtrans-token`,
+        `${API_URL}/payment/midtrans-token`,
         {
           order_id: orderId,
           gross_amount: order.total_price,
@@ -451,11 +450,9 @@ const UserOrdersPage = () => {
                         <div className="car-image-container">
                           <img
                             src={
-                              order.car?.image_url
-                                ? order.car.image_url.startsWith("/")
-                                  ? `${BACKEND_URL}${order.car.image_url}`
-                                  : order.car.image_url
-                                : ""
+                              order.car?.image_url?.startsWith("/")
+                                ? `${API_URL.replace(/\/api$/, "")}${order.car.image_url}`
+                                : order.car?.image_url
                             }
                             alt={order.car?.name}
                             className="car-image"

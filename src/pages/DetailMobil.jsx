@@ -11,6 +11,7 @@ import 'react-calendar/dist/Calendar.css';
 import axios from "axios";
 import { toast } from "react-toastify";
 import { format } from 'date-fns';
+import { API_URL } from "../utils/api"; // gunakan API_URL dari utils
 
 const defaultCarImage = '/images/default-car.jpg';
 const defaultGalleryImages = [
@@ -18,10 +19,6 @@ const defaultGalleryImages = [
   '/images/car-side.jpg',
   '/images/car-back.jpg'
 ];
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
 
 const DetailMobil = () => {
   const { id } = useParams();
@@ -39,7 +36,7 @@ const DetailMobil = () => {
   useEffect(() => {
     AOS.init({ duration: 800, once: true, easing: 'ease-in-out' });
 
-    fetch(`${BACKEND_URL}/api/layanan/${id}`)
+    fetch(`${API_URL}/layanan/${id}`)
       .then((response) => {
         if (!response.ok) throw new Error("Mobil tidak ditemukan");
         return response.json();
@@ -51,7 +48,7 @@ const DetailMobil = () => {
           processedImages.push(
             data.data.gambar.startsWith("http")
               ? data.data.gambar
-              : BACKEND_URL + data.data.gambar
+              : API_URL.replace(/\/api$/, "") + data.data.gambar
           );
         } else {
           processedImages.push(defaultCarImage);
@@ -75,7 +72,7 @@ const DetailMobil = () => {
   useEffect(() => {
     if (!car?.id) return;
     setLoadingReviews(true);
-    fetch(`${BACKEND_URL}/api/testimoni?layanan_id=${car.id}`)
+    fetch(`${API_URL}/testimoni?layanan_id=${car.id}`)
       .then(res => res.json())
       .then(data => {
         setReviews(Array.isArray(data.data) ? data.data : []);
@@ -330,7 +327,7 @@ const DetailMobil = () => {
                   <div className="d-flex align-items-center mb-3">
                     <div className="flex-shrink-0">
                       <img
-                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : defaultCarImage}
+                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : API_URL.replace(/\/api$/, "") + car.gambar) : defaultCarImage}
                         alt="Car Thumbnail"
                         className="rounded-3"
                         style={{ width: '80px', height: '60px', objectFit: 'cover' }}

@@ -26,11 +26,7 @@ import {
   FaCar
 } from "react-icons/fa";
 import { toast as toastify } from "react-toastify";
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+import { API_URL } from "../utils/api";
 
 const TestimoniReplyPage = () => {
   const [testimoni, setTestimoni] = useState([]);
@@ -46,7 +42,7 @@ const TestimoniReplyPage = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`${BACKEND_URL}/api/testimoni?status=approved`, {
+      .get(`${API_URL}/testimoni?status=approved`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -110,7 +106,7 @@ const TestimoniReplyPage = () => {
     setSaving(true);
     try {
       await axios.put(
-        `${BACKEND_URL}/api/testimoni/${selected.id}/reply`,
+        `${API_URL}/testimoni/${selected.id}/reply`,
         { reply },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -21,10 +21,10 @@ import {
   deleteAllNotifications
 } from "./utils/notificationApi";
 import { socket } from "./utils/socket";
+import { API_URL } from "../utils/api"; // Tambahkan ini di bagian import
 
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+// Hapus baris ini:
+// const API_URL = "https://uji-coba-production.up.railway.app/api";
 
 const AdminNavbar = ({ toggleSidebar, darkMode, toggleDarkMode }) => {
   const [showProfile, setShowProfile] = useState(false);

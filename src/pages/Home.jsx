@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../style/HomePage.css";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { API_URL } from "../utils/api"; // Tambahkan import ini
 
 const Home = () => {
   const [testimonials, setTestimonials] = useState([]);
@@ -37,17 +38,15 @@ const Home = () => {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true, easing: 'ease-out-cubic' });
 
-    // --- PERBAIKAN: Fetch data paralel dan setIsLoading lebih awal ---
     setIsLoading(true);
     Promise.all([
-      fetch("https://uji-coba-production.up.railway.app/api/testimoni").then(res => res.json()).catch(() => []),
-      fetch("https://uji-coba-production.up.railway.app/api/layanan?limit=3").then(res => res.json()).catch(() => ({ data: [] }))
+      fetch(`${API_URL}/testimoni`).then(res => res.json()).catch(() => []),
+      fetch(`${API_URL}/layanan?limit=3`).then(res => res.json()).catch(() => ({ data: [] }))
     ]).then(([testiData, carsData]) => {
       setTestimonials(Array.isArray(testiData.data) ? testiData.data : Array.isArray(testiData) ? testiData : []);
       setPopularCars(Array.isArray(carsData.data) ? carsData.data : Array.isArray(carsData) ? carsData : []);
       setIsLoading(false);
     });
-    // --- END PERBAIKAN ---
   }, []);
 
   return (
@@ -298,7 +297,7 @@ const Home = () => {
                       }}
                     >
                       <img
-                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : "http://localhost:3000" + car.gambar) : "/images/default-car.jpg"}
+                        src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : `${API_URL.replace(/\/api$/, "")}${car.gambar}`) : "/images/default-car.jpg"}
                         alt={car.nama}
                         className="img-fluid home-page-car-image"
                         style={{

@@ -8,11 +8,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import { Modal } from "react-bootstrap";
 import { toast } from "react-toastify";
 import "../style/LayananPage.css";
-
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+import { API_URL } from "../utils/api"; // gunakan API_URL dari utils
 
 const getHargaSetelahPromo = (car) => {
   if (car.promo && car.promo > 0) {
@@ -73,7 +69,7 @@ const Layanan = () => {
 
     const fetchLayanan = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/api/layanan`);
+        const response = await fetch(`${API_URL}/layanan`);
         if (!response.ok) throw new Error("Failed to load services");
         const data = await response.json();
         setLayanan(Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : []);
@@ -473,7 +469,7 @@ const Layanan = () => {
                       {/* Car Image */}
                       <div className="car-image-container">
                         <img
-                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
+                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : API_URL.replace(/\/api$/, "") + car.gambar) : "/images/default-car.jpg"}
                           alt={car.nama}
                           className="car-image"
                           onClick={() => openQuickView(car)}
@@ -600,7 +596,7 @@ const Layanan = () => {
                         >
                           <div className="compare-item-image">
                             <img 
-                              src={c.gambar ? (c.gambar.startsWith("http") ? c.gambar : BACKEND_URL + c.gambar) : "/images/default-car.jpg"}
+                              src={c.gambar ? (c.gambar.startsWith("http") ? c.gambar : API_URL.replace(/\/api$/, "") + c.gambar) : "/images/default-car.jpg"}
                               alt={c.nama}
                               loading="lazy"
                             />
@@ -656,7 +652,7 @@ const Layanan = () => {
             <div className="modal-content">
               <div className="modal-image">
                 <img
-                  src={selectedCar.gambar ? (selectedCar.gambar.startsWith("http") ? selectedCar.gambar : BACKEND_URL + selectedCar.gambar) : "/images/default-car.jpg"}
+                  src={selectedCar.gambar ? (selectedCar.gambar.startsWith("http") ? selectedCar.gambar : API_URL.replace(/\/api$/, "") + selectedCar.gambar) : "/images/default-car.jpg"}
                   alt={selectedCar.nama}
                 />
                 <div className="image-badges">
@@ -805,7 +801,7 @@ const Layanan = () => {
                     <th key={car.id}>
                       <div className="compare-car-header">
                         <img
-                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : BACKEND_URL + car.gambar) : "/images/default-car.jpg"}
+                          src={car.gambar ? (car.gambar.startsWith("http") ? car.gambar : API_URL.replace(/\/api$/, "") + car.gambar) : "/images/default-car.jpg"}
                           alt={car.nama}
                         />
                         <span>{car.nama}</span>

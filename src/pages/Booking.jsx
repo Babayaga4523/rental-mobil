@@ -4,7 +4,6 @@ import {
   FaCar, 
   FaMoneyBillWave, 
   FaCalendarAlt, 
-  FaPercentage, 
   FaCreditCard, 
   FaArrowLeft, 
   FaTimesCircle 
@@ -17,28 +16,13 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../style/BookingPage.css";
 import axios from "axios";
-  
-const BACKEND_URL = "https://uji-coba-production.up.railway.app";
-// ...existing code...
-const API_URL = "https://uji-coba-production.up.railway.app/api";
-// ...existing code...
+import { API_URL } from "../utils/api"; // gunakan API_URL dari utils
 
 const getHargaSetelahPromo = (price, promo) => {
   if (promo && promo > 0) {
     return Math.round(price - (price * promo / 100));
   }
   return price;
-};
-
-const BANK_INFO = {
-  bank: "BCA",
-  norek: "3930338060",
-  nama: "Agus Windiarto",
-};
-
-const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text);
-  toast.success("Berhasil disalin!");
 };
 
 const Booking = () => {
@@ -50,9 +34,6 @@ const Booking = () => {
     price,
     discount,
     image,
-    kapasitas,
-    transmisi,
-    fitur,
     days = 1,
   } = location.state || {};
 
@@ -66,26 +47,18 @@ const Booking = () => {
     payment_method: "midtrans", // default midtrans
     additional_notes: "",
     total_price: totalHarga,
-    // payment_proof: null, // HAPUS
   });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [activeTab, setActiveTab] = useState("booking");
-  const [previewImage, setPreviewImage] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Tambahkan state baru
   const [isAvailable, setIsAvailable] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
 
-  // Tambahkan state ini
   const [bookedDates, setBookedDates] = useState([]);
   const [showAllBooked, setShowAllBooked] = useState(false);
 
-  // Check if token is valid on component mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const tokenExpiry = localStorage.getItem("token_expiry");
@@ -114,48 +87,6 @@ const Booking = () => {
       ...prevData,
       [name]: value,
     }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size should be less than 5MB");
-      return;
-    }
-
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Only JPG, PNG, or PDF files are allowed");
-      return;
-    }
-
-    // Create preview for images
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewImage(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewImage(null);
-    }
-
-    setFormData((prevData) => ({
-      ...prevData,
-      payment_proof: file,
-    }));
-  };
-
-  const removePaymentProof = () => {
-    setFormData((prevData) => ({
-      ...prevData,
-      payment_proof: null,
-    }));
-    setPreviewImage(null);
   };
 
   // Hapus validasi payment_proof di validateForm
@@ -198,7 +129,6 @@ const Booking = () => {
     }
 
     setIsLoading(true);
-    setIsUploading(true);
 
     try {
       const token = localStorage.getItem("token");
@@ -219,24 +149,15 @@ const Booking = () => {
       formDataToSend.append('payment_method', formData.payment_method);
       formDataToSend.append('additional_notes', formData.additional_notes);
       formDataToSend.append('total_price', formData.total_price);
-      if (formData.payment_proof) {
-        formDataToSend.append('payment_proof', formData.payment_proof);
-      }
 
       const response = await axios.post(
-        "http://localhost:3000/api/orders",
+        `${API_URL}/orders`,
         formDataToSend,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
           },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setUploadProgress(percentCompleted);
-          },  
         }
       );
 
@@ -258,7 +179,7 @@ const Booking = () => {
         return;
       }
       const responseReceipt = await axios.get(
-        `${BACKEND_URL}/api/orders/${orderId}/receipt`,
+        `${API_URL}/orders/${orderId}/receipt`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (responseReceipt.data?.data?.id) {
@@ -291,50 +212,6 @@ const Booking = () => {
       });
     } finally {
       setIsLoading(false);
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleOrder = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const orderData = {
-        layanan_id: Number(formData.layanan_id),
-        pickup_date: formData.pickup_date,
-        return_date: formData.return_date,
-        payment_method: formData.payment_method,
-        additional_notes: formData.additional_notes,
-        total_price: formData.total_price,
-        // payment_proof: formData.payment_proof, // Uncomment if needed
-      };
-
-      const res = await axios.post("http://localhost:3000/api/orders", orderData, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data && res.data.success && res.data.data && res.data.data.id) {
-        // Redirect ke halaman struk
-        navigate(`/orders/${res.data.data.id}/receipt`);
-      } else {
-        // Tampilkan error
-        toast.error("Gagal membuat pesanan. Silakan coba lagi.");
-      }
-    } catch (error) {
-      console.error("Order creation error:", error);
-      let errorMessage = "Failed to create order";
-      if (error.response) {
-        errorMessage =
-          error.response.data.message ||
-          error.response.data.error ||
-          errorMessage;
-      } else if (error.request) {
-        errorMessage = "No response from server";
-      } else {
-        errorMessage = error.message;
-      }
-      toast.error(errorMessage);
     }
   };
 
@@ -345,7 +222,7 @@ const Booking = () => {
     const fetchBookedDates = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${BACKEND_URL}/api/orders/layanan/${carId}/booked-dates`, {
+        const res = await axios.get(`${API_URL}/orders/layanan/${carId}/booked-dates`, {
           headers: { 
             Authorization: `Bearer ${token}`
           }
@@ -354,7 +231,6 @@ const Booking = () => {
           setBookedDates(res.data.bookedDates);
         }
       } catch (error) {
-        console.error('Error fetching booked dates:', error);
         setBookedDates([]);
       }
     };
@@ -369,14 +245,13 @@ const Booking = () => {
     }
     setIsChecking(true);
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/orders/check-availability`, {
+      const response = await axios.get(`${API_URL}/orders/check-availability`, {
         params: {
           layanan_id: carId,
           pickup_date: pickup,
           return_date: returnDate
         }
       });
-      // Perbaikan: handle response tanpa field success
       if (typeof response.data.available === "boolean") {
         setIsAvailable(response.data.available);
         if (!response.data.available) {
@@ -394,25 +269,16 @@ const Booking = () => {
     }
   };
 
-  // Tambahkan useEffect untuk cek availability saat tanggal berubah
   useEffect(() => {
     if (formData.pickup_date && formData.return_date) {
       checkAvailability(formData.pickup_date, formData.return_date);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.pickup_date, formData.return_date]);
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
   }, []);
-
-  // Fetch booked dates for the car
-  useEffect(() => {
-    if (!carId) return;
-    axios
-      .get(`${BACKEND_URL}/api/orders/layanan/${carId}/booked-dates`)
-      .then((res) => setBookedDates(res.data.bookedDates || []))
-      .catch(() => setBookedDates([]));
-  }, [carId]);
 
   // Tambahkan fungsi handleMidtransPayment di dalam komponen Booking
   const handleMidtransPayment = async () => {
@@ -434,11 +300,11 @@ const Booking = () => {
 
       // Dapatkan Snap token dari backend
       const res = await axios.post(
-        `${BACKEND_URL}/api/payment/midtrans-token`,
+        `${API_URL}/payment/midtrans-token`,
         {
           order_id,
           gross_amount,
-          layanan_id, // atau car_id
+          layanan_id,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -452,11 +318,9 @@ const Booking = () => {
               theme: "colored",
               icon: "✅"
             });
-            // Ambil payment_type dari Midtrans
             const paymentMethod = result.payment_type || "midtrans";
-            // Buat order di backend dengan status paid
             const orderRes = await axios.post(
-              `${BACKEND_URL}/api/orders`,
+              `${API_URL}/orders`,
               {
                 layanan_id: Number(formData.layanan_id),
                 pickup_date: formData.pickup_date,
@@ -469,7 +333,6 @@ const Booking = () => {
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Redirect ke OrderReceipt tanpa delay
             if (orderRes.data?.data?.id) {
               navigate(`/orders/${orderRes.data.data.id}/receipt`);
             } else {
@@ -483,11 +346,9 @@ const Booking = () => {
               theme: "colored",
               icon: "⏳"
             });
-            // Ambil payment_type dari Midtrans
             const paymentMethod = result.payment_type || "midtrans";
-            // Buat order di backend dengan status pending
             const orderRes = await axios.post(
-              `${BACKEND_URL}/api/orders`,
+              `${API_URL}/orders`,
               {
                 layanan_id: Number(formData.layanan_id),
                 pickup_date: formData.pickup_date,
@@ -500,7 +361,6 @@ const Booking = () => {
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            // Redirect ke OrderReceipt tanpa delay
             if (orderRes.data?.data?.id) {
               navigate(`/orders/${orderRes.data.data.id}/receipt`);
             } else {
@@ -514,10 +374,9 @@ const Booking = () => {
               theme: "colored",
               icon: "❌"
             });
-            // Buat order di backend dengan status failed
             const paymentMethod = result?.payment_type || "midtrans";
             const orderRes = await axios.post(
-              `${BACKEND_URL}/api/orders`,
+              `${API_URL}/orders`,
               {
                 layanan_id: Number(formData.layanan_id),
                 pickup_date: formData.pickup_date,
@@ -617,7 +476,7 @@ const Booking = () => {
                     <div className="booking-page-summary card border-0 shadow-sm p-0" data-aos="zoom-in">
                       <div className="booking-page-card-img-top-custom position-relative">
                         <img
-                          src={image ? (image.startsWith("http") ? image : BACKEND_URL + image) : "/images/default-car.jpg"}
+                          src={image ? (image.startsWith("http") ? image : API_URL.replace(/\/api$/, "") + image) : "/images/default-car.jpg"}
                           alt={carName}
                           className="booking-page-img-cover-custom"
                         />
