@@ -33,6 +33,8 @@ const Testimoni = () => {
     setLayananList(response.data.data || response.data);
   };
 
+  const user = JSON.parse(localStorage.getItem("user")); // Atau dari context/redux
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!layananId) {
@@ -50,7 +52,7 @@ const Testimoni = () => {
         nama,
         pesan,
         rating,
-        user_id: 1,
+        user_id: user ? user.id : null, // null jika belum login
         layanan_id: layananId
       });
       setNama("");
