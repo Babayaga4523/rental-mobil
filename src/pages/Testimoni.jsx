@@ -46,18 +46,27 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem("user"));
+      } catch {
+        user = null;
+      }
       const payload = {
         nama,
         pesan,
         rating,
         layanan_id: layananId
       };
-      // Pastikan hanya kirim user_id jika user login dan id valid (angka positif)
+      // Hanya kirim user_id jika user login dan id valid
       if (user && typeof user.id === "number" && user.id > 0) {
         payload.user_id = user.id;
       }
-      await axios.post(`${API_URL}/testimoni`, payload);
+      await axios.post(`${API_URL}/testimoni`, payload, {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
       setNama("");
       setPesan("");
       setRating(5);
