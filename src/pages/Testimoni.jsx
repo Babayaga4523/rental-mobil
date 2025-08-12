@@ -54,6 +54,7 @@ const Testimoni = () => {
         rating,
         layanan_id: layananId
       };
+      // Hanya tambahkan user_id jika user login dan id valid
       if (user && user.id) {
         dataToSend.user_id = user.id;
       }
