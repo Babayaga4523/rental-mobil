@@ -48,13 +48,16 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/testimoni`, {
+      const dataToSend = {
         nama,
         pesan,
         rating,
-        user_id: user ? user.id : null, // null jika belum login
         layanan_id: layananId
-      });
+      };
+      if (user && user.id) {
+        dataToSend.user_id = user.id;
+      }
+      await axios.post(`${API_URL}/testimoni`, dataToSend);
       setNama("");
       setPesan("");
       setRating(5);
