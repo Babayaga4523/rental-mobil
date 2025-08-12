@@ -55,9 +55,9 @@ const Testimoni = () => {
         layanan_id: layananId
       };
       // Hanya tambahkan user_id jika user login dan id valid
-      if (user && user.id) {
-        dataToSend.user_id = user.id;
-      }
+     if (user && typeof user.id === "number" && user.id > 0) {
+  dataToSend.user_id = user.id;
+}
       await axios.post(`${API_URL}/testimoni`, dataToSend);
       setNama("");
       setPesan("");
