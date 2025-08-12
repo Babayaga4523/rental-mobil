@@ -46,13 +46,19 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/testimoni`, {
+      // Ambil user dari localStorage/context jika login
+      const user = JSON.parse(localStorage.getItem("user")); // sesuaikan jika pakai context/redux
+      const payload = {
         nama,
         pesan,
         rating,
-        user_id: 1,
         layanan_id: layananId
-      });
+      };
+      // Hanya tambahkan user_id jika user login dan id valid
+      if (user && user.id) {
+        payload.user_id = user.id;
+      }
+      await axios.post(`${API_URL}/testimoni`, payload);
       setNama("");
       setPesan("");
       setRating(5);
