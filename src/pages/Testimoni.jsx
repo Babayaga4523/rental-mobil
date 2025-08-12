@@ -33,8 +33,6 @@ const Testimoni = () => {
     setLayananList(response.data.data || response.data);
   };
 
-  const user = JSON.parse(localStorage.getItem("user")); // Atau dari context/redux
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!layananId) {
@@ -48,17 +46,18 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      const dataToSend = {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const payload = {
         nama,
         pesan,
         rating,
         layanan_id: layananId
       };
-      // Hanya tambahkan user_id jika user login dan id valid
-     if (user && typeof user.id === "number" && user.id > 0) {
-  dataToSend.user_id = user.id;
-}
-      await axios.post(`${API_URL}/testimoni`, dataToSend);
+      // Hanya kirim user_id jika user login dan id valid (angka positif)
+      if (user && typeof user.id === "number" && user.id > 0) {
+        payload.user_id = user.id;
+      }
+      await axios.post(`${API_URL}/testimoni`, payload);
       setNama("");
       setPesan("");
       setRating(5);
@@ -70,13 +69,23 @@ const Testimoni = () => {
         theme: "colored",
         icon: "✅"
       });
-    } catch {
-      toast.error("Gagal mengirim testimoni", {
-        position: "top-right",
-        autoClose: 3500,
-        theme: "colored",
-        icon: "❌"
-      });
+    } catch (err) {
+      // Tampilkan error detail jika ada masalah user_id
+      if (err.response && err.response.data && err.response.data.error) {
+        toast.error(`Gagal mengirim testimoni: ${err.response.data.error}`, {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+      } else {
+        toast.error("Gagal mengirim testimoni", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+      }
     } finally {
       setLoading(false);
     }
