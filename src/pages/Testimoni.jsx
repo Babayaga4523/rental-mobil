@@ -33,8 +33,6 @@ const Testimoni = () => {
     setLayananList(response.data.data || response.data);
   };
 
-  const user = JSON.parse(localStorage.getItem("user")); // Atau dari context/redux
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!layananId) {
@@ -48,17 +46,13 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      const dataToSend = {
+      await axios.post(`${API_URL}/testimoni`, {
         nama,
         pesan,
         rating,
+        user_id: 1,
         layanan_id: layananId
-      };
-      // Hanya tambahkan user_id jika user login dan id valid
-     if (user && typeof user.id === "number" && user.id > 0) {
-  dataToSend.user_id = user.id;
-}
-      await axios.post(`${API_URL}/testimoni`, dataToSend);
+      });
       setNama("");
       setPesan("");
       setRating(5);
