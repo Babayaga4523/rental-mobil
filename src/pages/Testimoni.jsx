@@ -52,11 +52,12 @@ const Testimoni = () => {
       } catch {
         user = null;
       }
+      // Pastikan layanan_id bertipe number
       const payload = {
         nama,
         pesan,
         rating,
-        layanan_id: layananId
+        layanan_id: Number(layananId)
       };
       // Hanya kirim user_id jika user login dan id valid
       if (user && typeof user.id === "number" && user.id > 0) {
