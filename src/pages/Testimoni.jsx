@@ -53,7 +53,11 @@ const Testimoni = () => {
         rating,
         layanan_id: layananId
       };
+<<<<<<< HEAD
       // Hanya kirim user_id jika user login dan id valid (angka positif)
+=======
+      // Pastikan hanya kirim user_id jika user login dan id valid (angka positif)
+>>>>>>> a45ffb951b43489e0d10ff164eec89d6f8a4c907
       if (user && typeof user.id === "number" && user.id > 0) {
         payload.user_id = user.id;
       }
@@ -70,7 +74,10 @@ const Testimoni = () => {
         icon: "✅"
       });
     } catch (err) {
+<<<<<<< HEAD
       // Tampilkan error detail jika ada masalah user_id
+=======
+>>>>>>> a45ffb951b43489e0d10ff164eec89d6f8a4c907
       if (err.response && err.response.data && err.response.data.error) {
         toast.error(`Gagal mengirim testimoni: ${err.response.data.error}`, {
           position: "top-right",
