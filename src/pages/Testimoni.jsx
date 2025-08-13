@@ -46,12 +46,7 @@ const Testimoni = () => {
     }
     setLoading(true);
     try {
-      let user = null;
-      try {
-        user = JSON.parse(localStorage.getItem("user"));
-      } catch {
-        user = null;
-      }
+      // Hapus seluruh logika user
       // Pastikan layanan_id bertipe number
       const payload = {
         nama,
@@ -59,10 +54,7 @@ const Testimoni = () => {
         rating,
         layanan_id: Number(layananId)
       };
-      // Hanya kirim user_id jika user login dan id valid
-      if (user && typeof user.id === "number" && user.id > 0) {
-        payload.user_id = user.id;
-      }
+      // Tidak perlu lagi cek/kirim user_id
       await axios.post(`${API_URL}/testimoni`, payload, {
         headers: {
           "Content-Type": "application/json"
