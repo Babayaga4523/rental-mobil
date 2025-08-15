@@ -33,8 +33,20 @@ Object.keys(db).forEach(modelName => {
 
 // Middleware
 app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:3001",
+  "https://rental-mobil-ruby.vercel.app",
+  "https://rental-mobil-rcmr1udov-yoga-krisnas-projects.vercel.app",
+  "https://uji-coba-production.up.railway.app" // tambahkan domain frontend Anda di sini
+];
+
 app.use(cors({
-  origin: "http://localhost:3001", // atau sesuai URL frontend
+  origin: function(origin, callback) {
+    // izinkan request tanpa origin (Postman, curl, dsb)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 app.use('/uploads', express.static('uploads'));
@@ -47,6 +59,7 @@ const authRoutes = require("./routes/authRoute");
 const userRoutes = require("./routes/userRoute");
 const notificationRoutes = require('./routes/notificationRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const aiRoute = require('./routes/aiRoutes');
 
 
 
@@ -58,6 +71,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/ai', aiRoute);
 
 
 // Tes koneksi

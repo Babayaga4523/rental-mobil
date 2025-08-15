@@ -68,8 +68,6 @@ Statistik Website Saat Ini:
     e.preventDefault();
     if (!input.trim()) return;
     const userMsg = { role: "user", content: input };
-    const systemMsg = { role: "system", content: getSystemPrompt() };
-    const newMessages = [systemMsg, ...messages.slice(1), userMsg];
     setMessages([...messages, userMsg]);
     setInput("");
     setLoading(true);
@@ -81,13 +79,12 @@ Statistik Website Saat Ini:
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: MODEL,
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          max_tokens: 1544 // Lebih panjang agar tidak terpotong
+          message: input // hanya kirim field message
         })
       });
       const data = await response.json();
-      const aiReply = data.choices?.[0]?.message?.content || "Maaf, terjadi kesalahan pada AI.";
+      // Sesuaikan dengan response backend Anda
+      const aiReply = data.response || "Maaf, terjadi kesalahan pada AI.";
       setMessages([...messages, userMsg, { role: "assistant", content: aiReply }]);
     } catch (err) {
       setMessages([...messages, userMsg, { role: "assistant", content: "Maaf, terjadi kesalahan koneksi ke AI." }]);
