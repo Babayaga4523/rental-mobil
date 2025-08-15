@@ -73,17 +73,20 @@ Statistik Website Saat Ini:
     setLoading(true);
 
     try {
+      // Ambil token dari localStorage (atau context/auth state Anda)
+      const token = localStorage.getItem("token"); // pastikan token sudah disimpan saat login
+
       const response = await fetch(OPENROUTER_API_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` })
         },
         body: JSON.stringify({
-          message: input // hanya kirim field message
+          message: input
         })
       });
       const data = await response.json();
-      // Sesuaikan dengan response backend Anda
       const aiReply = data.response || "Maaf, terjadi kesalahan pada AI.";
       setMessages([...messages, userMsg, { role: "assistant", content: aiReply }]);
     } catch (err) {
