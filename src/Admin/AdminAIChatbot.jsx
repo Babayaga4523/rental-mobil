@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import { FaRobot, FaPaperPlane, FaTimes } from "react-icons/fa";
 import "./AdminAIChatbot.css";
+import { API_URL } from "../utils/api"; // Tambahkan ini
 
-const OPENROUTER_API_KEY = "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";
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_URL = `${API_URL}/ai/chat`; // Ganti ke endpoint backend proxy
 const MODEL = "openai/gpt-5-mini";
 
 const AdminAIChatbot = ({ stats, omzet, orders, users }) => {
@@ -69,7 +69,6 @@ Statistik Website Saat Ini:
     if (!input.trim()) return;
     const userMsg = { role: "user", content: input };
     const systemMsg = { role: "system", content: getSystemPrompt() };
-    // Kirim system prompt + seluruh percakapan
     const newMessages = [systemMsg, ...messages.slice(1), userMsg];
     setMessages([...messages, userMsg]);
     setInput("");
@@ -79,7 +78,6 @@ Statistik Website Saat Ini:
       const response = await fetch(OPENROUTER_API_URL, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
