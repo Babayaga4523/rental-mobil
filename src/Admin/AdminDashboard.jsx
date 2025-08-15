@@ -13,6 +13,7 @@ import ReactECharts from "echarts-for-react";
 import moment from "moment";
 import "./AdminDashboard.css";
 import { API_URL } from "../utils/api"; // GUNAKAN API_URL dari utils/api.js
+import AdminAIChatbot from "./AdminAIChatbot.jsx"; // Tambahkan ini
 
 const StatCard = ({ icon, title, value, color, loading }) => (
   <Card className="stat-card shadow-sm mb-3 border-0">
@@ -30,26 +31,11 @@ const StatCard = ({ icon, title, value, color, loading }) => (
   </Card>
 );
 
-const DashboardHome = () => {
-  const [stats, setStats] = useState({
-    orders: 0,
-    cars: 0,
-    users: 0,
-    revenue: 0,
-    availableCars: 0,
-    unavailableCars: 0,
-    pendingOrders: 0,
-    paidOrders: 0
-  });
-  const [latestUsers, setLatestUsers] = useState([]);
-  const [latestOrders, setLatestOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [orderChart, setOrderChart] = useState(null);
-  const [revenueChart, setRevenueChart] = useState(null);
-  const [userChart, setUserChart] = useState(null);
-  const [notif, setNotif] = useState("");
-  const [topCars, setTopCars] = useState([]);
-  const [occupancyChart, setOccupancyChart] = useState(null);
+const DashboardHome = ({
+  stats, setStats, latestUsers, setLatestUsers, latestOrders, setLatestOrders,
+  loading, setLoading, orderChart, setOrderChart, revenueChart, setRevenueChart,
+  userChart, setUserChart, notif, setNotif, topCars, setTopCars, occupancyChart, setOccupancyChart
+}) => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -730,6 +716,27 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
+  // --- Angkat state ke sini ---
+  const [stats, setStats] = useState({
+    orders: 0,
+    cars: 0,
+    users: 0,
+    revenue: 0,
+    availableCars: 0,
+    unavailableCars: 0,
+    pendingOrders: 0,
+    paidOrders: 0
+  });
+  const [latestUsers, setLatestUsers] = useState([]);
+  const [latestOrders, setLatestOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [orderChart, setOrderChart] = useState(null);
+  const [revenueChart, setRevenueChart] = useState(null);
+  const [userChart, setUserChart] = useState(null);
+  const [notif, setNotif] = useState("");
+  const [topCars, setTopCars] = useState([]);
+  const [occupancyChart, setOccupancyChart] = useState(null);
+
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
   const isDashboardHome = location.pathname === "/admin" || location.pathname === "/admin/";
 
@@ -753,10 +760,36 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
       >
         <div className="content">
           <div className="container-fluid">
-            {isDashboardHome ? <DashboardHome /> : <Outlet />}
+            {isDashboardHome ? (
+              <DashboardHome
+                stats={stats}
+                setStats={setStats}
+                latestUsers={latestUsers}
+                setLatestUsers={setLatestUsers}
+                latestOrders={latestOrders}
+                setLatestOrders={setLatestOrders}
+                loading={loading}
+                setLoading={setLoading}
+                orderChart={orderChart}
+                setOrderChart={setOrderChart}
+                revenueChart={revenueChart}
+                setRevenueChart={setRevenueChart}
+                userChart={userChart}
+                setUserChart={setUserChart}
+                notif={notif}
+                setNotif={setNotif}
+                topCars={topCars}
+                setTopCars={setTopCars}
+                occupancyChart={occupancyChart}
+                setOccupancyChart={setOccupancyChart}
+              />
+            ) : (
+              <Outlet />
+            )}
           </div>
         </div>
       </div>
+      <AdminAIChatbot stats={stats} omzet={stats.revenue} orders={stats.orders} users={stats.users} />
     </div>
   );
 };
