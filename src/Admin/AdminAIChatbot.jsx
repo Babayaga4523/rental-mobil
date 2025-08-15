@@ -73,9 +73,7 @@ Statistik Website Saat Ini:
     setLoading(true);
 
     try {
-      // Ambil token dari localStorage (atau context/auth state Anda)
-      const token = localStorage.getItem("token"); // pastikan token sudah disimpan saat login
-
+      const token = localStorage.getItem("token");
       const response = await fetch(OPENROUTER_API_URL, {
         method: "POST",
         headers: {
@@ -83,7 +81,8 @@ Statistik Website Saat Ini:
           ...(token && { Authorization: `Bearer ${token}` })
         },
         body: JSON.stringify({
-          message: input
+          message: input,
+          systemPrompt: getSystemPrompt() // Kirim prompt lengkap ke backend
         })
       });
       const data = await response.json();

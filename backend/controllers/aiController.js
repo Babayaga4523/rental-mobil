@@ -2,13 +2,13 @@ const fetch = require("node-fetch");
 
 exports.chat = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, systemPrompt } = req.body;
     if (!message) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Siapkan prompt system (bisa juga diterima dari frontend jika mau)
-    const systemPrompt = `
+    // Gunakan prompt system dari frontend jika ada
+    const prompt = systemPrompt || `
 Kamu adalah AI asisten profesional untuk admin website rental mobil.
 Tugas kamu adalah membantu pemilik atau admin dalam mengelola bisnis rental mobil berbasis data dan strategi pemasaran digital.
     `.trim();
@@ -23,7 +23,7 @@ Tugas kamu adalah membantu pemilik atau admin dalam mengelola bisnis rental mobi
       body: JSON.stringify({
         model: "openai/gpt-5-mini",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: prompt },
           { role: "user", content: message }
         ],
         max_tokens: 1024
