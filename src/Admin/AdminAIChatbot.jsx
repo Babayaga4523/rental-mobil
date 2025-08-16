@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FaRobot, FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaRobot, FaPaperPlane, FaTimes, FaChartLine, FaMoneyBillWave, FaCar, FaUsers, FaClipboardCheck, FaHourglassHalf, FaLightbulb } from "react-icons/fa";
+import { IoMdStats } from "react-icons/io";
 import "./AdminAIChatbot.css";
 import { API_URL } from "../utils/api";
 
@@ -8,8 +9,13 @@ const AdminAIChatbot = () => {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content:
-        "Halo Admin! Saya adalah AI asisten website rental mobil Anda. Tanyakan apa saja tentang statistik, pemasaran, atau pengelolaan website.",
+      content: "Halo Admin! Saya adalah AI asisten cerdas untuk manajemen rental mobil Anda. Saya bisa membantu dengan:",
+      quickReplies: [
+        "Tampilkan analisis penjualan bulan ini",
+        "Apa rekomendasi untuk meningkatkan pendapatan?",
+        "Berapa tingkat konversi pemesanan?",
+        "Tampilkan prediksi permintaan minggu depan"
+      ]
     },
   ]);
   const [input, setInput] = useState("");
@@ -17,8 +23,9 @@ const AdminAIChatbot = () => {
   const [stats, setStats] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Ambil data statistik saat chatbot dibuka
+  // Fetch statistics when chatbot opens
   useEffect(() => {
+    if (!open) return;
     const token = localStorage.getItem("token");
     fetch(`${API_URL}/users/admin/stats`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -26,13 +33,24 @@ const AdminAIChatbot = () => {
       .then((res) => res.json())
       .then(setStats)
       .catch(() => setStats(null));
-  }, []);
+  }, [open]);
 
-  // Prompt system dengan data statistik real-time
-  const getSystemPrompt = () =>
-    `
-Kamu adalah AI asisten admin rental mobil.
-Statistik saat ini:
+  // System prompt hanya pakai data dari backend
+  const getSystemPrompt = () => {
+    const currentDate = new Date().toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return `
+Kamu adalah AI asisten admin rental mobil yang juga dapat menjawab pertanyaan umum di luar topik rental mobil jika dibutuhkan.
+
+INFORMASI SAAT INI:
+Tanggal: ${currentDate}
+
+STATISTIK RENTAL:
 - Total User: ${stats?.totalUsers ?? 0}
 - Total Pesanan: ${stats?.totalOrders ?? 0}
 - Total Omzet: Rp${(stats?.totalRevenue ?? 0).toLocaleString("id-ID")}
@@ -40,13 +58,22 @@ Statistik saat ini:
 - Pesanan Pending: ${stats?.pendingOrders ?? 0}
 - Pesanan Dibayar: ${stats?.paidOrders ?? 0}
 
-Tugas kamu: membantu admin dalam analisis data, memberikan insight, dan menjawab pertanyaan terkait bisnis rental mobil.
+TUGAS KAMU:
+1. Jika pertanyaan berkaitan dengan rental mobil, jawab dengan analisis bisnis, strategi, dan insight data.
+2. Jika pertanyaan di luar rental mobil, jawab dengan pengetahuan umum terbaikmu.
+3. Jika tidak tahu jawabannya, katakan dengan jujur.
 `.trim();
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
-    const userMsg = { role: "user", content: input };
+    if (!input.trim() || loading) return;
+
+    const userMsg = {
+      role: "user",
+      content: input,
+      quickReplies: []
+    };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
@@ -55,34 +82,37 @@ Tugas kamu: membantu admin dalam analisis data, memberikan insight, dan menjawab
       const token = localStorage.getItem("token");
       const headers = {
         "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
       };
-      if (
-        token &&
-        typeof token === "string" &&
-        token.trim() &&
-        token !== "undefined" &&
-        token !== "null"
-      ) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+
       const response = await fetch(`${API_URL}/ai/chat`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           message: input,
           systemPrompt: getSystemPrompt(),
+          context: {
+            stats,
+            currentDate: new Date().toISOString()
+          }
         }),
       });
+
       const data = await response.json();
-      const aiReply = data.response || "Maaf, terjadi kesalahan pada AI.";
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: aiReply },
-      ]);
+      const aiReply = {
+        role: "assistant",
+        content: data.response || "Maaf, terjadi kesalahan pada AI.",
+        quickReplies: generateQuickReplies(input, data.response)
+      };
+      setMessages((prev) => [...prev, aiReply]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Maaf, terjadi kesalahan koneksi ke AI." },
+        {
+          role: "assistant",
+          content: "Maaf, terjadi kesalahan koneksi ke AI.",
+          quickReplies: []
+        },
       ]);
     } finally {
       setLoading(false);
@@ -92,206 +122,217 @@ Tugas kamu: membantu admin dalam analisis data, memberikan insight, dan menjawab
     }
   };
 
-  // Format angka ke rupiah
+  // Generate context-aware quick replies
+  const generateQuickReplies = (input, response) => {
+    const lowerInput = input.toLowerCase();
+    const lowerResponse = (response || "").toLowerCase();
+
+    if (lowerInput.includes('penjualan') || lowerResponse.includes('penjualan')) {
+      return [
+        "Tampilkan tren penjualan 3 bulan terakhir",
+        "Bandingkan penjualan minggu ini dengan minggu lalu",
+        "Produk apa yang paling laku bulan ini?",
+        "Buat prediksi penjualan bulan depan"
+      ];
+    }
+
+    if (lowerInput.includes('rekomendasi') || lowerResponse.includes('rekomendasi')) {
+      return [
+        "Bagaimana cara meningkatkan konversi?",
+        "Apa promosi yang paling efektif?",
+        "Saran untuk mengurangi mobil yang menganggur",
+        "Optimasi harga berdasarkan permintaan"
+      ];
+    }
+
+    if (lowerInput.includes('pelanggan') || lowerResponse.includes('pelanggan')) {
+      return [
+        "Berapa tingkat retensi pelanggan?",
+        "Apa karakteristik pelanggan setia?",
+        "Bagaimana meningkatkan kepuasan pelanggan?",
+        "Tampilkan segmentasi pelanggan"
+      ];
+    }
+
+    // Default quick replies
+    return [
+      "Tampilkan analisis performa bulan ini",
+      "Apa mobil yang paling menguntungkan?",
+      "Bagaimana utilisasi armada kita?",
+      "Berikan rekomendasi pemasaran"
+    ];
+  };
+
   const formatRupiah = (num) => "Rp" + (num || 0).toLocaleString("id-ID");
 
-  // Komponen statistik dengan Bootstrap Card
   const StatCard = ({ label, value, color, icon }) => (
-    <div className="col-6 col-md-3 mb-3">
-      <div className="card text-center shadow-sm border-0 h-100">
-        <div
-          className="card-body d-flex flex-column align-items-center justify-content-center"
-          style={{ background: color + "10", borderRadius: 12 }}
-        >
-          <div
-            className="mb-2"
-            style={{
-              fontSize: 28,
-              color,
-              background: color + "22",
-              borderRadius: "50%",
-              width: 48,
-              height: 48,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {icon}
-          </div>
-          <div className="fw-semibold" style={{ color, fontSize: 15 }}>
-            {label}
-          </div>
-          <div className="fs-5 fw-bold mt-1" style={{ color: "#222" }}>
-            {value}
-          </div>
-        </div>
+    <div className="stat-card">
+      <div className="stat-icon" style={{ backgroundColor: `${color}20`, color }}>
+        {icon}
+      </div>
+      <div className="stat-content">
+        <div className="stat-value">{value}</div>
+        <div className="stat-label">{label}</div>
       </div>
     </div>
   );
 
+  // Quick reply button component
+  const QuickReply = ({ text }) => (
+    <button
+      className="quick-reply"
+      onClick={() => {
+        setInput(text);
+        setTimeout(() => {
+          document.querySelector('.chat-input button[type="submit"]')?.click();
+        }, 50);
+      }}
+    >
+      {text}
+    </button>
+  );
+
   return (
-    <div className="admin-ai-chatbot-widget">
-      {open ? (
-        <div
-          className="chatbot-box shadow-lg"
-          style={{
-            width: 400,
-            maxWidth: "95vw",
-            position: "fixed",
-            bottom: 24,
-            right: 24,
-            zIndex: 1050,
-            borderRadius: 18,
-            background: "#fff",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            height: 600,
-            maxHeight: "90vh",
-          }}
-        >
-          <div
-            className="chatbot-header d-flex align-items-center justify-content-between px-3 py-2 border-bottom"
-            style={{ background: "#f8fafc" }}
-          >
-            <span className="fw-bold">
-              <FaRobot className="me-2" />
-              AI Admin Assistant
-            </span>
-            <button
-              className="btn btn-sm btn-light"
-              onClick={() => setOpen(false)}
-              style={{ borderRadius: "50%" }}
-            >
-              <FaTimes />
-            </button>
-          </div>
-          {/* Statistik Section */}
-          <div className="container-fluid py-2" style={{ background: "#f1f5f9" }}>
-            <div className="row g-2">
-              <StatCard
-                label="Total User"
-                value={stats?.totalUsers ?? 0}
-                color="#f59e42"
-                icon={<span role="img" aria-label="user">👤</span>}
-              />
-              <StatCard
-                label="Total Pesanan"
-                value={stats?.totalOrders ?? 0}
-                color="#6366f1"
-                icon={<span role="img" aria-label="order">📦</span>}
-              />
-              <StatCard
-                label="Total Omzet"
-                value={formatRupiah(stats?.totalRevenue ?? 0)}
-                color="#22c55e"
-                icon={<span role="img" aria-label="omzet">💰</span>}
-              />
-              <StatCard
-                label="Total Mobil"
-                value={stats?.totalCars ?? 0}
-                color="#06b6d4"
-                icon={<span role="img" aria-label="car">🚗</span>}
-              />
+    <div className="admin-ai-chatbot">
+      {/* Floating Action Button */}
+      <button
+        className={`chatbot-fab ${open ? 'hidden' : ''}`}
+        onClick={() => setOpen(true)}
+        aria-label="Open AI Assistant"
+      >
+        <FaRobot />
+        <span className="pulse-dot"></span>
+      </button>
+
+      {/* Chatbot Container */}
+      <div className={`chatbot-container ${open ? 'open' : ''}`}>
+        {/* Chatbot Header */}
+        <div className="chatbot-header">
+          <div className="header-left">
+            <div className="ai-avatar">
+              <FaRobot />
             </div>
-            <div className="row g-2 mt-1">
-              <StatCard
-                label="Pending"
-                value={stats?.pendingOrders ?? 0}
-                color="#f43f5e"
-                icon={<span role="img" aria-label="pending">⏳</span>}
-              />
-              <StatCard
-                label="Dibayar"
-                value={stats?.paidOrders ?? 0}
-                color="#16a34a"
-                icon={<span role="img" aria-label="paid">✅</span>}
-              />
+            <div className="header-info">
+              <h3>AI Admin Assistant</h3>
+              <p>Analytics & Business Intelligence</p>
             </div>
           </div>
-          {/* End Statistik Section */}
-          <div
-            className="chatbot-messages flex-grow-1 px-3 py-2"
-            style={{
-              overflowY: "auto",
-              background: "#f8fafc",
-              minHeight: 0,
-            }}
+          <button
+            className="close-btn"
+            onClick={() => setOpen(false)}
+            aria-label="Close chat"
           >
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`chatbot-msg mb-2 d-flex ${
-                  msg.role === "user" ? "justify-content-end" : "justify-content-start"
-                }`}
-              >
-                <div
-                  className={`msg-bubble px-3 py-2 rounded-3 ${
-                    msg.role === "user"
-                      ? "bg-primary text-white"
-                      : "bg-light border"
-                  }`}
-                  style={{
-                    maxWidth: "80%",
-                    wordBreak: "break-word",
-                  }}
-                >
+            <FaTimes />
+          </button>
+        </div>
+
+        {/* Stats Dashboard */}
+        <div className="stats-dashboard">
+          <div className="dashboard-header">
+            <IoMdStats />
+            <h4>Statistik Real-time</h4>
+          </div>
+          <div className="stats-grid">
+            <StatCard
+              label="Total User"
+              value={stats?.totalUsers ?? 0}
+              color="#6366f1"
+              icon={<FaUsers />}
+            />
+            <StatCard
+              label="Total Pesanan"
+              value={stats?.totalOrders ?? 0}
+              color="#8b5cf6"
+              icon={<FaChartLine />}
+            />
+            <StatCard
+              label="Total Omzet"
+              value={formatRupiah(stats?.totalRevenue ?? 0)}
+              color="#10b981"
+              icon={<FaMoneyBillWave />}
+            />
+            <StatCard
+              label="Total Mobil"
+              value={stats?.totalCars ?? 0}
+              color="#0ea5e9"
+              icon={<FaCar />}
+            />
+            <StatCard
+              label="Pending"
+              value={stats?.pendingOrders ?? 0}
+              color="#f59e0b"
+              icon={<FaHourglassHalf />}
+            />
+            <StatCard
+              label="Dibayar"
+              value={stats?.paidOrders ?? 0}
+              color="#22c55e"
+              icon={<FaClipboardCheck />}
+            />
+          </div>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="chat-messages">
+          {messages.map((msg, idx) => (
+            <React.Fragment key={idx}>
+              <div className={`message ${msg.role}`}>
+                <div className="message-content">
                   {msg.content}
+                  {msg.role === 'assistant' && (
+                    <div className="insight-tag">
+                      <FaLightbulb /> Insight Bisnis
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-          <form
-            className="chatbot-input-row d-flex border-top p-2 bg-white"
-            onSubmit={handleSend}
-          >
-            <input
-              type="text"
-              className="form-control me-2"
-              placeholder="Tulis pertanyaan admin..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-              autoFocus
-              style={{ borderRadius: 12 }}
-            />
-            <button
-              type="submit"
-              className="btn btn-primary d-flex align-items-center justify-content-center"
-              disabled={loading || !input.trim()}
-              style={{ borderRadius: 12, minWidth: 44, minHeight: 44 }}
-            >
-              {loading ? (
-                <span className="spinner-border spinner-border-sm"></span>
-              ) : (
-                <FaPaperPlane />
+              {msg.quickReplies && msg.quickReplies.length > 0 && (
+                <div className="quick-replies">
+                  {msg.quickReplies.map((reply, i) => (
+                    <QuickReply
+                      key={i}
+                      text={reply}
+                    />
+                  ))}
+                </div>
               )}
-            </button>
-          </form>
+            </React.Fragment>
+          ))}
+          {loading && (
+            <div className="message assistant">
+              <div className="message-content typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
-      ) : (
-        <button
-          className="chatbot-fab btn btn-primary shadow-lg"
-          onClick={() => setOpen(true)}
-          style={{
-            position: "fixed",
-            bottom: 32,
-            right: 32,
-            zIndex: 1040,
-            borderRadius: "50%",
-            width: 60,
-            height: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 28,
-          }}
-        >
-          <FaRobot />
-        </button>
-      )}
+
+        {/* Input Area */}
+        <form className="chat-input" onSubmit={handleSend}>
+          <input
+            type="text"
+            placeholder="Tanya tentang analisis bisnis..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={loading}
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            aria-label="Send message"
+          >
+            {loading ? (
+              <div className="spinner"></div>
+            ) : (
+              <FaPaperPlane />
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
