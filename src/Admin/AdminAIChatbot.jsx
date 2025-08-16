@@ -1,67 +1,41 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaRobot, FaPaperPlane, FaTimes } from "react-icons/fa";
 import "./AdminAIChatbot.css";
-import { API_URL } from "../utils/api"; // Tambahkan ini
+import { API_URL } from "../utils/api";
 
-const OPENROUTER_API_URL = `${API_URL}/ai/chat`; // Ganti ke endpoint backend proxy
-const MODEL = "openai/gpt-5-mini";
-
-const AdminAIChatbot = ({ stats, omzet, orders, users }) => {
+const AdminAIChatbot = () => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Halo Admin! Saya adalah AI asisten website rental mobil Anda. Tanyakan apa saja tentang statistik, pemasaran, atau pengelolaan website." }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Prompt system yang lebih kuat
+  // Ambil data statistik saat chatbot dibuka
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch(`${API_URL}/users/admin/stats`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
+      .then(res => res.json())
+      .then(setStats)
+      .catch(() => setStats(null));
+  }, []);
+
+  // Prompt system dengan data statistik real-time
   const getSystemPrompt = () => `
-Kamu adalah AI asisten profesional untuk admin website rental mobil.
-Tugas kamu adalah membantu pemilik atau admin dalam mengelola bisnis rental mobil berbasis data dan strategi pemasaran digital.
-
-⚡ Karakteristik Jawaban:
-1. Gunakan bahasa Indonesia yang baik, profesional, dan mudah dipahami.
-2. Jawaban harus selalu lengkap, jelas, dan berbasis data yang tersedia.
-3. Jika membahas statistik, omzet, penjualan, tren, atau strategi pemasaran, sertakan:
-   - Analisis singkat tren (naik/turun, penyebab, peluang, risiko)
-   - Insight atau temuan penting dari data
-   - Rekomendasi praktis untuk pengambilan keputusan
-4. Gunakan format yang rapi seperti bullet point, tabel, atau langkah-langkah.
-5. Jika memberikan strategi, sertakan:
-   - Target yang ingin dicapai
-   - Langkah-langkah implementasi
-   - Perkiraan dampak / hasil
-6. Jangan pernah memotong jawaban atau mengatakan “jawaban terpotong”.
-7. Berikan contoh penerapan nyata jika memungkinkan.
-
-📊 Data Bisnis Rental Mobil (contoh untuk dasar analisis):
-- Jumlah pemesanan bulan lalu: 124 transaksi
-- Jumlah pemesanan bulan ini: 138 transaksi (naik 11,3%)
-- Rata-rata durasi sewa: 2,8 hari
-- Omzet bulan lalu: Rp186.000.000
-- Omzet bulan ini: Rp205.500.000
-- Mobil paling banyak disewa: Toyota Avanza, Honda Brio
-- Channel pemasaran: Instagram Ads, Google Ads, SEO Website
-- Sumber pelanggan terbesar: Instagram (45%), Google (35%), Referral (20%)
-
-📈 Fokus Bantuan AI:
-- Membantu analisis performa bulanan (penjualan, omzet, trafik website, konversi)
-- Memberikan strategi marketing digital (SEO, sosial media, iklan berbayar)
-- Memberikan ide promo dan bundling paket sewa
-- Menyediakan insight untuk manajemen armada (mobil paling laku, perawatan)
-- Memberikan rekomendasi peningkatan UX/UI website untuk meningkatkan konversi
-- Menyediakan laporan singkat siap kirim ke owner
-
-Statistik Website Saat Ini:
-- Total Pesanan: ${stats?.orders ?? orders ?? 0}
-- Total Omzet: Rp${(stats?.revenue ?? omzet ?? 0).toLocaleString("id-ID")}
-- Jumlah Mobil: ${stats?.cars ?? 0}
-- Pengguna Terdaftar: ${stats?.users ?? users ?? 0}
-- Mobil Tersedia: ${stats?.availableCars ?? 0}
-- Mobil Tidak Tersedia: ${stats?.unavailableCars ?? 0}
+Kamu adalah AI asisten admin rental mobil.
+Statistik saat ini:
+- Total User: ${stats?.totalUsers ?? 0}
+- Total Pesanan: ${stats?.totalOrders ?? 0}
+- Total Omzet: Rp${(stats?.totalRevenue ?? 0).toLocaleString("id-ID")}
+- Total Mobil: ${stats?.totalCars ?? 0}
 - Pesanan Pending: ${stats?.pendingOrders ?? 0}
 - Pesanan Dibayar: ${stats?.paidOrders ?? 0}
+
+Tugas kamu: membantu admin dalam analisis data, memberikan insight, dan menjawab pertanyaan terkait bisnis rental mobil.
 `.trim();
 
   const handleSend = async (e) => {
@@ -73,17 +47,19 @@ Statistik Website Saat Ini:
     setLoading(true);
 
     try {
-      // Ambil token dari localStorage (atau context/auth state Anda)
-      const token = localStorage.getItem("token"); // pastikan token sudah disimpan saat login
-
-      const response = await fetch(OPENROUTER_API_URL, {
+      const token = localStorage.getItem("token");
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (token && typeof token === "string" && token.trim() && token !== "undefined" && token !== "null") {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/ai/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
+        headers,
         body: JSON.stringify({
-          message: input
+          message: input,
+          systemPrompt: getSystemPrompt()
         })
       });
       const data = await response.json();
@@ -126,19 +102,19 @@ Statistik Website Saat Ini:
           <div className="ai-stats-row">
             <StatCard
               label="Omzet"
-              value={formatRupiah(stats?.revenue ?? omzet ?? 0)}
+              value={formatRupiah(stats?.revenue ?? 0)}
               color="#22c55e"
               icon={<span role="img" aria-label="omzet">💰</span>}
             />
             <StatCard
               label="Pesanan"
-              value={stats?.orders ?? orders ?? 0}
+              value={stats?.orders ?? 0}
               color="#6366f1"
               icon={<span role="img" aria-label="order">📦</span>}
             />
             <StatCard
               label="Pengguna"
-              value={stats?.users ?? users ?? 0}
+              value={stats?.users ?? 0}
               color="#f59e42"
               icon={<span role="img" aria-label="user">👤</span>}
             />
