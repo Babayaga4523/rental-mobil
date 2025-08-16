@@ -74,15 +74,18 @@ Statistik Website Saat Ini:
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(OPENROUTER_API_URL, {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (token && typeof token === "string" && token.trim() && token !== "undefined" && token !== "null") {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const response = await fetch(`${API_URL}/ai/chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
+        headers,
         body: JSON.stringify({
           message: input,
-          systemPrompt: getSystemPrompt() // Kirim prompt lengkap ke backend
+          systemPrompt: getSystemPrompt()
         })
       });
       const data = await response.json();
