@@ -102,19 +102,19 @@ Tugas kamu: membantu admin dalam analisis data, memberikan insight, dan menjawab
           <div className="ai-stats-row">
             <StatCard
               label="Omzet"
-              value={formatRupiah(stats?.revenue ?? omzet ?? 0)}
+              value={formatRupiah(stats?.revenue ?? 0)}
               color="#22c55e"
               icon={<span role="img" aria-label="omzet">💰</span>}
             />
             <StatCard
               label="Pesanan"
-              value={stats?.orders ?? orders ?? 0}
+              value={stats?.orders ?? 0}
               color="#6366f1"
               icon={<span role="img" aria-label="order">📦</span>}
             />
             <StatCard
               label="Pengguna"
-              value={stats?.users ?? users ?? 0}
+              value={stats?.users ?? 0}
               color="#f59e42"
               icon={<span role="img" aria-label="user">👤</span>}
             />
