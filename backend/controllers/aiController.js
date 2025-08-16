@@ -13,28 +13,48 @@ exports.chat = async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Gunakan prompt system dari frontend jika ada
     const prompt = systemPrompt || `
 Kamu adalah AI asisten profesional untuk admin website rental mobil.
 Tugas kamu adalah membantu pemilik atau admin dalam mengelola bisnis rental mobil berbasis data dan strategi pemasaran digital.
     `.trim();
 
-    // Kirim ke OpenRouter
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const model = "openai/gpt-5-mini";
+    const messages = [
+      { role: "system", content: prompt },
+      { role: "user", content: message }
+    ];
+
+    let maxTokens = 1024;
+    let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages: [
-          { role: "system", content: prompt },
-          { role: "user", content: message }
-        ],
-        max_tokens: 1024
+        model,
+        messages,
+        max_tokens: maxTokens
       })
     });
+
+    // Jika error 402 (token limit), coba ulang dengan token lebih kecil
+    if (response.status === 402) {
+      maxTokens = 512;
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: maxTokens
+        })
+      });
+    }
+
     if (!response.ok) {
       const text = await response.text().catch(() => '');
       return res.status(502).json({
@@ -42,12 +62,12 @@ Tugas kamu adalah membantu pemilik atau admin dalam mengelola bisnis rental mobi
         detail: text.slice(0, 500)
       });
     }
+
     const data = await response.json();
     if (data.error) {
       return res.status(502).json({ error: data.error.message || 'AI error' });
     }
 
-    // Kirim jawaban AI ke frontend
     const aiReply = data.choices?.[0]?.message?.content || "Maaf, terjadi kesalahan pada AI.";
     res.json({ response: aiReply });
   } catch (error) {
