@@ -533,6 +533,8 @@
     border-radius: 0;
     box-shadow: none;
     z-index: 9999;
+    display: flex;
+    flex-direction: column;
   }
 
   .chatbot-header {
@@ -544,10 +546,21 @@
     padding: var(--space-xs);
   }
 
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-xs);
+  }
+
+  .stat-card {
+    padding: var(--space-xs);
+    font-size: var(--text-sm);
+  }
+
   .chat-messages {
     padding: var(--space-xs);
-    padding-bottom: 5.5rem; /* ruang untuk input di atas keyboard */
+    padding-bottom: 6rem; /* ruang untuk input di atas keyboard */
     min-height: 0;
+    font-size: var(--text-sm);
   }
 
   .chat-input {
@@ -559,6 +572,27 @@
     background: var(--white);
     border-top: 1px solid var(--gray-200);
     z-index: 10001;
+  }
+
+  .chat-input input {
+    font-size: var(--text-sm);
+    padding: 0.5rem 0.75rem;
+  }
+
+  .chat-input button {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1rem;
+  }
+
+  .quick-replies {
+    gap: 0.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .quick-reply {
+    padding: 0.25rem 0.5rem;
+    font-size: var(--text-xs);
   }
 
   .chatbot-fab {
