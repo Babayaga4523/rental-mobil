@@ -6,66 +6,27 @@ import axios from "axios";
 import { Card, Table, Spinner, Badge, Alert, Button, Row, Col, OverlayTrigger, Tooltip } from "react-bootstrap";
 import {
   FiFileText, FiTruck, FiUsers, FiDollarSign,
-  FiAlertCircle, FiPlusCircle, FiTrendingUp, FiPieChart, FiUserPlus,
-  FiClock, FiCheckCircle, FiXCircle, FiCalendar, FiBarChart2
+  FiAlertCircle, FiPlusCircle, FiTrendingUp, FiPieChart, FiUserPlus
 } from "react-icons/fi";
-import { FaChartBar, FaCrown, FaCar } from "react-icons/fa";
-import { BsGraphUp, BsPeople } from "react-icons/bs";
+import { FaChartBar, FaCrown } from "react-icons/fa";
 import ReactECharts from "echarts-for-react";
 import moment from "moment";
 import "./AdminDashboard.css";
-import { API_URL } from "../utils/api";
-import AdminAIChatbot from "./AdminAIChatbot.jsx";
+import { API_URL } from "../utils/api"; // GUNAKAN API_URL dari utils/api.js
+import AdminAIChatbot from "./AdminAIChatbot.jsx"; // Tambahkan ini
 
-// Custom StatCard component with improved design
-const StatCard = ({ icon, title, value, color, loading, trend, trendColor }) => (
-  <Card className="stat-card shadow-sm mb-3 border-0 h-100">
-    <Card.Body className="d-flex align-items-center p-3">
-      <div 
-        className="stat-icon me-3 d-flex align-items-center justify-content-center rounded-circle" 
-        style={{ 
-          backgroundColor: `${color}20`, 
-          color, 
-          width: 48, 
-          height: 48, 
-          fontSize: 24 
-        }}
-      >
+const StatCard = ({ icon, title, value, color, loading }) => (
+  <Card className="stat-card shadow-sm mb-3 border-0">
+    <Card.Body className="d-flex align-items-center">
+      <div className="stat-icon me-3 d-flex align-items-center justify-content-center rounded-circle shadow" style={{ backgroundColor: `${color}20`, color, width: 54, height: 54, fontSize: 28 }}>
         {icon}
       </div>
-      <div className="stat-content flex-grow-1">
-        <h6 className="stat-title mb-1 text-muted small">{title}</h6>
-        <h3 className="stat-value mb-0 fw-bold">
+      <div className="stat-content">
+        <h6 className="stat-title mb-1">{title}</h6>
+        <h3 className="stat-value mb-0">
           {loading ? <Spinner animation="border" size="sm" /> : value}
         </h3>
-        {trend && (
-          <div className="stat-trend mt-1 small" style={{ color: trendColor }}>
-            {trend}
-          </div>
-        )}
       </div>
-    </Card.Body>
-  </Card>
-);
-
-// ChartCard component for consistent chart styling
-const ChartCard = ({ title, icon, color, loading, children, className = "" }) => (
-  <Card className={`h-100 shadow-sm border-0 ${className}`}>
-    <Card.Header 
-      className={`text-white fw-semibold d-flex align-items-center`}
-      style={{ backgroundColor: color }}
-    >
-      {icon && React.cloneElement(icon, { className: "me-2" })}
-      {title}
-    </Card.Header>
-    <Card.Body className="p-2">
-      {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-        </div>
-      ) : (
-        children
-      )}
     </Card.Body>
   </Card>
 );
@@ -100,7 +61,7 @@ const DashboardHome = ({
           ? usersRes.data.data
           : (Array.isArray(usersRes.data.users) ? usersRes.data.users : []);
 
-        // Calculate stats
+        // Statistik
         const totalRevenue = orders
           .filter(order => order.payment_status === "paid")
           .reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
@@ -127,11 +88,32 @@ const DashboardHome = ({
             : ""
         );
 
-        // Prepare charts and data
+        // Grafik tren
         prepareCharts(orders, users);
+
+        // Pesanan & user terbaru
         prepareLatestData(orders, users);
+
+        // Mobil terlaris bulan ini
         prepareTopCars(orders, cars);
-        prepareOccupancyChart(orders, cars);
+
+        // Okupansi mobil
+        const occupancyData = cars.map(car => {
+          const totalOrder = orders.filter(o => o.layanan_id === car.id && o.status !== "cancelled").length;
+          return { name: car.nama, value: totalOrder };
+        });
+        setOccupancyChart({
+          tooltip: { trigger: "item" },
+          legend: { top: "5%", left: "center" },
+          series: [
+            {
+              name: "Okupansi Mobil",
+              type: "pie",
+              radius: ["40%", "70%"],
+              data: occupancyData
+            }
+          ]
+        });
 
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -145,12 +127,11 @@ const DashboardHome = ({
       const now = new Date();
       const year = now.getFullYear();
 
-      // Initialize arrays for monthly data
+      // Orders, revenue, user per month
       const monthlyOrdersArr = Array(12).fill(0);
       const monthlyRevenueArr = Array(12).fill(0);
       const monthlyUsersArr = Array(12).fill(0);
 
-      // Process orders data
       orders.forEach(order => {
         const created = order.createdAt || order.created_at || order.order_date;
         if (created) {
@@ -165,7 +146,6 @@ const DashboardHome = ({
         }
       });
 
-      // Process users data
       users.forEach(user => {
         const created = user.createdAt || user.created_at;
         if (created) {
@@ -177,90 +157,96 @@ const DashboardHome = ({
         }
       });
 
-      // Set chart options
-      setOrderChart(getChartOptions(
-        monthsArr, 
-        monthlyOrdersArr, 
-        "Pesanan", 
-        "#6366f1", 
-        "Pesanan"
-      ));
-
-      setRevenueChart(getChartOptions(
-        monthsArr, 
-        monthlyRevenueArr, 
-        "Omzet (Rp)", 
-        "#10b981", 
-        "Omzet",
-        value => {
-          if (value >= 1_000_000) return `Rp${(value/1_000_000).toFixed(1)}jt`;
-          if (value >= 1_000) return `Rp${(value/1_000).toFixed(0)}rb`;
-          return `Rp${value}`;
-        }
-      ));
-
-      setUserChart(getChartOptions(
-        monthsArr, 
-        monthlyUsersArr, 
-        "User Baru", 
-        "#f59e0b", 
-        "User Baru"
-      ));
-    };
-
-    const getChartOptions = (xAxisData, seriesData, yAxisName, color, seriesName, formatter) => {
-      return {
-        tooltip: { 
-          trigger: 'axis',
-          formatter: formatter ? (params) => {
-            return `${params[0].axisValue}<br/>${seriesName}: ${formatter(params[0].value)}`;
-          } : null
-        },
-        grid: { left: '3%', right: '3%', bottom: '15%', top: '10%' },
+      setOrderChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
         xAxis: {
           type: 'category',
-          data: xAxisData,
-          axisLabel: { 
-            rotate: 30, 
-            fontSize: 12,
-            margin: 10
-          },
-          axisLine: { show: false },
-          axisTick: { show: false }
+          data: monthsArr,
+          axisLabel: { rotate: 30, fontSize: 13 }
         },
         yAxis: {
           type: 'value',
-          name: yAxisName,
-          nameTextStyle: { padding: [0, 0, 0, 30] },
-          axisLabel: { 
-            fontSize: 12,
-            formatter: formatter
-          },
-          splitLine: {
-            lineStyle: {
-              type: 'dashed'
+          name: 'Pesanan',
+          axisLabel: { fontSize: 13 }
+        },
+        series: [
+          {
+            name: 'Pesanan',
+            type: 'line',
+            data: monthlyOrdersArr,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#6366f1" },
+            itemStyle: { color: "#6366f1" },
+            areaStyle: { color: "rgba(99,102,241,0.10)" }
+          }
+        ]
+      });
+
+      setRevenueChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
+        xAxis: {
+          type: 'category',
+          data: monthsArr,
+          axisLabel: { rotate: 30, fontSize: 13 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Omzet (Rp)',
+          axisLabel: {
+            fontSize: 13,
+            formatter: value => {
+              if (value >= 1_000_000) return `Rp${(value/1_000_000).toFixed(1)}jt`;
+              if (value >= 1_000) return `Rp${(value/1_000).toFixed(0)}rb`;
+              return `Rp${value}`;
             }
           }
         },
         series: [
           {
-            name: seriesName,
+            name: 'Omzet',
             type: 'line',
-            data: seriesData,
+            data: monthlyRevenueArr,
             smooth: true,
             symbol: 'circle',
-            symbolSize: 8,
-            lineStyle: { width: 3, color },
-            itemStyle: { color },
-            areaStyle: { 
-              color: new ReactECharts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: `${color}40` },
-                { offset: 1, color: `${color}10` }
-              ]) 
-            }
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#10b981" },
+            itemStyle: { color: "#10b981" },
+            areaStyle: { color: "rgba(16,185,129,0.10)" }
           }
         ]
-      };
+      });
+
+      setUserChart({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 50, right: 30, bottom: 50, top: 40 },
+        xAxis: {
+          type: 'category',
+          data: monthsArr,
+          axisLabel: { rotate: 30, fontSize: 13 }
+        },
+        yAxis: {
+          type: 'value',
+          name: 'User Baru',
+          axisLabel: { fontSize: 13 }
+        },
+        series: [
+          {
+            name: 'User Baru',
+            type: 'line',
+            data: monthlyUsersArr,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 10,
+            lineStyle: { width: 4, color: "#f59e0b" },
+            itemStyle: { color: "#f59e0b" },
+            areaStyle: { color: "rgba(245,158,11,0.08)" }
+          }
+        ]
+      });
     };
 
     const prepareLatestData = (orders, users) => {
@@ -304,14 +290,15 @@ const DashboardHome = ({
       });
 
       const top = Object.entries(carCount)
-        .map(([id, data]) => {
+        .map(([id, data], idx) => {
           const car = cars.find(c => c.id.toString() === id.toString());
           return {
             id,
             nama: car?.nama || "-",
             gambar: car?.gambar || "/images/car-placeholder.png",
             count: data.count,
-            omzet: data.omzet
+            omzet: data.omzet,
+            rank: idx + 1
           };
         })
         .sort((a, b) => b.count - a.count)
@@ -320,97 +307,35 @@ const DashboardHome = ({
       setTopCars(top);
     };
 
-    const prepareOccupancyChart = (orders, cars) => {
-      const occupancyData = cars.map(car => {
-        const totalOrder = orders.filter(o => o.layanan_id === car.id && o.status !== "cancelled").length;
-        return { 
-          name: car.nama, 
-          value: totalOrder,
-          itemStyle: {
-            color: getRandomColor()
-          }
-        };
-      });
-
-      setOccupancyChart({
-        tooltip: { 
-          trigger: "item",
-          formatter: "{a} <br/>{b}: {c} ({d}%)"
-        },
-        legend: { 
-          top: "5%", 
-          left: "center",
-          textStyle: {
-            fontSize: 12
-          }
-        },
-        series: [
-          {
-            name: "Okupansi Mobil",
-            type: "pie",
-            radius: ["40%", "70%"],
-            avoidLabelOverlap: false,
-            itemStyle: {
-              borderRadius: 10,
-              borderColor: '#fff',
-              borderWidth: 2
-            },
-            label: {
-              show: false,
-              position: 'center'
-            },
-            emphasis: {
-              label: {
-                show: true,
-                fontSize: '18',
-                fontWeight: 'bold'
-              }
-            },
-            labelLine: {
-              show: false
-            },
-            data: occupancyData
-          }
-        ]
-      });
-    };
-
-    const getRandomColor = () => {
-      const colors = [
-        '#6366f1', '#10b981', '#f59e0b', '#3b82f6', 
-        '#ec4899', '#8b5cf6', '#14b8a6', '#f97316'
-      ];
-      return colors[Math.floor(Math.random() * colors.length)];
-    };
-
     fetchDashboardData();
+
   }, [token]);
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
-        return <Badge bg="warning" className="badge-pill py-1 px-2">Pending</Badge>;
+        return <Badge bg="warning" className="badge-pill">Pending</Badge>;
       case "confirmed":
-        return <Badge bg="info" className="badge-pill py-1 px-2">Confirmed</Badge>;
+        return <Badge bg="info" className="badge-pill">Confirmed</Badge>;
       case "completed":
-        return <Badge bg="success" className="badge-pill py-1 px-2">Completed</Badge>;
+        return <Badge bg="success" className="badge-pill">Completed</Badge>;
       case "cancelled":
-        return <Badge bg="danger" className="badge-pill py-1 px-2">Cancelled</Badge>;
+        return <Badge bg="danger" className="badge-pill">Cancelled</Badge>;
       default:
-        return <Badge bg="secondary" className="badge-pill py-1 px-2">Unknown</Badge>;
+        return <Badge bg="secondary" className="badge-pill">Unknown</Badge>;
     }
   };
 
   const getPaymentBadge = (status) => {
     switch (status) {
       case "paid":
-        return <Badge bg="success" className="badge-pill py-1 px-2">Paid</Badge>;
+        return <Badge bg="success" className="badge-pill">Paid</Badge>;
       case "pending_verification":
-        return <Badge bg="warning" className="badge-pill py-1 px-2">Pending</Badge>;
+        return <Badge bg="warning" className="badge-pill">Pending</Badge>;
       case "rejected":
-        return <Badge bg="danger" className="badge-pill py-1 px-2">Rejected</Badge>;
+        return <Badge bg="danger" className="badge-pill">Rejected</Badge>;
       default:
-        return <Badge bg="secondary" className="badge-pill py-1 px-2">Unknown</Badge>;
+        return <Badge bg="secondary" className="badge-pill">Unknown</Badge>;
     }
   };
 
@@ -428,30 +353,18 @@ const DashboardHome = ({
     return moment(date).format('DD MMM YYYY');
   };
 
-  const getTrendIndicator = (current, previous) => {
-    if (!previous || previous === 0) return null;
-    const percentage = ((current - previous) / previous * 100).toFixed(1);
-    const isPositive = percentage >= 0;
-    
-    return (
-      <span className={`trend-indicator ${isPositive ? 'text-success' : 'text-danger'}`}>
-        {isPositive ? '↑' : '↓'} {Math.abs(percentage)}%
-      </span>
-    );
-  };
-
   return (
-    <div className="dashboard-home p-3 p-md-4">
+    <div className="dashboard-home py-4 px-2 px-md-4">
       {/* Notification Alert */}
       {notif && (
-        <Alert variant="warning" className="alert-notification mb-4 shadow-sm border-0">
+        <Alert variant="warning" className="alert-notification mb-4 shadow-sm">
           <div className="d-flex align-items-center">
-            <FiAlertCircle className="me-2 flex-shrink-0" size={20} />
-            <span className="flex-grow-1">{notif}</span>
+            <FiAlertCircle className="me-2" size={20} />
+            <span>{notif}</span>
             <Button
               size="sm"
-              variant="outline-warning"
-              className="ms-3"
+              variant="warning"
+              className="ms-auto"
               onClick={() => navigate('/admin/orders')}
             >
               Lihat Pesanan
@@ -461,212 +374,174 @@ const DashboardHome = ({
       )}
 
       {/* Stats Cards */}
-      <Row className="g-3 mb-4">
-        <Col xs={12} sm={6} lg={3}>
-          <StatCard 
-            icon={<FiFileText />} 
-            title="Total Pesanan" 
-            value={stats.orders} 
-            color="#6366f1" 
-            loading={loading}
-            trend={getTrendIndicator(stats.orders, stats.orders * 0.8)}
-          />
+      <Row className="g-4 mb-4">
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiFileText />} title="Total Pesanan" value={stats.orders} color="#6366f1" loading={loading} />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
-          <StatCard 
-            icon={<FiTruck />} 
-            title="Jumlah Mobil" 
-            value={`${stats.availableCars}/${stats.cars}`} 
-            color="#10b981" 
-            loading={loading}
-            trend={`${stats.cars > 0 ? Math.round((stats.availableCars / stats.cars) * 100) : 0}% tersedia`}
-          />
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiTruck />} title="Jumlah Mobil" value={stats.cars} color="#10b981" loading={loading} />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
-          <StatCard 
-            icon={<FiUsers />} 
-            title="Pengguna" 
-            value={stats.users} 
-            color="#3b82f6" 
-            loading={loading}
-            trend={getTrendIndicator(stats.users, stats.users * 0.9)}
-          />
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiUsers />} title="Pengguna Terdaftar" value={stats.users} color="#3b82f6" loading={loading} />
         </Col>
-        <Col xs={12} sm={6} lg={3}>
-          <StatCard 
-            icon={<FiDollarSign />} 
-            title="Total Pendapatan" 
-            value={formatCurrency(stats.revenue)} 
-            color="#f59e0b" 
-            loading={loading}
-            trend={getTrendIndicator(stats.revenue, stats.revenue * 0.85)}
-          />
+        <Col xs={6} md={3}>
+          <StatCard icon={<FiDollarSign />} title="Total Pendapatan" value={formatCurrency(stats.revenue)} color="#f59e0b" loading={loading} />
         </Col>
       </Row>
 
       {/* Charts Row */}
-      <Row className="g-3 mb-4">
+      <Row className="g-4 mb-4">
         <Col lg={4} md={12}>
-          <ChartCard 
-            title="Pesanan Bulanan" 
-            icon={<FiTrendingUp />} 
-            color="#6366f1" 
-            loading={loading || !orderChart}
-          >
-            <ReactECharts 
-              option={orderChart} 
-              style={{ height: 250 }} 
-              className="echarts-for-react-fix"
-            />
-          </ChartCard>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-primary text-white fw-semibold d-flex align-items-center">
+              <FiTrendingUp className="me-2" /> Pesanan Bulanan
+            </Card.Header>
+            <Card.Body className="bg-light">
+              {loading || !orderChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="primary" />
+                </div>
+              ) : (
+                <ReactECharts option={orderChart} style={{ height: 220 }} />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
         <Col lg={4} md={6}>
-          <ChartCard 
-            title="Pendapatan Bulanan" 
-            icon={<FiDollarSign />} 
-            color="#10b981" 
-            loading={loading || !revenueChart}
-          >
-            <ReactECharts 
-              option={revenueChart} 
-              style={{ height: 250 }} 
-              className="echarts-for-react-fix"
-            />
-          </ChartCard>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-success text-white fw-semibold d-flex align-items-center">
+              <FiDollarSign className="me-2" /> Pendapatan Bulanan
+            </Card.Header>
+            <Card.Body className="bg-light">
+              {loading || !revenueChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="success" />
+                </div>
+              ) : (
+                <ReactECharts option={revenueChart} style={{ height: 220 }} />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
         <Col lg={4} md={6}>
-          <ChartCard 
-            title="User Baru Bulanan" 
-            icon={<FiUserPlus />} 
-            color="#f59e0b" 
-            loading={loading || !userChart}
-          >
-            <ReactECharts 
-              option={userChart} 
-              style={{ height: 250 }} 
-              className="echarts-for-react-fix"
-            />
-          </ChartCard>
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Header className="bg-warning text-dark fw-semibold d-flex align-items-center">
+              <FiUserPlus className="me-2" /> User Baru Bulanan
+            </Card.Header>
+            <Card.Body className="bg-light">
+              {loading || !userChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="warning" />
+                </div>
+              ) : (
+                <ReactECharts option={userChart} style={{ height: 220 }} />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
       {/* Top Cars & Pie Chart */}
-      <Row className="g-3 mb-4">
+      <Row className="g-4 mb-4">
         <Col lg={6} md={12}>
-          <ChartCard 
-            title="Mobil Terlaris Bulan Ini" 
-            icon={<FaCrown />} 
-            color="#8b5cf6" 
-            loading={loading}
-          >
-            <div className="top-cars-list">
-              {topCars.length === 0 ? (
-                <div className="text-center py-4 text-muted">Belum ada data.</div>
-              ) : (
-                <div className="d-flex flex-column gap-2">
-                  {topCars.map((car, idx) => (
-                    <div 
-                      className={`top-car-item d-flex align-items-center p-3 rounded ${idx === 0 ? "top-car-highlight" : ""}`}
-                      key={car.id}
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-info text-white fw-semibold d-flex align-items-center">
+              <FaCrown className="me-2" /> Mobil Terlaris Bulan Ini
+            </Card.Header>
+            <Card.Body>
+              <ul className="list-group list-group-flush">
+                {topCars.length === 0 && (
+                  <li className="list-group-item text-muted">Belum ada data.</li>
+                )}
+                {topCars.map((car, idx) => (
+                  <li
+                    className="list-group-item d-flex align-items-center border-0 border-bottom py-3"
+                    key={car.id}
+                    style={{ background: idx === 0 ? "linear-gradient(90deg, #e0f7fa 0%, #fff 100%)" : "inherit" }}
+                  >
+                    <span
+                      className="badge me-3 d-flex align-items-center justify-content-center"
+                      style={{
+                        fontSize: 20,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: idx === 0 ? "#ffd700" : idx === 1 ? "#b0b0b0" : "#cd7f32",
+                        color: "#fff",
+                        boxShadow: idx === 0 ? "0 0 10px #ffd70088" : undefined
+                      }}
                     >
-                      <div className="top-car-rank me-3 d-flex align-items-center justify-content-center">
-                        <span className="rank-number">{idx + 1}</span>
-                        <FaCrown className={`rank-crown ${idx === 0 ? "gold" : idx === 1 ? "silver" : "bronze"}`} />
-                      </div>
-                      <img
-                        src={car.gambar || "/images/car-placeholder.png"}
-                        alt={car.nama}
-                        className="me-3 rounded shadow-sm"
-                        style={{ width: 80, height: 50, objectFit: "cover" }}
-                      />
-                      <div className="flex-grow-1">
-                        <div className="fw-bold">{car.nama}</div>
-                        <div className="d-flex align-items-center mt-1">
-                          <Badge bg="secondary" className="me-2">
-                            {car.count}x disewa
-                          </Badge>
-                          <div className="text-muted small">
-                            Omzet: <span className="fw-semibold">{formatCurrency(car.omzet)}</span>
-                          </div>
-                        </div>
+                      <FaCrown className="me-1" />
+                      {idx + 1}
+                    </span>
+                    <img
+                      src={car.gambar || "/images/car-placeholder.png"}
+                      alt={car.nama}
+                      className="me-3 rounded shadow-sm"
+                      style={{ width: 64, height: 40, objectFit: "cover", border: "2px solid #eee" }}
+                    />
+                    <div>
+                      <div className="fw-bold" style={{ fontSize: 17 }}>{car.nama}</div>
+                      <div className="small text-muted">
+                        <Badge bg="success" className="me-2">{car.count}x</Badge>
+                        Omzet: <span className="fw-semibold">{formatCurrency(car.omzet)}</span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </ChartCard>
+                  </li>
+                ))}
+              </ul>
+            </Card.Body>
+          </Card>
         </Col>
         <Col lg={6} md={12}>
-          <ChartCard 
-            title="Status Pesanan" 
-            icon={<FiPieChart />} 
-            color="#ec4899" 
-            loading={loading}
-          >
-            <ReactECharts
-  style={{ height: 250 }}
-  option={{
-    tooltip: { 
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: { 
-      orient: 'horizontal', 
-      bottom: 0,
-      textStyle: {
-        fontSize: 12
-      }
-    },
-    series: [
-      {
-        name: 'Status Pesanan',
-        type: 'pie',
-        radius: ['50%', '70%'],
-        center: ['50%', '40%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 5,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '16',
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: [
-          { value: stats.pendingOrders, name: 'Pending' },
-          { value: stats.paidOrders, name: 'Dibayar' },
-          { value: stats.orders - stats.pendingOrders - stats.paidOrders, name: 'Lainnya' }
-        ]
-      }
-    ],
-    color: ['#f59e0b', '#10b981', '#6366f1']
-  }}
-  className="echarts-for-react-fix"
-            />
-          </ChartCard>
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-secondary text-white fw-semibold d-flex align-items-center">
+              <FiPieChart className="me-2" /> Status Pesanan Bulanan
+            </Card.Header>
+            <Card.Body>
+              {loading ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="info" />
+                </div>
+              ) : (
+                <ReactECharts
+                  style={{ height: 220 }}
+                  option={{
+                    tooltip: { trigger: 'item' },
+                    legend: { orient: 'vertical', left: 'left' },
+                    series: [
+                      {
+                        name: 'Status Pesanan',
+                        type: 'pie',
+                        radius: '70%',
+                        data: [
+                          { value: stats.pendingOrders, name: 'Pending', itemStyle: { color: "#f59e0b" } },
+                          { value: stats.paidOrders, name: 'Dibayar', itemStyle: { color: "#10b981" } },
+                          { value: stats.orders - stats.pendingOrders - stats.paidOrders, name: 'Lainnya', itemStyle: { color: "#6366f1" } }
+                        ],
+                        emphasis: {
+                          itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                          }
+                        }
+                      }
+                    ]
+                  }}
+                />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
       {/* Recent Orders & Users */}
-      <Row className="g-3 mb-4">
-        <Col xs={12} lg={6}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="d-flex justify-content-between align-items-center bg-white border-0">
-              <h5 className="card-title mb-0 fw-semibold d-flex align-items-center">
-                <FiFileText className="me-2 text-primary" /> Pesanan Terbaru
-              </h5>
+      <Row className="g-4 mb-4">
+        <Col xs={12} md={6}>
+          <Card className="mb-4 border-0 shadow-sm">
+            <Card.Header className="d-flex justify-content-between align-items-center bg-light">
+              <h5 className="card-title mb-0">Pesanan Terbaru</h5>
               <Button
                 size="sm"
                 variant="outline-primary"
@@ -677,38 +552,27 @@ const DashboardHome = ({
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table hover className="mb-0 align-middle">
-                  <thead className="table-light">
+                <Table hover responsive className="mb-0 align-middle">
+                  <thead>
                     <tr>
-                      <th className="ps-3">ID Pesanan</th>
+                      <th>ID Pesanan</th>
                       <th>Pelanggan</th>
                       <th>Total</th>
-                      <th className="pe-3">Status</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {latestOrders.map(order => (
-                      <tr 
-                        key={order.id} 
-                        onClick={() => navigate(`/admin/orders/${order.id}`)} 
-                        className="cursor-pointer"
-                      >
-                        <td className="ps-3 text-primary fw-semibold">#{order.id}</td>
+                      <tr key={order.id} onClick={() => navigate(`/admin/orders/${order.id}`)} style={{ cursor: "pointer" }}>
+                        <td className="text-primary">#{order.id}</td>
+                        <td>{order.user?.name || '-'}</td>
+                        <td>{formatCurrency(order.total_price || 0)}</td>
                         <td>
                           <div className="d-flex align-items-center">
-                            <div className="avatar avatar-sm me-2 bg-light text-dark rounded-circle d-flex align-items-center justify-content-center" style={{ width: 28, height: 28 }}>
-                              {order.user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </div>
-                            <span className="text-truncate" style={{ maxWidth: '100px' }}>
-                              {order.user?.name || '-'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="fw-semibold">{formatCurrency(order.total_price || 0)}</td>
-                        <td className="pe-3">
-                          <div className="d-flex flex-column gap-1">
                             {getPaymentBadge(order.payment_status)}
-                            {getStatusBadge(order.status)}
+                            <div className="ms-2">
+                              {getStatusBadge(order.status)}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -719,12 +583,10 @@ const DashboardHome = ({
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} lg={6}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Header className="d-flex justify-content-between align-items-center bg-white border-0">
-              <h5 className="card-title mb-0 fw-semibold d-flex align-items-center">
-                <BsPeople className="me-2 text-primary" /> Pengguna Terbaru
-              </h5>
+        <Col xs={12} md={6}>
+          <Card className="mb-4 border-0 shadow-sm">
+            <Card.Header className="d-flex justify-content-between align-items-center bg-light">
+              <h5 className="card-title mb-0">Pengguna Terbaru</h5>
               <Button
                 size="sm"
                 variant="outline-primary"
@@ -735,33 +597,27 @@ const DashboardHome = ({
             </Card.Header>
             <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table hover className="mb-0 align-middle">
-                  <thead className="table-light">
+                <Table hover responsive className="mb-0 align-middle">
+                  <thead>
                     <tr>
-                      <th className="ps-3">Nama</th>
+                      <th>Nama</th>
                       <th>Email</th>
-                      <th className="pe-3">Bergabung</th>
+                      <th>Bergabung</th>
                     </tr>
                   </thead>
                   <tbody>
                     {latestUsers.map(user => (
-                      <tr 
-                        key={user.id} 
-                        onClick={() => navigate(`/admin/users/${user.id}`)} 
-                        className="cursor-pointer"
-                      >
-                        <td className="ps-3">
+                      <tr key={user.id} onClick={() => navigate(`/admin/users/${user.id}`)} style={{ cursor: "pointer" }}>
+                        <td>
                           <div className="d-flex align-items-center">
-                            <div className="avatar avatar-sm me-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 28, height: 28, fontWeight: 600 }}>
+                            <div className="avatar avatar-sm me-2 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: 32, height: 32, fontWeight: 600 }}>
                               {user.name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="text-truncate" style={{ maxWidth: '100px' }}>
-                              {user.name}
-                            </span>
+                            {user.name}
                           </div>
                         </td>
-                        <td className="text-truncate" style={{ maxWidth: '150px' }}>{user.email}</td>
-                        <td className="pe-3">{formatDate(user.createdAt || user.created_at)}</td>
+                        <td>{user.email}</td>
+                        <td>{formatDate(user.createdAt || user.created_at)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -773,40 +629,40 @@ const DashboardHome = ({
       </Row>
 
       {/* Grafik Okupansi Mobil */}
-      <Row className="g-3 mb-4">
+      <Row className="g-4 mb-4">
         <Col lg={12}>
-          <ChartCard 
-            title="Distribusi Penyewaan Mobil" 
-            icon={<FaCar />} 
-            color="#3b82f6" 
-            loading={loading || !occupancyChart}
-          >
-            <ReactECharts 
-              option={occupancyChart} 
-              style={{ height: 350 }} 
-              className="echarts-for-react-fix"
-            />
-          </ChartCard>
+          <Card className="h-100 border-0 shadow-sm">
+            <Card.Header className="bg-dark text-white fw-semibold d-flex align-items-center">
+              <FiPieChart className="me-2" /> Grafik Okupansi Mobil
+            </Card.Header>
+            <Card.Body>
+              {loading || !occupancyChart ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="dark" />
+                </div>
+              ) : (
+                <ReactECharts option={occupancyChart} style={{ height: 320 }} />
+              )}
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 
       {/* Quick Actions */}
-      <Row className="g-3">
+      <Row className="g-4 mb-2">
         <Col lg={12}>
           <Card className="border-0 shadow-sm">
-            <Card.Header className="fw-semibold bg-white border-0">Aksi Cepat</Card.Header>
-            <Card.Body className="pt-0">
+            <Card.Header className="fw-semibold bg-light">Aksi Cepat</Card.Header>
+            <Card.Body>
               <Row className="g-3">
                 <Col xs={6} md={3}>
-                  <OverlayTrigger placement="top" overlay={<Tooltip>Tambah Mobil Baru</Tooltip>}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Tambah Mobil</Tooltip>}>
                     <Button
-                      variant="outline-light"
+                      variant="outline-success"
                       className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
                       onClick={() => navigate('/admin/cars')}
                     >
-                      <div className="action-icon mb-3 d-flex align-items-center justify-content-center rounded-circle" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', width: 48, height: 48 }}>
-                        <FiPlusCircle size={24} />
-                      </div>
+                      <FiPlusCircle size={32} className="mb-2" />
                       <span className="fw-semibold">Tambah Mobil</span>
                     </Button>
                   </OverlayTrigger>
@@ -814,41 +670,35 @@ const DashboardHome = ({
                 <Col xs={6} md={3}>
                   <OverlayTrigger placement="top" overlay={<Tooltip>Kelola Pesanan</Tooltip>}>
                     <Button
-                      variant="outline-light"
+                      variant="outline-info"
                       className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
                       onClick={() => navigate('/admin/orders')}
                     >
-                      <div className="action-icon mb-3 d-flex align-items-center justify-content-center rounded-circle" style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', width: 48, height: 48 }}>
-                        <FiFileText size={24} />
-                      </div>
+                      <FiFileText size={32} className="mb-2" />
                       <span className="fw-semibold">Kelola Pesanan</span>
                     </Button>
                   </OverlayTrigger>
                 </Col>
                 <Col xs={6} md={3}>
-                  <OverlayTrigger placement="top" overlay={<Tooltip>Kelola Pengguna</Tooltip>}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Kelola User</Tooltip>}>
                     <Button
-                      variant="outline-light"
+                      variant="outline-primary"
                       className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
                       onClick={() => navigate('/admin/users')}
                     >
-                      <div className="action-icon mb-3 d-flex align-items-center justify-content-center rounded-circle" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', width: 48, height: 48 }}>
-                        <FiUsers size={24} />
-                      </div>
+                      <FiUsers size={32} className="mb-2" />
                       <span className="fw-semibold">Kelola User</span>
                     </Button>
                   </OverlayTrigger>
                 </Col>
                 <Col xs={6} md={3}>
-                  <OverlayTrigger placement="top" overlay={<Tooltip>Lihat Laporan</Tooltip>}>
+                  <OverlayTrigger placement="top" overlay={<Tooltip>Laporan</Tooltip>}>
                     <Button
-                      variant="outline-light"
+                      variant="outline-dark"
                       className="w-100 d-flex flex-column align-items-center justify-content-center py-4 rounded shadow-sm quick-action-btn"
                       onClick={() => navigate('/admin/report')}
                     >
-                      <div className="action-icon mb-3 d-flex align-items-center justify-content-center rounded-circle" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', width: 48, height: 48 }}>
-                        <FaChartBar size={24} />
-                      </div>
+                      <FaChartBar size={32} className="mb-2" />
                       <span className="fw-semibold">Laporan</span>
                     </Button>
                   </OverlayTrigger>
@@ -866,7 +716,7 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
 
-  // State management
+  // --- Angkat state ke sini ---
   const [stats, setStats] = useState({
     orders: 0,
     cars: 0,
@@ -905,12 +755,11 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
       <div
         className="content-wrapper"
         style={{
-          marginLeft: sidebarCollapsed ? '70px' : '250px',
-          transition: 'margin-left 0.3s ease'
+          marginLeft: sidebarCollapsed ? '70px' : '250px'
         }}
       >
         <div className="content">
-          <div className="container-fluid p-0">
+          <div className="container-fluid">
             {isDashboardHome ? (
               <DashboardHome
                 stats={stats}
@@ -940,12 +789,7 @@ const AdminDashboard = ({ darkMode, toggleDarkMode }) => {
           </div>
         </div>
       </div>
-      <AdminAIChatbot 
-        stats={stats} 
-        omzet={stats.revenue} 
-        orders={stats.orders} 
-        users={stats.users} 
-      />
+      <AdminAIChatbot stats={stats} omzet={stats.revenue} orders={stats.orders} users={stats.users} />
     </div>
   );
 };

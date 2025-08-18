@@ -23,6 +23,18 @@ const AdminAIChatbot = () => {
   const [stats, setStats] = useState(null);
   const messagesEndRef = useRef(null);
 
+  // Lock body scroll when chat is open
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add('chat-open');
+    } else {
+      document.body.classList.remove('chat-open');
+    }
+    return () => {
+      document.body.classList.remove('chat-open');
+    };
+  }, [open]);
+
   // Fetch statistics when chatbot opens
   useEffect(() => {
     if (!open) return;

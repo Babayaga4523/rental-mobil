@@ -98,7 +98,7 @@ const Home = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               >
-                <Link to="#cars" className="btn btn-accent btn-lg px-4">
+                <Link to="/layanan" className="btn btn-accent btn-lg px-4">
                   <i className="bi bi-car-front me-2"></i>Pilih Mobil
                 </Link>
                 <a

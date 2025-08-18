@@ -600,3 +600,7 @@
     right: var(--space-md);
   }
 }
+
+body.chat-open {
+  overflow: hidden;
+}
