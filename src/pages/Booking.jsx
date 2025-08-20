@@ -297,6 +297,28 @@ const Booking = () => {
     setIsLoading(true);
 
     try {
+      // 1. Cek ketersediaan ulang
+      const availRes = await axios.get(`${API_URL}/orders/check-availability`, {
+        params: {
+          layanan_id: formData.layanan_id,
+          pickup_date: formData.pickup_date,
+          return_date: formData.return_date
+        }
+      });
+      if (!availRes.data.available) {
+        toast.error("Mobil tidak tersedia pada tanggal yang dipilih!", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+        setIsLoading(false);
+        setIsAvailable(false);
+        return;
+      }
+      setIsAvailable(true);
+
+      // 2. Buat order
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Anda harus login terlebih dahulu.", {
@@ -309,7 +331,6 @@ const Booking = () => {
         return;
       }
 
-      // 1. Buat order dulu, dapatkan orderId
       const orderRes = await axios.post(
         `${API_URL}/orders`,
         {
@@ -335,7 +356,7 @@ const Booking = () => {
         return;
       }
 
-      // 2. Dapatkan Snap token dari backend
+      // 3. Dapatkan Snap token dari backend
       const res = await axios.post(
         `${API_URL}/payment/midtrans-token`,
         {
@@ -346,8 +367,9 @@ const Booking = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      setIsLoading(false);
+
       if (res.data && res.data.token) {
-        setIsLoading(false); // Pastikan loading selesai sebelum Snap muncul
         window.snap.pay(res.data.token, {
           onSuccess: async function(result) {
             toast.success("Pembayaran berhasil!", {
@@ -403,7 +425,6 @@ const Booking = () => {
           theme: "colored",
           icon: "❌"
         });
-        setIsLoading(false);
       }
     } catch (err) {
       toast.error("Gagal memulai pembayaran", {
@@ -436,6 +457,15 @@ const Booking = () => {
       return orderRes.data.data.id;
     }
     throw new Error("Gagal membuat pesanan");
+  };
+
+  const formatRangeTanggal = (start, end) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    if (start === end) {
+      return startDate.toLocaleDateString("id-ID");
+    }
+    return `${startDate.toLocaleDateString("id-ID")} s/d ${endDate.toLocaleDateString("id-ID")}`;
   };
 
   if (isSessionExpired) {
@@ -559,15 +589,15 @@ const Booking = () => {
                                 <b>Mobil tidak tersedia pada tanggal berikut:</b>
                               </div>
                               <ul className="list-group list-group-flush">
-                                {(showAllBooked ? bookedDates : bookedDates.slice(0, 3)).map((range, i) => (
+                                {(showAllBooked ? bookedDates : bookedDates.slice(0, 5)).map((range, i) => (
                                   <li key={i} className="list-group-item bg-transparent px-0 py-1 border-0">
                                     <span className="badge bg-danger bg-opacity-75 me-2">
-                                      {new Date(range.start).toLocaleDateString("id-ID")} - {new Date(range.end).toLocaleDateString("id-ID")}
+                                      {formatRangeTanggal(range.start, range.end)}
                                     </span>
                                   </li>
                                 ))}
                               </ul>
-                              {bookedDates.length > 3 && (
+                              {bookedDates.length > 5 && (
                                 <button
                                   className="btn btn-link p-0 mt-2"
                                   onClick={() => setShowAllBooked(!showAllBooked)}
@@ -733,7 +763,7 @@ const Booking = () => {
                                   disabled={isLoading || isAvailable === false}
                                 >
                                   <FaCreditCard className="me-2" />
-                                  Bayar Sekarang
+                                  {isLoading ? "Memproses..." : "Pesan & Bayar Sekarang"}
                                 </button>
                               </div>
                             </>
