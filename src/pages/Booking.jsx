@@ -53,13 +53,9 @@ const Booking = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [activeTab, setActiveTab] = useState("booking");
+  const [bookedDates, setBookedDates] = useState([]);
   const [isAvailable, setIsAvailable] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
-
-  const [bookedDates, setBookedDates] = useState([]);
-  const [showAllBooked, setShowAllBooked] = useState(false);
-
-  const [pendingOrderId, setPendingOrderId] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -217,157 +213,84 @@ const Booking = () => {
     }
   };
 
-  // Check availability on component mount and when carId changes
+  // Ambil daftar tanggal tidak tersedia saat carId berubah
   useEffect(() => {
     if (!carId) return;
-    
-    const fetchBookedDates = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/orders/layanan/${carId}/booked-dates`, {
-          headers: { 
-            Authorization: `Bearer ${token}`
-          }
-        });
-        if (res.data.success) {
-          setBookedDates(res.data.bookedDates);
-        }
-      } catch (error) {
-        setBookedDates([]);
-      }
-    };
-
-    fetchBookedDates();
+    axios
+      .get(`${API_URL}/orders/layanan/${carId}/booked-dates`)
+      .then(res => setBookedDates(res.data.bookedDates || []))
+      .catch(() => setBookedDates([]));
   }, [carId]);
 
-  const checkAvailability = async (pickup, returnDate) => {
-    if (!pickup || !returnDate) {
+  // Cek ketersediaan setiap kali tanggal berubah
+  useEffect(() => {
+    if (!formData.pickup_date || !formData.return_date || !carId) {
       setIsAvailable(null);
       return;
     }
     setIsChecking(true);
-    try {
-      const response = await axios.get(`${API_URL}/orders/check-availability`, {
+    axios
+      .get(`${API_URL}/orders/check-availability`, {
         params: {
           layanan_id: carId,
-          pickup_date: pickup,
-          return_date: returnDate
+          pickup_date: formData.pickup_date,
+          return_date: formData.return_date
         }
-      });
-      if (typeof response.data.available === "boolean") {
-        setIsAvailable(response.data.available);
-        if (!response.data.available) {
-          toast.error('Mobil tidak tersedia pada tanggal yang dipilih');
-        }
-      } else {
-        setIsAvailable(null);
-        toast.error('Gagal mengecek ketersediaan mobil');
-      }
-    } catch (error) {
-      setIsAvailable(false);
-      toast.error('Gagal mengecek ketersediaan mobil');
-    } finally {
-      setIsChecking(false);
-    }
-  };
+      })
+      .then(res => setIsAvailable(res.data.available))
+      .catch(() => setIsAvailable(false))
+      .finally(() => setIsChecking(false));
+  }, [formData.pickup_date, formData.return_date, carId]);
 
-  useEffect(() => {
-    if (formData.pickup_date && formData.return_date) {
-      checkAvailability(formData.pickup_date, formData.return_date);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.pickup_date, formData.return_date]);
-
-  useEffect(() => {
-    AOS.init({ duration: 800, once: true });
-  }, []);
-
-  // Tambahkan fungsi handleMidtransPayment di dalam komponen Booking
+  // Saat klik tombol pesan/bayar, cek ulang ketersediaan sebelum create order
   const handleMidtransPayment = async () => {
-    if (!validateForm()) {
-      toast.error("Silakan lengkapi formulir dengan benar.", {
-        position: "top-right",
-        autoClose: 3500,
-        theme: "colored",
-        icon: "⚠️"
-      });
+    if (!formData.pickup_date || !formData.return_date) {
+      toast.error("Pilih tanggal sewa terlebih dahulu!");
       return;
     }
-
     setIsLoading(true);
-
     try {
-      // 1. Cek ketersediaan ulang
+      // Cek ketersediaan ulang
       const availRes = await axios.get(`${API_URL}/orders/check-availability`, {
         params: {
-          layanan_id: formData.layanan_id,
+          layanan_id: carId,
           pickup_date: formData.pickup_date,
           return_date: formData.return_date
         }
       });
       if (!availRes.data.available) {
-        toast.error("Mobil tidak tersedia pada tanggal yang dipilih!", {
-          position: "top-right",
-          autoClose: 3500,
-          theme: "colored",
-          icon: "❌"
-        });
-        setIsLoading(false);
+        toast.error("Mobil tidak tersedia pada tanggal yang dipilih!");
         setIsAvailable(false);
+        setIsLoading(false);
         return;
       }
       setIsAvailable(true);
 
-      // 2. Buat order
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("Anda harus login terlebih dahulu.", {
-          position: "top-right",
-          autoClose: 3500,
-          theme: "colored",
-          icon: "⚠️"
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const orderRes = await axios.post(
-        `${API_URL}/orders`,
-        {
-          layanan_id: Number(formData.layanan_id),
-          pickup_date: formData.pickup_date,
-          return_date: formData.return_date,
-          payment_method: "midtrans",
-          additional_notes: formData.additional_notes,
-          total_price: formData.total_price,
-          payment_status: "unpaid",
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const orderId = orderRes.data?.data?.id;
-      if (!orderId) {
-        toast.error("Gagal membuat pesanan", {
+        toast.error("Token autentikasi tidak ditemukan", {
           position: "top-right",
           autoClose: 3500,
           theme: "colored",
           icon: "❌"
         });
-        setIsLoading(false);
         return;
       }
 
-      // 3. Dapatkan Snap token dari backend
+      const order_id = `ORDER-${Date.now()}`;
+      const gross_amount = formData.total_price;
+      const layanan_id = Number(formData.layanan_id);
+
+      // Dapatkan Snap token dari backend
       const res = await axios.post(
         `${API_URL}/payment/midtrans-token`,
         {
-          order_id: `ORDER-${orderId}`,
-          gross_amount: formData.total_price,
-          layanan_id: Number(formData.layanan_id),
+          order_id,
+          gross_amount,
+          layanan_id,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setIsLoading(false);
 
       if (res.data && res.data.token) {
         window.snap.pay(res.data.token, {
@@ -378,17 +301,26 @@ const Booking = () => {
               theme: "colored",
               icon: "✅"
             });
-            await axios.patch(
-              `${API_URL}/orders/${orderId}`,
+            const paymentMethod = result.payment_type || "midtrans";
+            const orderRes = await axios.post(
+              `${API_URL}/orders`,
               {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
                 payment_status: "paid",
-                payment_method: result.payment_type || "midtrans",
                 midtrans_order_id: result.order_id,
-                status: "confirmed"
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            navigate(`/orders/${orderId}/receipt`);
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Gagal mendapatkan ID pesanan");
+            }
           },
           onPending: async function(result) {
             toast.info("Pembayaran masih diproses.", {
@@ -397,7 +329,26 @@ const Booking = () => {
               theme: "colored",
               icon: "⏳"
             });
-            navigate(`/orders/${orderId}/receipt`);
+            const paymentMethod = result.payment_type || "midtrans";
+            const orderRes = await axios.post(
+              `${API_URL}/orders`,
+              {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
+                payment_status: "unpaid",
+                midtrans_order_id: result.order_id,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Gagal mendapatkan ID pesanan");
+            }
           },
           onError: async function(result) {
             toast.error("Pembayaran gagal.", {
@@ -406,16 +357,34 @@ const Booking = () => {
               theme: "colored",
               icon: "❌"
             });
-            navigate(`/orders/${orderId}/receipt`);
+            const paymentMethod = result?.payment_type || "midtrans";
+            const orderRes = await axios.post(
+              `${API_URL}/orders`,
+              {
+                layanan_id: Number(formData.layanan_id),
+                pickup_date: formData.pickup_date,
+                return_date: formData.return_date,
+                payment_method: paymentMethod,
+                additional_notes: formData.additional_notes,
+                total_price: formData.total_price,
+                payment_status: "failed",
+                midtrans_order_id: result?.order_id,
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (orderRes.data?.data?.id) {
+              navigate(`/orders/${orderRes.data.data.id}/receipt`);
+            } else {
+              toast.error("Pembayaran gagal dan pesanan tidak tercatat.");
+            }
           },
-          onClose: async function() {
+          onClose: function() {
             toast.info("Anda menutup popup pembayaran", {
               position: "top-right",
               autoClose: 3500,
               theme: "colored",
               icon: "ℹ️"
             });
-            navigate(`/orders/${orderId}/receipt`);
           }
         });
       } else {
@@ -433,39 +402,7 @@ const Booking = () => {
         theme: "colored",
         icon: "❌"
       });
-      setIsLoading(false);
     }
-  };
-
-  const createOrderBeforePayment = async () => {
-    const token = localStorage.getItem("token");
-    const orderRes = await axios.post(
-      `${API_URL}/orders`,
-      {
-        layanan_id: Number(formData.layanan_id),
-        pickup_date: formData.pickup_date,
-        return_date: formData.return_date,
-        payment_method: "midtrans",
-        additional_notes: formData.additional_notes,
-        total_price: formData.total_price,
-        payment_status: "unpaid",
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (orderRes.data?.data?.id) {
-      setPendingOrderId(orderRes.data.data.id);
-      return orderRes.data.data.id;
-    }
-    throw new Error("Gagal membuat pesanan");
-  };
-
-  const formatRangeTanggal = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    if (start === end) {
-      return startDate.toLocaleDateString("id-ID");
-    }
-    return `${startDate.toLocaleDateString("id-ID")} s/d ${endDate.toLocaleDateString("id-ID")}`;
   };
 
   if (isSessionExpired) {
@@ -589,22 +526,14 @@ const Booking = () => {
                                 <b>Mobil tidak tersedia pada tanggal berikut:</b>
                               </div>
                               <ul className="list-group list-group-flush">
-                                {(showAllBooked ? bookedDates : bookedDates.slice(0, 5)).map((range, i) => (
+                                {bookedDates.map((range, i) => (
                                   <li key={i} className="list-group-item bg-transparent px-0 py-1 border-0">
                                     <span className="badge bg-danger bg-opacity-75 me-2">
-                                      {formatRangeTanggal(range.start, range.end)}
+                                      {new Date(range.start).toLocaleDateString("id-ID")} - {new Date(range.end).toLocaleDateString("id-ID")}
                                     </span>
                                   </li>
                                 ))}
                               </ul>
-                              {bookedDates.length > 5 && (
-                                <button
-                                  className="btn btn-link p-0 mt-2"
-                                  onClick={() => setShowAllBooked(!showAllBooked)}
-                                >
-                                  {showAllBooked ? "Sembunyikan" : `Lihat Semua (${bookedDates.length})`}
-                                </button>
-                              )}
                             </div>
                           )}
                         </div>
@@ -763,7 +692,7 @@ const Booking = () => {
                                   disabled={isLoading || isAvailable === false}
                                 >
                                   <FaCreditCard className="me-2" />
-                                  {isLoading ? "Memproses..." : "Pesan & Bayar Sekarang"}
+                                  Bayar Sekarang
                                 </button>
                               </div>
                             </>

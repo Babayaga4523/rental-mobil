@@ -9,7 +9,7 @@ const db = {};
 const app = express();
 const server = http.createServer(app);
 const { init } = require('./utils/socket');
-const { startAutoCancelJob } = require('./utils/autoCancelJob');
+const startAutoCancelJob = require('./utils/autoCancelJob');
 
 // Setup CORS sesuai kebutuhan frontend
 const io = init(server, {
@@ -36,9 +36,11 @@ Object.keys(db).forEach(modelName => {
 app.use(express.json());
 const allowedOrigins = [
   "http://localhost:3001",
+  "http://localhost:3000", // tambahkan ini jika perlu
   "https://rental-mobil-ruby.vercel.app",
   "https://rental-mobil-rcmr1udov-yoga-krisnas-projects.vercel.app",
-  "https://uji-coba-production.up.railway.app" // tambahkan domain frontend Anda di sini
+  "https://uji-coba-production.up.railway.app"
+  // Tambahkan domain frontend lain jika perlu
 ];
 
 app.use(cors({
