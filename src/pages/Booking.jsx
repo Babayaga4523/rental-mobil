@@ -59,6 +59,8 @@ const Booking = () => {
   const [bookedDates, setBookedDates] = useState([]);
   const [showAllBooked, setShowAllBooked] = useState(false);
 
+  const [pendingOrderId, setPendingOrderId] = useState(null);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const tokenExpiry = localStorage.getItem("token_expiry");
@@ -294,17 +296,16 @@ const Booking = () => {
         return;
       }
 
-      const order_id = `ORDER-${Date.now()}`;
-      const gross_amount = formData.total_price;
-      const layanan_id = Number(formData.layanan_id);
+      // 1. Buat order dulu, dapatkan orderId
+      const orderId = await createOrderBeforePayment();
 
-      // Dapatkan Snap token dari backend
+      // 2. Dapatkan Snap token dari backend
       const res = await axios.post(
         `${API_URL}/payment/midtrans-token`,
         {
-          order_id,
-          gross_amount,
-          layanan_id,
+          order_id: `ORDER-${orderId}`,
+          gross_amount: formData.total_price,
+          layanan_id: Number(formData.layanan_id),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -318,26 +319,18 @@ const Booking = () => {
               theme: "colored",
               icon: "✅"
             });
-            const paymentMethod = result.payment_type || "midtrans";
-            const orderRes = await axios.post(
-              `${API_URL}/orders`,
+            // Update status order jadi paid
+            await axios.patch(
+              `${API_URL}/orders/${orderId}`,
               {
-                layanan_id: Number(formData.layanan_id),
-                pickup_date: formData.pickup_date,
-                return_date: formData.return_date,
-                payment_method: paymentMethod,
-                additional_notes: formData.additional_notes,
-                total_price: formData.total_price,
                 payment_status: "paid",
+                payment_method: result.payment_type || "midtrans",
                 midtrans_order_id: result.order_id,
+                status: "confirmed"
               },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (orderRes.data?.data?.id) {
-              navigate(`/orders/${orderRes.data.data.id}/receipt`);
-            } else {
-              toast.error("Gagal mendapatkan ID pesanan");
-            }
+            navigate(`/orders/${orderId}/receipt`);
           },
           onPending: async function(result) {
             toast.info("Pembayaran masih diproses.", {
@@ -346,26 +339,8 @@ const Booking = () => {
               theme: "colored",
               icon: "⏳"
             });
-            const paymentMethod = result.payment_type || "midtrans";
-            const orderRes = await axios.post(
-              `${API_URL}/orders`,
-              {
-                layanan_id: Number(formData.layanan_id),
-                pickup_date: formData.pickup_date,
-                return_date: formData.return_date,
-                payment_method: paymentMethod,
-                additional_notes: formData.additional_notes,
-                total_price: formData.total_price,
-                payment_status: "unpaid",
-                midtrans_order_id: result.order_id,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (orderRes.data?.data?.id) {
-              navigate(`/orders/${orderRes.data.data.id}/receipt`);
-            } else {
-              toast.error("Gagal mendapatkan ID pesanan");
-            }
+            // Status tetap unpaid/pending
+            navigate(`/orders/${orderId}/receipt`);
           },
           onError: async function(result) {
             toast.error("Pembayaran gagal.", {
@@ -374,34 +349,18 @@ const Booking = () => {
               theme: "colored",
               icon: "❌"
             });
-            const paymentMethod = result?.payment_type || "midtrans";
-            const orderRes = await axios.post(
-              `${API_URL}/orders`,
-              {
-                layanan_id: Number(formData.layanan_id),
-                pickup_date: formData.pickup_date,
-                return_date: formData.return_date,
-                payment_method: paymentMethod,
-                additional_notes: formData.additional_notes,
-                total_price: formData.total_price,
-                payment_status: "failed",
-                midtrans_order_id: result?.order_id,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (orderRes.data?.data?.id) {
-              navigate(`/orders/${orderRes.data.data.id}/receipt`);
-            } else {
-              toast.error("Pembayaran gagal dan pesanan tidak tercatat.");
-            }
+            // Status tetap unpaid/failed
+            navigate(`/orders/${orderId}/receipt`);
           },
-          onClose: function() {
+          onClose: async function() {
             toast.info("Anda menutup popup pembayaran", {
               position: "top-right",
               autoClose: 3500,
               theme: "colored",
               icon: "ℹ️"
             });
+            // Langsung arahkan ke receipt, status bisa unpaid/pending
+            navigate(`/orders/${orderId}/receipt`);
           }
         });
       } else {
@@ -420,6 +379,28 @@ const Booking = () => {
         icon: "❌"
       });
     }
+  };
+
+  const createOrderBeforePayment = async () => {
+    const token = localStorage.getItem("token");
+    const orderRes = await axios.post(
+      `${API_URL}/orders`,
+      {
+        layanan_id: Number(formData.layanan_id),
+        pickup_date: formData.pickup_date,
+        return_date: formData.return_date,
+        payment_method: "midtrans",
+        additional_notes: formData.additional_notes,
+        total_price: formData.total_price,
+        payment_status: "unpaid",
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (orderRes.data?.data?.id) {
+      setPendingOrderId(orderRes.data.data.id);
+      return orderRes.data.data.id;
+    }
+    throw new Error("Gagal membuat pesanan");
   };
 
   if (isSessionExpired) {
