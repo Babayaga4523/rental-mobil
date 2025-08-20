@@ -284,6 +284,18 @@ const Booking = () => {
 
   // Tambahkan fungsi handleMidtransPayment di dalam komponen Booking
   const handleMidtransPayment = async () => {
+    if (!validateForm()) {
+      toast.error("Silakan lengkapi formulir dengan benar.", {
+        position: "top-right",
+        autoClose: 3500,
+        theme: "colored",
+        icon: "⚠️"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -293,11 +305,35 @@ const Booking = () => {
           theme: "colored",
           icon: "⚠️"
         });
+        setIsLoading(false);
         return;
       }
 
       // 1. Buat order dulu, dapatkan orderId
-      const orderId = await createOrderBeforePayment();
+      const orderRes = await axios.post(
+        `${API_URL}/orders`,
+        {
+          layanan_id: Number(formData.layanan_id),
+          pickup_date: formData.pickup_date,
+          return_date: formData.return_date,
+          payment_method: "midtrans",
+          additional_notes: formData.additional_notes,
+          total_price: formData.total_price,
+          payment_status: "unpaid",
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const orderId = orderRes.data?.data?.id;
+      if (!orderId) {
+        toast.error("Gagal membuat pesanan", {
+          position: "top-right",
+          autoClose: 3500,
+          theme: "colored",
+          icon: "❌"
+        });
+        setIsLoading(false);
+        return;
+      }
 
       // 2. Dapatkan Snap token dari backend
       const res = await axios.post(
@@ -311,6 +347,7 @@ const Booking = () => {
       );
 
       if (res.data && res.data.token) {
+        setIsLoading(false); // Pastikan loading selesai sebelum Snap muncul
         window.snap.pay(res.data.token, {
           onSuccess: async function(result) {
             toast.success("Pembayaran berhasil!", {
@@ -319,7 +356,6 @@ const Booking = () => {
               theme: "colored",
               icon: "✅"
             });
-            // Update status order jadi paid
             await axios.patch(
               `${API_URL}/orders/${orderId}`,
               {
@@ -339,7 +375,6 @@ const Booking = () => {
               theme: "colored",
               icon: "⏳"
             });
-            // Status tetap unpaid/pending
             navigate(`/orders/${orderId}/receipt`);
           },
           onError: async function(result) {
@@ -349,7 +384,6 @@ const Booking = () => {
               theme: "colored",
               icon: "❌"
             });
-            // Status tetap unpaid/failed
             navigate(`/orders/${orderId}/receipt`);
           },
           onClose: async function() {
@@ -359,7 +393,6 @@ const Booking = () => {
               theme: "colored",
               icon: "ℹ️"
             });
-            // Langsung arahkan ke receipt, status bisa unpaid/pending
             navigate(`/orders/${orderId}/receipt`);
           }
         });
@@ -370,6 +403,7 @@ const Booking = () => {
           theme: "colored",
           icon: "❌"
         });
+        setIsLoading(false);
       }
     } catch (err) {
       toast.error("Gagal memulai pembayaran", {
@@ -378,6 +412,7 @@ const Booking = () => {
         theme: "colored",
         icon: "❌"
       });
+      setIsLoading(false);
     }
   };
 
